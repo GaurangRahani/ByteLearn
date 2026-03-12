@@ -1,0 +1,77 @@
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Please add a name"],
+    },
+    email: {
+      type: String,
+      required: [true, "Please add an email"],
+      unique: true,
+      match: [
+        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        "Please add a valid email address",
+      ],
+    },
+    password: {
+      type: String,
+      required: [true, "Please add a password"],
+      minlength: 6,
+      select: false,
+    },
+    role: {
+      type: String,
+      enum: ["student", "educator_pending", "educator_approved", "admin"],
+      default: "student",
+    },
+
+    educatorApplication: {
+      qualifications: { type: String },
+      experience: { type: String },
+      supportingCredentials: [{ type: String }],
+      appliedAt: { type: Date },
+    },
+
+    profilePicture: {
+      type: String,
+      default: "default-profile.jpg",
+    },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other"],
+    },
+    dateOfBirth: {
+      type: Date,
+    },
+    educationLevel: {
+      type: String,
+    },
+    phone: {
+      type: String,
+    },
+    bio: {
+      type: String,
+      maxlength: 500,
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
+
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
+    return next();
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});
+
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+module.exports = mongoose.model("User", userSchema);
