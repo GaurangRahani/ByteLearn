@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["student", "educator_pending", "educator_approved", "admin"],
+      enum: ["student", "educator", "admin"],
       default: "student",
     },
 
@@ -32,6 +32,11 @@ const userSchema = new mongoose.Schema(
       qualifications: { type: String },
       experience: { type: String },
       supportingCredentials: [{ type: String }],
+      status: {
+        type: String,
+        enum: ["pending", "approved", "rejected"],
+        default: "pending",
+      },
       appliedAt: { type: Date },
     },
 
