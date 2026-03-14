@@ -167,10 +167,73 @@ const updateUserProfile = async (req, res) => {
     }
 };
 
+const changePassword = async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+
+        if (!oldPassword || !newPassword) {
+            return res.status(400).json({ message: 'Please provide both old and new password' });
+        }
+
+        const user = await User.findById(req.user._id).select('+password');
+
+        if (user && (await user.matchPassword(oldPassword))) {
+            user.password = newPassword;
+            await user.save();
+            res.json({ message: 'Password changed successfully' });
+        } else {
+            res.status(401).json({ message: 'Invalid old password' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const getAllEducators = async (req, res) => {
+    try {
+        const status = req.query.status;
+        const filter = { role: 'educator' };
+
+        if (status) {
+            filter['educatorApplication.status'] = status;
+        }
+
+        const educators = await User.find(filter).select('-password');
+        res.json(educators);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const updateEducatorStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+
+        if (!status || !['approved', 'rejected'].includes(status)) {
+            return res.status(400).json({ message: 'Invalid status' });
+        }
+
+        const user = await User.findById(req.params.id);
+
+        if (user && user.role === 'educator') {
+            user.educatorApplication.status = status;
+            const updatedUser = await user.save();
+            res.json(updatedUser);
+        } else {
+            res.status(404).json({ message: 'Educator not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     registerStudent,
     registerEducator,
     loginUser,
     getUserProfile,
-    updateUserProfile
+    updateUserProfile,
+    changePassword,
+    getAllEducators,
+    updateEducatorStatus
 };
