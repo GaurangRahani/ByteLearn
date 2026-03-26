@@ -3,6 +3,7 @@ const router = express.Router();
 const {
     createCourse,
     getEducatorCourses,
+    getAllCourses,
     getCourseById,
     updateCourse,
     deleteCourse
@@ -11,6 +12,7 @@ const { protect, approvedEducator, educator } = require('../middleware/authMiddl
 const upload = require('../middleware/uploadMiddleware');
 
 router.route('/')
+    .get(getAllCourses)
     .post(protect, approvedEducator, upload.single('thumbnail'), createCourse);
 
 router.route('/my-courses')

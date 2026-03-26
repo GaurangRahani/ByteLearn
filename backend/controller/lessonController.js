@@ -18,7 +18,6 @@ const cleanupTempFiles = (files) => {
     });
 };
 
-//verify ownership
 const verifyModuleOwnership = async (moduleId, userId) => {
     const module = await Module.findById(moduleId).populate('courseId');
     if (!module) return { error: 'Module not found', status: 404 };
@@ -31,7 +30,7 @@ const verifyModuleOwnership = async (moduleId, userId) => {
 const addLesson = async (req, res) => {
     try {
         const { title, content, order, isPreview } = req.body;
-        let { duration } = req.body; //Manual duration if provided
+        let { duration } = req.body; 
 
         if (!title) {
             cleanupTempFiles(req.files);
@@ -52,7 +51,6 @@ const addLesson = async (req, res) => {
             }
             videoUrl = uploadedVideo.secure_url;
 
-            //actual duratio of video so we dont have to pass explicity
             if (uploadedVideo.duration) {
                 duration = Math.round(uploadedVideo.duration);
             }

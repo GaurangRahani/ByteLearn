@@ -6,4 +6,13 @@ const moduleSchema = new mongoose.Schema({
   order: { type: Number, required: true },
 }, { timestamps: true });
 
+moduleSchema.virtual('lessons', {
+  ref: 'Lesson',
+  localField: '_id',
+  foreignField: 'moduleId'
+});
+
+moduleSchema.set('toJSON', { virtuals: true });
+moduleSchema.set('toObject', { virtuals: true });
+
 module.exports = mongoose.model("Module", moduleSchema);

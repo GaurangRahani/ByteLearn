@@ -6,7 +6,7 @@ const lessonSchema = new mongoose.Schema({
   videoUrl: String,
   content: String, // text lesson
   attachments: [String],
-  attachmentUrl: { type: String }, // FIX 4: explicit field for single PDF/attachment
+  attachmentUrl: { type: String }, 
   duration: Number,
   order: Number,
   isPreview: { type: Boolean, default: false },
