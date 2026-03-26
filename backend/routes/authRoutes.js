@@ -8,13 +8,17 @@ const {
     updateUserProfile,
     changePassword,
     getAllEducators,
-    updateEducatorStatus
+    updateEducatorStatus,
+    verifyOtp,
+    resendOtp
 } = require("../controller/authController");
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.post("/register-student", registerStudent);
 router.post("/register-educator", registerEducator);
 router.post("/login", loginUser);
+router.post("/verify-otp", verifyOtp);
+router.post("/resend-otp", resendOtp);
 
 router.route("/profile").get(protect, getUserProfile).put(protect, updateUserProfile);
 router.put("/change-password", protect, changePassword);

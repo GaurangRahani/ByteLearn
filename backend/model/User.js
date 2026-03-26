@@ -3,11 +3,11 @@ const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
-    name: {
+    name:{
       type: String,
       required: [true, "Please add a name"],
     },
-    email: {
+    email:{
       type: String,
       required: [true, "Please add an email"],
       unique: true,
@@ -27,6 +27,12 @@ const userSchema = new mongoose.Schema(
       enum: ["student", "educator", "admin"],
       default: "student",
     },
+
+    isVerified: { type: Boolean, default: false },
+    isBlocked: { type: Boolean, default: false },
+
+    otp: { type: String },
+    otpExpires: { type: Date },
 
     educatorApplication: {
       qualifications: { type: String },
@@ -61,15 +67,21 @@ const userSchema = new mongoose.Schema(
       type: String,
       maxlength: 500,
     },
+    lastLogin: {
+      type: Date,
+    },
+    passwordChangedAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
   },
 );
 
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
   if (!this.isModified("password")) {
-    return next();
+    return;
   }
 
   const salt = await bcrypt.genSalt(10);
