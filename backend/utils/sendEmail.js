@@ -4,7 +4,6 @@ const sendEmail = async (options) => {
 
   console.log(`Attempting to send email from: ${process.env.EMAIL_USER}`);
 
-
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.error("Email error: Missing EMAIL_USER or EMAIL_PASS in .env file!");
     return;

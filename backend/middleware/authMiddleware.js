@@ -16,6 +16,14 @@ const protect = async (req, res, next) => {
 
             req.user = await User.findById(decoded.id).select('-password');
 
+            if (!req.user) {
+                return res.status(401).json({ message: 'User not found' });
+            }
+
+            if (req.user.isBlocked) {
+                return res.status(403).json({ message: 'Your account has been blocked' });
+            }
+
             next();
         } catch (error) {
             console.error('JWT Verification Error:', error.message);
@@ -26,6 +34,22 @@ const protect = async (req, res, next) => {
     if (!token) {
         res.status(401).json({ message: 'Not authorized, no token' });
     }
+};
+
+const optionalProtect = async (req, res, next) => {
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            const token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const user = await User.findById(decoded.id).select('-password');
+            if (user && !user.isBlocked) {
+                req.user = user;
+            }
+        } catch (error) {
+            //fail if token is invalid
+        }
+    }
+    next();
 };
 
 const admin = (req, res, next) => {
@@ -52,4 +76,4 @@ const approvedEducator = (req, res, next) => {
     }
 };
 
-module.exports = { protect, admin, educator, approvedEducator };
+module.exports = { protect, optionalProtect, admin, educator, approvedEducator };

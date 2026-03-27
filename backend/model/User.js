@@ -3,11 +3,11 @@ const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
-    name:{
+    name: {
       type: String,
       required: [true, "Please add a name"],
     },
-    email:{
+    email: {
       type: String,
       required: [true, "Please add an email"],
       unique: true,
@@ -37,11 +37,10 @@ const userSchema = new mongoose.Schema(
     educatorApplication: {
       qualifications: { type: String },
       experience: { type: String },
-      supportingCredentials: [{ type: String }],
+      supportingCredentials: { type: [String] },
       status: {
         type: String,
         enum: ["pending", "approved", "rejected"],
-        default: "pending",
       },
       appliedAt: { type: Date },
     },

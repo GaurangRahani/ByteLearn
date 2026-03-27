@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const enrollmentSchema = new mongoose.Schema({
   studentId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true },
-   // progress tracking
+  // progress tracking
   completedLessons: [{ type: mongoose.Schema.Types.ObjectId, ref: "Lesson" }],
   completedQuizzes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Quiz" }],
   completedModules: [{ type: mongoose.Schema.Types.ObjectId, ref: "Module" }],
@@ -11,7 +11,7 @@ const enrollmentSchema = new mongoose.Schema({
 
   lastAccessedLesson: { type: mongoose.Schema.Types.ObjectId, ref: "Lesson" },
   progressPercentage: { type: Number, default: 0 },
-  
+
   status: {
     type: String,
     enum: ["active", "completed"],
@@ -22,7 +22,7 @@ const enrollmentSchema = new mongoose.Schema({
   completedAt: Date,
 }, { timestamps: true });
 
-// This prevents duplicate enrollments at the database level
+//prevents duplicate enrollements
 enrollmentSchema.index({ studentId: 1, courseId: 1 }, { unique: true });
 
 module.exports = mongoose.model("Enrollment", enrollmentSchema);

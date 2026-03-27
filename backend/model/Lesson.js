@@ -5,11 +5,9 @@ const lessonSchema = new mongoose.Schema({
   title: { type: String, required: true },
   videoUrl: String,
   content: String, // text lesson
-  attachments: [String],
   attachmentUrl: { type: String }, 
   duration: Number,
   order: Number,
-  isPreview: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model("Lesson", lessonSchema);

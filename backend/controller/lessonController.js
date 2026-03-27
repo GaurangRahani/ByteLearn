@@ -29,7 +29,7 @@ const verifyModuleOwnership = async (moduleId, userId) => {
 
 const addLesson = async (req, res) => {
     try {
-        const { title, content, order, isPreview } = req.body;
+        const { title, content, order } = req.body;
         let { duration } = req.body; 
 
         if (!title) {
@@ -72,7 +72,7 @@ const addLesson = async (req, res) => {
             attachmentUrl,
             content,
             order,
-            isPreview: isPreview === 'true' || isPreview === true,
+
             duration,
         });
 
@@ -113,9 +113,7 @@ const updateLesson = async (req, res) => {
         if (req.body.content !== undefined) allowedUpdates.content = req.body.content;
         if (req.body.order !== undefined) allowedUpdates.order = req.body.order;
         if (req.body.duration !== undefined) allowedUpdates.duration = req.body.duration;
-        if (req.body.isPreview !== undefined) {
-            allowedUpdates.isPreview = req.body.isPreview === 'true' || req.body.isPreview === true;
-        }
+
 
         if (req.files?.video?.[0]) {
             const uploadedVideo = await uploadOnCloudinary(req.files.video[0].path);

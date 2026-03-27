@@ -17,6 +17,11 @@ const enrollInFreeCourse = async (req, res) => {
             return res.status(404).json({ success: false, message: "Course not found" });
         }
 
+        // Ensure course is approved and published
+        if (course.status !== 'approved') {
+            return res.status(400).json({ success: false, message: "Course is not available for enrollment" });
+        }
+
         // Ensure course is actually free
         if (course.isPaid) {
             return res.status(402).json({ success: false, message: "Payment Required for this course" });

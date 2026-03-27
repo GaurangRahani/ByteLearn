@@ -6,9 +6,11 @@ const {
     getAllCourses,
     getCourseById,
     updateCourse,
-    deleteCourse
+    deleteCourse,
+    submitForReview,
+    reviewCourse,
 } = require('../controller/courseController');
-const { protect, approvedEducator, educator } = require('../middleware/authMiddleware');
+const { protect, optionalProtect, approvedEducator, educator, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
 router.route('/')
@@ -19,12 +21,18 @@ router.route('/my-courses')
     .get(protect, educator, getEducatorCourses);
 
 router.route('/:id')
-    .get(getCourseById)
+    .get(optionalProtect, getCourseById)
     .put(protect, approvedEducator, upload.single('thumbnail'), updateCourse)
     .delete(protect, approvedEducator, deleteCourse);
 
-//  Nested: /api/courses/:courseId/modules
+
 const moduleRoutes = require('./moduleRoutes');
 router.use('/:courseId/modules', moduleRoutes);
+
+
+router.route('/:id/submit-review')
+    .post(protect, approvedEducator, submitForReview);
+
+
 
 module.exports = router;

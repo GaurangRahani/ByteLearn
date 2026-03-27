@@ -93,10 +93,10 @@ const getCourseById = async (req, res) => {
                     options: { sort: { order: 1 } },
                     transform: (doc) => {
                         const lesson = doc.toObject ? doc.toObject() : doc;
-                        if (!lesson.isPreview) {
-                            delete lesson.videoUrl;
-                            delete lesson.content;
-                        }
+                        // No preview — always hide video and content from public catalog
+                        delete lesson.videoUrl;
+                        delete lesson.attachmentUrl;
+                        delete lesson.content;
                         return lesson;
                     }
                 }
@@ -104,6 +104,18 @@ const getCourseById = async (req, res) => {
 
         if (!course) {
             return res.status(404).json({ success: false, message: 'Course not found' });
+        }
+
+        // If course is not approved, only the owning educator or an admin can view it
+        if (course.status !== 'approved') {
+            const userId = req.user ? req.user._id.toString() : null;
+            const userRole = req.user ? req.user.role : null;
+            const isOwner = course.educatorId._id.toString() === userId;
+            const isAdmin = userRole === 'admin';
+
+            if (!isOwner && !isAdmin) {
+                return res.status(404).json({ success: false, message: 'Course not found' });
+            }
         }
 
         res.status(200).json({ success: true, data: course });
@@ -185,11 +197,48 @@ const deleteCourse = async (req, res) => {
     }
 };
 
+//educator submit course for admin review
+const submitForReview = async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id);
+
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        //Ownership check
+        if (course.educatorId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Not authorized to submit this course' });
+        }
+
+        if (!['draft', 'rejected'].includes(course.status)) {
+            return res.status(400).json({
+                message: `Course is already "${course.status}". Only draft or rejected courses can be submitted for review.`
+            });
+        }
+
+        const moduleCount = await Module.countDocuments({ courseId: course._id });
+        if (moduleCount === 0) {
+            return res.status(400).json({ message: 'You cannot submit an empty course. Add at least one module first.' });
+        }
+
+        course.status = 'pending';
+        course.adminFeedback = undefined;
+        await course.save();
+
+        res.json({ message: 'Course submitted for review successfully.', status: course.status });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
 module.exports = {
     createCourse,
     getEducatorCourses,
     getAllCourses,
     getCourseById,
     updateCourse,
-    deleteCourse
+    deleteCourse,
+    submitForReview,
 };
