@@ -9,6 +9,7 @@ const {
     deleteCourse,
     submitForReview,
     reviewCourse,
+    getAuthorizedCourseContent,
 } = require('../controller/courseController');
 const { protect, optionalProtect, approvedEducator, educator, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -19,6 +20,8 @@ router.route('/')
 
 router.route('/my-courses')
     .get(protect, educator, getEducatorCourses);
+
+router.get('/learn/:id', protect, getAuthorizedCourseContent);
 
 router.route('/:id')
     .get(optionalProtect, getCourseById)

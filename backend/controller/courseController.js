@@ -1,6 +1,7 @@
 const Course = require('../model/Course');
 const Module = require('../model/Module');
 const Lesson = require('../model/Lesson');
+const Enrollment = require('../model/Enrollment');
 const { uploadOnCloudinary } = require('../utils/cloudinary');
 const fs = require('fs');
 
@@ -232,6 +233,39 @@ const submitForReview = async (req, res) => {
     }
 };
 
+const getAuthorizedCourseContent = async (req, res) => {
+    try {
+        const studentId = req.user._id;
+        const courseId = req.params.id;
+
+        const enrollment = await Enrollment.findOne({ studentId, courseId });
+
+        if (!enrollment) {
+            return res.status(403).json({ success: false, message: "Access denied. Not enrolled in this course." });
+        }
+
+        const course = await Course.findById(courseId)
+            .populate('educatorId', 'name profilePicture bio')
+            .populate({
+                path: 'modules',
+                options: { sort: { order: 1 } },
+                populate: [
+                    { path: 'lessons', options: { sort: { order: 1 } } },
+                    { path: 'quizzes', options: { sort: { order: 1 } } },
+                    { path: 'assignments', options: { sort: { order: 1 } } }
+                ]
+            })
+            .lean();
+
+        if (!course) {
+            return res.status(404).json({ success: false, message: 'Course not found' });
+        }
+
+        res.status(200).json({ success: true, data: { course, progress: enrollment } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
 
 module.exports = {
     createCourse,
@@ -241,4 +275,5 @@ module.exports = {
     updateCourse,
     deleteCourse,
     submitForReview,
+    getAuthorizedCourseContent,
 };
