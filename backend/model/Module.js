@@ -12,6 +12,18 @@ moduleSchema.virtual('lessons', {
   foreignField: 'moduleId'
 });
 
+moduleSchema.virtual('quizzes', {
+  ref: 'Quiz',
+  localField: '_id',
+  foreignField: 'moduleId'
+});
+
+moduleSchema.virtual('assignments', {
+  ref: 'Assignment',
+  localField: '_id',
+  foreignField: 'moduleId'
+});
+
 moduleSchema.set('toJSON', { virtuals: true });
 moduleSchema.set('toObject', { virtuals: true });
 
