@@ -7,9 +7,20 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
 
 const registerStudent = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { 
+            name, 
+            email, 
+            password,
+            gender,
+            dateOfBirth,
+            educationLevel,
+            phone,
+            bio,
+            profilePicture
+        } = req.body;
+
         if (!name || !email || !password) {
-            return res.status(400).json({ message: 'Please add all fields' });
+            return res.status(400).json({ message: 'Please add all required fields (name, email, password)' });
         }
 
         const userExists = await User.findOne({ email });
@@ -20,7 +31,20 @@ const registerStudent = async (req, res) => {
         const otp = generateOTP();
         const otpExpires = Date.now() + 10 * 60 * 1000;
 
-        const user = await User.create({ name, email, password, role: 'student', otp, otpExpires });
+        const user = await User.create({ 
+            name, 
+            email, 
+            password, 
+            role: 'student', 
+            otp, 
+            otpExpires,
+            gender,
+            dateOfBirth,
+            educationLevel,
+            phone,
+            bio,
+            profilePicture
+        });
 
         try {
             await sendEmail({
