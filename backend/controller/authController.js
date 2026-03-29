@@ -95,7 +95,6 @@ const registerEducator = async (req, res) => {
             const uploadPromises = req.files.supportingCredentials.map(file => uploadOnCloudinary(file.path));
             const uploadResults = await Promise.all(uploadPromises);
             
-            // Filter out any failed uploads and get the URLs
             credentialsArray = uploadResults
                 .filter(res => res !== null)
                 .map(res => res.url);
@@ -163,6 +162,8 @@ const loginUser = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                isVerified: user.isVerified,
+                educatorApplication: user.educatorApplication,
                 token: generateToken(user._id),
             });
         } else {
