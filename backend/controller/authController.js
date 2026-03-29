@@ -1,6 +1,7 @@
 const User = require('../model/User');
 const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
+const { uploadOnCloudinary } = require('../utils/cloudinary');
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -77,13 +78,27 @@ const registerEducator = async (req, res) => {
         const otp = generateOTP();
         const otpExpires = Date.now() + 10 * 60 * 1000;
 
-        const profilePicture = (req.files && req.files.profilePicture) 
-            ? req.files.profilePicture[0].path 
-            : (req.body.profilePicture || "default-profile.jpg");
+        let profilePictureUrl = "default-profile.jpg";
+        if (req.files && req.files.profilePicture) {
+            const localPath = req.files.profilePicture[0].path;
+            const uploadResult = await uploadOnCloudinary(localPath);
+            if (uploadResult && uploadResult.url) {
+                profilePictureUrl = uploadResult.url;
+            }
+        } else if (req.body.profilePicture) {
+            profilePictureUrl = req.body.profilePicture;
+        }
 
         let credentialsArray = [];
         if (req.files && req.files.supportingCredentials) {
-            credentialsArray = req.files.supportingCredentials.map(file => file.path);
+            // Upload all supporting credentials to Cloudinary in parallel
+            const uploadPromises = req.files.supportingCredentials.map(file => uploadOnCloudinary(file.path));
+            const uploadResults = await Promise.all(uploadPromises);
+            
+            // Filter out any failed uploads and get the URLs
+            credentialsArray = uploadResults
+                .filter(res => res !== null)
+                .map(res => res.url);
         } else if (req.body.supportingCredentials) {
             credentialsArray = Array.isArray(req.body.supportingCredentials) 
                 ? req.body.supportingCredentials 
@@ -92,7 +107,10 @@ const registerEducator = async (req, res) => {
 
         const user = await User.create({
             name, email, password, role: 'educator', otp, otpExpires,
-            gender, dateOfBirth, phone, profilePicture,
+            ...(gender && { gender }),
+            ...(dateOfBirth && { dateOfBirth }),
+            ...(phone && { phone }),
+            profilePicture: profilePictureUrl,
             educatorApplication: {
                 qualifications, 
                 experience, 

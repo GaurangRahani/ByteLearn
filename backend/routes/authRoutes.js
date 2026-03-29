@@ -13,9 +13,13 @@ const {
     resendOtp
 } = require("../controller/authController");
 const { protect, admin } = require('../middleware/authMiddleware');
+const upload = require('../middleware/uploadMiddleware');
 
 router.post("/register-student", registerStudent);
-router.post("/register-educator", registerEducator);
+router.post("/register-educator", upload.fields([
+    { name: 'profilePicture', maxCount: 1 },
+    { name: 'supportingCredentials', maxCount: 5 }
+]), registerEducator);
 router.post("/login", loginUser);
 router.post("/verify-otp", verifyOtp);
 router.post("/resend-otp", resendOtp);
