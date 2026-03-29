@@ -13,8 +13,7 @@ const StudentRegister = () => {
     phone: '',
     gender: '',
     dateOfBirth: '',
-    educationLevel: '',
-    bio: ''
+    educationLevel: ''
   });
   const [showOptional, setShowOptional] = useState(false);
   const [error, setError] = useState(null);
