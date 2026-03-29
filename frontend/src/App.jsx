@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import StudentRegister from './pages/StudentRegister';
 import EducatorRegister from './pages/EducatorRegister';
 import VerifyOtp from './pages/VerifyOtp';
+import Login from './pages/Login';
 import Header from './components/layout/Header';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
             <Route path="/register-student" element={<StudentRegister />} />
             <Route path="/apply-educator" element={<EducatorRegister />} />
             <Route path="/verify-otp" element={<VerifyOtp />} />
+            <Route path="/login" element={<Login />} />
           </Routes>
         </main>
       </div>
