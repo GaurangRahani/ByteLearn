@@ -64,7 +64,7 @@ const registerStudent = async (req, res) => {
 
 const registerEducator = async (req, res) => {
     try {
-        const { name, email, password, qualifications, experience, gender, dateOfBirth, phone } = req.body;
+        const { name, email, password, qualifications, experience, gender, dateOfBirth, phone, supportingCredentials } = req.body;
         if (!name || !email || !password || !qualifications || !experience) {
             return res.status(400).json({ message: 'Please add all required fields' });
         }
@@ -77,13 +77,28 @@ const registerEducator = async (req, res) => {
         const otp = generateOTP();
         const otpExpires = Date.now() + 10 * 60 * 1000;
 
-        const profilePicture = req.file ? req.file.path : (req.body.profilePicture || "default-profile.jpg");
+        const profilePicture = (req.files && req.files.profilePicture) 
+            ? req.files.profilePicture[0].path 
+            : (req.body.profilePicture || "default-profile.jpg");
+
+        let credentialsArray = [];
+        if (req.files && req.files.supportingCredentials) {
+            credentialsArray = req.files.supportingCredentials.map(file => file.path);
+        } else if (req.body.supportingCredentials) {
+            credentialsArray = Array.isArray(req.body.supportingCredentials) 
+                ? req.body.supportingCredentials 
+                : [req.body.supportingCredentials];
+        }
 
         const user = await User.create({
             name, email, password, role: 'educator', otp, otpExpires,
             gender, dateOfBirth, phone, profilePicture,
             educatorApplication: {
-                qualifications, experience, status: 'pending', appliedAt: new Date()
+                qualifications, 
+                experience, 
+                supportingCredentials: credentialsArray,
+                status: 'pending', 
+                appliedAt: new Date()
             }
         });
 
