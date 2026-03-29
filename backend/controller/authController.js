@@ -148,7 +148,23 @@ const loginUser = async (req, res) => {
 
         if (user && (await user.matchPassword(password))) {
             if (!user.isVerified) {
-                return res.status(403).json({ message: 'Account not verified. Please verify OTP.' });
+                // Automatically generate and send a new OTP
+                const otp = generateOTP();
+                user.otp = otp;
+                user.otpExpires = Date.now() + 10 * 60 * 1000;
+                await user.save();
+
+                try {
+                    await sendEmail({
+                        email: user.email,
+                        subject: 'Verify your ByteLearn Account',
+                        message: `Your new OTP is ${otp}. It will expire in 10 minutes.`
+                    });
+                } catch (err) {
+                    console.error('Failed to send OTP email on login attempt:', err.message);
+                }
+
+                return res.status(403).json({ message: 'Account not verified. A new OTP has been sent to your email.' });
             }
             if (user.isBlocked) {
                 return res.status(403).json({ message: 'Your account has been suspended. Contact support.' });
