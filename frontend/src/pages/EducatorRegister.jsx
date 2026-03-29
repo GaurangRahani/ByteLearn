@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
-const EducatorRegisterPage = () => {
+const EducatorRegister = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
@@ -95,7 +95,7 @@ const EducatorRegisterPage = () => {
         }
       });
 
-      alert(res.data.message);
+      navigate('/verify-otp', { state: { email: formData.email } });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -123,7 +123,7 @@ const EducatorRegisterPage = () => {
           </div>
         )}
 
-        {}
+        { }
         <form onSubmit={handleSubmit} className="space-y-5">
 
           {/* Required Fields */}
@@ -382,4 +382,4 @@ const EducatorRegisterPage = () => {
   );
 };
 
-export default EducatorRegisterPage;
+export default EducatorRegister;

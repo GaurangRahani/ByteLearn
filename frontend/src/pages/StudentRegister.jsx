@@ -44,8 +44,8 @@ const StudentRegister = () => {
 
 
       const res = await axios.post('/api/auth/register-student', dataToSend);
-      alert(res.data.message); // Could be a toast in the future
-      // navigate('/verify-otp') // Example next step
+      // alert(res.data.message); 
+      navigate('/verify-otp', { state: { email: formData.email } });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
