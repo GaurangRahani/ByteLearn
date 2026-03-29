@@ -85,7 +85,7 @@ const getAllCourses = async (req, res) => {
 const getCourseById = async (req, res) => {
     try {
         const course = await Course.findById(req.params.id)
-            .populate('educatorId', 'name profilePicture bio')
+            .populate('educatorId', 'name profilePicture')
             .populate({
                 path: 'modules',
                 options: { sort: { order: 1 } },
@@ -245,7 +245,7 @@ const getAuthorizedCourseContent = async (req, res) => {
         }
 
         const course = await Course.findById(courseId)
-            .populate('educatorId', 'name profilePicture bio')
+            .populate('educatorId', 'name profilePicture')
             .populate({
                 path: 'modules',
                 options: { sort: { order: 1 } },

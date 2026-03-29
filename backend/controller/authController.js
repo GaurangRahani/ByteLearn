@@ -15,7 +15,6 @@ const registerStudent = async (req, res) => {
             dateOfBirth,
             educationLevel,
             phone,
-            bio,
             profilePicture
         } = req.body;
 
@@ -42,7 +41,6 @@ const registerStudent = async (req, res) => {
             dateOfBirth,
             educationLevel,
             phone,
-            bio,
             profilePicture
         });
 
@@ -66,9 +64,9 @@ const registerStudent = async (req, res) => {
 
 const registerEducator = async (req, res) => {
     try {
-        const { name, email, password, qualifications, experience } = req.body;
+        const { name, email, password, qualifications, experience, gender, dateOfBirth, phone } = req.body;
         if (!name || !email || !password || !qualifications || !experience) {
-            return res.status(400).json({ message: 'Please add all fields' });
+            return res.status(400).json({ message: 'Please add all required fields' });
         }
 
         const userExists = await User.findOne({ email });
@@ -79,13 +77,13 @@ const registerEducator = async (req, res) => {
         const otp = generateOTP();
         const otpExpires = Date.now() + 10 * 60 * 1000;
 
+        const profilePicture = req.file ? req.file.path : (req.body.profilePicture || "default-profile.jpg");
+
         const user = await User.create({
             name, email, password, role: 'educator', otp, otpExpires,
+            gender, dateOfBirth, phone, profilePicture,
             educatorApplication: {
-                qualifications,
-                experience,
-                status: 'pending',
-                appliedAt: new Date()
+                qualifications, experience, status: 'pending', appliedAt: new Date()
             }
         });
 
@@ -120,12 +118,10 @@ const loginUser = async (req, res) => {
             if (!user.isVerified) {
                 return res.status(403).json({ message: 'Account not verified. Please verify OTP.' });
             }
-            //Block check
             if (user.isBlocked) {
                 return res.status(403).json({ message: 'Your account has been suspended. Contact support.' });
             }
 
-            //Update lastLogin
             user.lastLogin = Date.now();
             await user.save();
 
@@ -160,7 +156,6 @@ const getUserProfile = async (req, res) => {
                 dateOfBirth: user.dateOfBirth,
                 educationLevel: user.educationLevel,
                 phone: user.phone,
-                bio: user.bio,
                 lastLogin: user.lastLogin,
             });
         } else {
@@ -208,7 +203,6 @@ const updateUserProfile = async (req, res) => {
         user.dateOfBirth = req.body.dateOfBirth || user.dateOfBirth;
         user.educationLevel = req.body.educationLevel || user.educationLevel;
         user.phone = req.body.phone || user.phone;
-        user.bio = req.body.bio || user.bio;
         if (req.body.password) {
             return res.status(400).json({ message: 'Use change-password to update your password.' });
         }

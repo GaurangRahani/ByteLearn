@@ -62,10 +62,6 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
     },
-    bio: {
-      type: String,
-      maxlength: 500,
-    },
     lastLogin: {
       type: Date,
     },
