@@ -45,7 +45,7 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
               to={item.path}
               className={({ isActive }) => 
                 `flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                  isActive || item.name === 'Dashboard' 
+                  isActive 
                     ? 'text-blue-600 bg-blue-50/80 font-semibold' 
                     : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
                 }`
