@@ -59,6 +59,52 @@ const getEducatorCourses = async (req, res) => {
     }
 };
 
+const getEducatorDashboardStats = async (req, res) => {
+    try {
+        const educatorId = req.user._id;
+        const courses = await Course.find({ educatorId });
+        
+        const totalCourses = courses.length;
+        const approvedCourses = courses.filter(c => c.status === 'approved').length;
+        const pendingApprovals = courses.filter(c => c.status === 'pending').length;
+
+        const courseIds = courses.map(c => c._id);
+        const totalStudents = await Enrollment.countDocuments({ courseId: { $in: courseIds } });
+
+        const recentCoursesRaw = await Course.find({ educatorId })
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .lean();
+
+        const recentCourses = await Promise.all(recentCoursesRaw.map(async (course) => {
+            const students = await Enrollment.countDocuments({ courseId: course._id });
+            const modules = await Module.countDocuments({ courseId: course._id });
+            return {
+                id: course._id,
+                title: course.title,
+                status: course.status,
+                students: students,
+                modules: modules
+            };
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: {
+                stats: {
+                    totalCourses,
+                    approvedCourses,
+                    pendingApprovals,
+                    totalStudents
+                },
+                recentCourses
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 const getAllCourses = async (req, res) => {
     try {
         const { search, category } = req.query;
@@ -276,4 +322,5 @@ module.exports = {
     deleteCourse,
     submitForReview,
     getAuthorizedCourseContent,
+    getEducatorDashboardStats,
 };

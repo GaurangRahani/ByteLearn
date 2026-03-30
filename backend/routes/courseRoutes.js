@@ -10,6 +10,7 @@ const {
     submitForReview,
     reviewCourse,
     getAuthorizedCourseContent,
+    getEducatorDashboardStats,
 } = require('../controller/courseController');
 const { protect, optionalProtect, approvedEducator, educator, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -17,6 +18,9 @@ const upload = require('../middleware/uploadMiddleware');
 router.route('/')
     .get(getAllCourses)
     .post(protect, approvedEducator, upload.single('thumbnail'), createCourse);
+
+router.route('/dashboard-stats')
+    .get(protect, educator, getEducatorDashboardStats);
 
 router.route('/my-courses')
     .get(protect, educator, getEducatorCourses);
