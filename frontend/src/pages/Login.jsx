@@ -17,30 +17,46 @@ const Login = () => {
     setError(null);
     try {
       const res = await axios.post('/api/auth/login', { email, password });
-      const { user } = res.data; 
-      const userData = user || res.data; 
-      
+
+      console.log("Login Response Data:", res.data);
+
+      // The response is the user object directly, not wrapped
+      const userData = res.data;
+      const token = res.data.token;
+
+      if (token) {
+        localStorage.setItem('token', token);
+        console.log("Token saved to localStorage");
+      }
+
       const { role, isVerified, educatorApplication } = userData;
+      console.log("Extracted Info:", { role, isVerified, status: educatorApplication?.status });
 
       if (!isVerified) {
+        console.log("User not verified, redirecting to /verify-otp");
         navigate('/verify-otp', { state: { email } });
         return;
       }
 
-      if (role === 'student' && isVerified) {
+      if (role === 'student') {
         navigate('/student-dashboard');
-      } else if (role === 'admin' && isVerified) {
+      } else if (role === 'admin') {
         navigate('/admin-dashboard');
-      } else if (role === 'educator' && isVerified) {
+      } else if (role === 'educator') {
         const status = educatorApplication?.status;
+        console.log("Educator Status found:", status);
         if (status === 'pending') {
+          console.log("Redirecting to Educator Status page");
           navigate('/educator-status');
         } else if (status === 'approved') {
+          console.log("Redirecting to Educator Dashboard");
           navigate('/educator-dashboard');
         } else if (status === 'rejected') {
+          console.log("Redirecting to Educator Rejected page");
           navigate('/educator-rejected');
         } else {
-          navigate('/');
+          console.log("Unknown status, defaulting to status page");
+          navigate('/educator-status');
         }
       }
 
@@ -59,8 +75,8 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4 py-12">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-sm border border-slate-100 p-8">
-        
-        {}
+
+        { }
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2 text-blue-600 mb-6">
             <GraduationCap size={32} />
@@ -128,14 +144,14 @@ const Login = () => {
             Don't have an account?
           </p>
           <div className="flex gap-4 justify-center">
-            <Link 
-              to="/register-student" 
+            <Link
+              to="/register-student"
               className="flex-1 py-2 px-4 border border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition-colors text-sm"
             >
               Student
             </Link>
-            <Link 
-              to="/apply-educator" 
+            <Link
+              to="/apply-educator"
               className="flex-1 py-2 px-4 border border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition-colors text-sm"
             >
               Educator
