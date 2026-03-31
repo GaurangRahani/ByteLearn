@@ -16,11 +16,11 @@ import {
 const DashboardHeader = ({ studentName = 'Student' }) => {
   const navItems = [
     { name: 'Dashboard', path: '/student-dashboard', icon: LayoutDashboard },
-    { name: 'Browse', path: '/browse', icon: Compass },
-    { name: 'My Courses', path: '/my-courses', icon: BookOpen },
+    { name: 'Browse', path: '/browse', icon: BookOpen },
+    { name: 'My Courses', path: '/my-courses', icon: GraduationCap },
     { name: 'Assignments', path: '/assignments', icon: FileText },
     { name: 'Quizzes', path: '/quizzes', icon: HelpCircle },
-    { name: 'Queries', path: '/queries', icon: MessageSquare },
+    { name: 'Queries', path: '/queries', icon: MessageSquare }, // Leaving MessageSquare for Queries based on context
     { name: 'Progress', path: '/progress', icon: TrendingUp },
     { name: 'Certificates', path: '/certificates', icon: Award },
   ];

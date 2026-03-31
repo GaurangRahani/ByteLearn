@@ -12,14 +12,15 @@ import Login from './pages/auth/Login';
 import Header from './components/layout/Header';
 import StudentDashboard from './pages/student/StudentDashboard';
 import BrowseCourse from './pages/student/BrowseCourse';
+import MyCoursesPage from './pages/student/MyCoursesPage';
 
 const AppContent = () => {
   const location = useLocation();
-  // Hide global Header if we are on an educator/student dashboard or course flow
   const hideGlobalHeader =
     location.pathname.startsWith('/educator') ||
     location.pathname.startsWith('/student-dashboard') ||
     location.pathname.startsWith('/browse') ||
+    location.pathname.startsWith('/my-courses') ||
     location.pathname.startsWith('/course/');
 
   return (
@@ -38,6 +39,7 @@ const AppContent = () => {
           <Route path="/course/:id/curriculum" element={<CurriculumBuilder />} />
           <Route path="/student-dashboard" element={<StudentDashboard />} />
           <Route path="/browse" element={<BrowseCourse />} />
+          <Route path="/my-courses" element={<MyCoursesPage />} />
           <Route path="/login" element={<Login />} />
         </Routes>
       </main>
