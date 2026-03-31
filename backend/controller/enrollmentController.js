@@ -58,7 +58,7 @@ const getMyCourses = async (req, res) => {
             .select('progressPercentage status courseId')
             .populate({
                 path: 'courseId',
-                select: 'title thumbnail category totalLessons educatorId',
+                select: 'title thumbnail price isPaid level duration description educatorId',
                 populate: {
                     path: 'educatorId',
                     select: 'name'

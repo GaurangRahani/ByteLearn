@@ -63,7 +63,7 @@ const getEducatorDashboardStats = async (req, res) => {
     try {
         const educatorId = req.user._id;
         const courses = await Course.find({ educatorId });
-        
+
         const totalCourses = courses.length;
         const approvedCourses = courses.filter(c => c.status === 'approved').length;
         const pendingApprovals = courses.filter(c => c.status === 'pending').length;
@@ -118,7 +118,7 @@ const getAllCourses = async (req, res) => {
         }
 
         const courses = await Course.find(query)
-            .select("title thumbnail price isPaid level rating educatorId")
+            .select("title thumbnail price isPaid level rating totalRatings description educatorId")
             .populate("educatorId", "name")
             .sort({ createdAt: -1 });
 
