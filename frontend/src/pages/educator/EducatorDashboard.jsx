@@ -1,20 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
-  GraduationCap, 
-  LayoutDashboard, 
-  Plus, 
   BookOpen, 
-  FileText, 
-  HelpCircle, 
-  MessageSquare,
   Users,
   Clock,
   CheckCircle2,
-  ChevronDown,
   ArrowRight
 } from 'lucide-react';
+import EducatorHeader from '../../components/layout/EducatorHeader';
 
 const EducatorDashboard = () => {
   const navigate = useNavigate();
@@ -66,80 +60,10 @@ const EducatorDashboard = () => {
     { title: 'APPROVED COURSES', value: statsData.approvedCourses, icon: <CheckCircle2 size={20} />, color: 'bg-emerald-500', textColor: 'text-emerald-500' },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
-  };
-
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
+      <EducatorHeader educatorName={educatorName} activePage="/educator-dashboard" />
       
-      {/* Educator Exclusive Navbar */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            
-            {/* Logo */}
-            <div className="flex items-center">
-              <Link to="/educator-dashboard" className="flex items-center gap-2 text-xl font-bold tracking-tight text-slate-800">
-                <div className="bg-blue-600 p-1.5 rounded-lg">
-                   <GraduationCap className="h-5 w-5 text-white" strokeWidth={2.5} />
-                </div>
-                <span>ByteLearn</span>
-              </Link>
-            </div>
-
-            {/* Nav Links */}
-            <div className="hidden md:flex items-center gap-1 mx-8 relative">
-              <Link to="/educator-dashboard" className="flex items-center gap-1.5 px-4 py-2 bg-blue-50 text-blue-600 rounded-md text-sm font-semibold relative after:absolute after:bottom-[-16px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-600">
-                <LayoutDashboard size={16} />
-                Dashboard
-              </Link>
-
-              <Link to="/course/create" className="flex items-center gap-1.5 px-4 py-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-md text-sm font-medium transition-colors">
-                <Plus size={16} />
-                Create Course
-              </Link>
-
-              <Link to="/educator/courses" className="flex items-center gap-1.5 px-4 py-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-md text-sm font-medium transition-colors">
-                <BookOpen size={16} />
-                My Courses
-              </Link>
-
-              <Link to="/educator/assignments" className="flex items-center gap-1.5 px-4 py-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-md text-sm font-medium transition-colors">
-                <FileText size={16} />
-                Assignments
-              </Link>
-
-              <Link to="/educator/quizzes" className="flex items-center gap-1.5 px-4 py-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-md text-sm font-medium transition-colors">
-                <HelpCircle size={16} />
-                Quizzes
-              </Link>
-
-              <Link to="/educator/queries" className="flex items-center gap-1.5 px-4 py-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-md text-sm font-medium transition-colors">
-                <MessageSquare size={16} />
-                Queries
-              </Link>
-            </div>
-
-            {/* Profile Dropdown */}
-            <div className="flex items-center">
-               <button className="flex items-center gap-3 hover:bg-slate-50 p-2 rounded-lg transition-colors border border-transparent hover:border-slate-200">
-                 <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                   <Users size={16} />
-                 </div>
-                 <div className="text-left hidden sm:block">
-                   <p className="text-sm font-bold text-slate-800 leading-tight">{educatorName}</p>
-                   <p className="text-[11px] text-slate-500 font-medium">Educator</p>
-                 </div>
-                 <ChevronDown size={16} className="text-slate-400" />
-               </button>
-            </div>
-
-          </div>
-        </div>
-      </nav>
-
       {/* Main Content Area */}
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         

@@ -36,7 +36,7 @@ const BrowseCourseCard = ({ course }) => {
             </span>
           ) : (
             <span className="bg-[#2563EB]/95 backdrop-blur-sm px-3 py-1.5 rounded-md shadow-sm border border-[#2563EB]">
-              <span className="text-white text-xs font-bold leading-none tracking-wide">${Number(price).toFixed(2)}</span>
+              <span className="text-white text-xs font-bold leading-none tracking-wide">₹{Number(price).toFixed(2)}</span>
             </span>
           )}
         </div>
