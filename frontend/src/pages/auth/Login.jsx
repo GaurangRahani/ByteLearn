@@ -26,14 +26,14 @@ const Login = () => {
 
       if (token) {
         localStorage.setItem('token', token);
-        console.log("Token saved to localStorage");
+        localStorage.setItem('user', JSON.stringify(userData));
+        console.log("Token and User metadata saved to session");
       }
 
       const { role, isVerified, educatorApplication } = userData;
-      console.log("Extracted Info:", { role, isVerified, status: educatorApplication?.status });
+      console.log("Session Role Index:", role);
 
       if (!isVerified) {
-        console.log("User not verified, redirecting to /verify-otp");
         navigate('/verify-otp', { state: { email } });
         return;
       }

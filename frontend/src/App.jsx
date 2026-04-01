@@ -14,6 +14,11 @@ import StudentDashboard from './pages/student/StudentDashboard';
 import BrowseCourse from './pages/student/BrowseCourse';
 import MyCoursesPage from './pages/student/MyCoursesPage';
 
+import AdminDashboard from './pages/admin/AdminDashboard';
+import EducatorApprovals from './pages/admin/EducatorApprovals';
+import CourseApprovals from './pages/admin/CourseApprovals';
+import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
+
 const AppContent = () => {
   const location = useLocation();
   const hideGlobalHeader =
@@ -21,6 +26,8 @@ const AppContent = () => {
     location.pathname.startsWith('/student-dashboard') ||
     location.pathname.startsWith('/browse') ||
     location.pathname.startsWith('/my-courses') ||
+    location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/admin-dashboard') ||
     location.pathname.startsWith('/course/');
 
   return (
@@ -29,6 +36,14 @@ const AppContent = () => {
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
+          
+          {/* Admin Infrastructure */}
+          <Route element={<AdminProtectedRoute />}>
+             <Route path="/admin-dashboard" element={<AdminDashboard />} />
+             <Route path="/admin/educators" element={<EducatorApprovals />} />
+             <Route path="/admin/courses" element={<CourseApprovals />} />
+          </Route>
+
           <Route path="/register-student" element={<StudentRegister />} />
           <Route path="/apply-educator" element={<EducatorRegister />} />
           <Route path="/verify-otp" element={<VerifyOtp />} />
