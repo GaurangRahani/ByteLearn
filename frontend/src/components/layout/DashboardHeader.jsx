@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { 
   LayoutDashboard, 
   Compass, 
@@ -17,8 +18,30 @@ import {
 
 const DashboardHeader = ({ studentName = 'Student' }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [profileName, setProfileName] = useState(studentName);
   const profileRef = useRef(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (studentName && studentName !== 'Student') {
+      setProfileName(studentName);
+      return; 
+    }
+    const fetchProfileName = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const res = await axios.get('/api/auth/profile', config);
+        if (res.data && res.data.name) {
+          setProfileName(res.data.name);
+        }
+      } catch (err) {
+        console.error("DashboardHeader failed to fetch profile name", err);
+      }
+    };
+    fetchProfileName();
+  }, [studentName]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -92,7 +115,7 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
               <UserIcon size={20} className="mt-1" fill="currentColor" />
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-[14px] font-bold text-slate-800 leading-tight">{studentName}</p>
+              <p className="text-[14px] font-bold text-slate-800 leading-tight">{profileName}</p>
               <p className="text-[13px] text-slate-500 font-medium">Student</p>
             </div>
             <ChevronDown size={14} className="text-slate-400 ml-1" />
