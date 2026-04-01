@@ -1,7 +1,7 @@
 const Enrollment = require('../model/Enrollment');
 const Course = require('../model/Course');
 
-const enrollInFreeCourse = async (req, res) => {
+const enrollInCourse = async (req, res) => {
     try {
         const studentId = req.user._id;
         const { courseId } = req.body;
@@ -10,27 +10,20 @@ const enrollInFreeCourse = async (req, res) => {
             return res.status(400).json({ success: false, message: "courseId is required" });
         }
 
-        // Check if the course exists
         const course = await Course.findById(courseId);
 
         if (!course) {
             return res.status(404).json({ success: false, message: "Course not found" });
         }
 
-        // Ensure course is approved and published
-        if (course.status !== 'approved') {
-            return res.status(400).json({ success: false, message: "Course is not available for enrollment" });
-        }
-
-        // Ensure course is actually free
-        if (course.isPaid) {
-            return res.status(402).json({ success: false, message: "Payment Required for this course" });
-        }
-
         const existingEnrollment = await Enrollment.findOne({ studentId, courseId });
         
         if (existingEnrollment) {
-            return res.status(409).json({ success: false, message: "You are already enrolled in this course" });
+            return res.status(400).json({ success: false, message: "You are already enrolled in this course" });
+        }
+
+        if (course.isPaid) {
+            return res.status(403).json({ success: false, message: "Payment required for this course" });
         }
 
         const enrollment = await Enrollment.create({
@@ -40,11 +33,11 @@ const enrollInFreeCourse = async (req, res) => {
             progressPercentage: 0
         });
 
-        res.status(201).json({ success: true, message: "Successfully enrolled", data: enrollment });
+        res.status(201).json({ success: true, message: "Enrolled successfully", data: enrollment });
 
     } catch (error) {
         if (error.code === 11000) {
-            return res.status(409).json({ success: false, message: "You are already enrolled in this course" });
+            return res.status(400).json({ success: false, message: "You are already enrolled in this course" });
         }
         res.status(500).json({ success: false, message: error.message });
     }
@@ -77,6 +70,6 @@ const getMyCourses = async (req, res) => {
 };
 
 module.exports = {
-    enrollInFreeCourse,
+    enrollInCourse,
     getMyCourses
 };

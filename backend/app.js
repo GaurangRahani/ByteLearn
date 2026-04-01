@@ -31,7 +31,7 @@ const adminRoutes = require('./routes/adminRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
-app.use('/api/enroll', enrollmentRoutes);
+app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 5000;
