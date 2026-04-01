@@ -13,6 +13,8 @@ import Header from './components/layout/Header';
 import StudentDashboard from './pages/student/StudentDashboard';
 import BrowseCourse from './pages/student/BrowseCourse';
 import MyCoursesPage from './pages/student/MyCoursesPage';
+import CourseDetailsPage from './pages/student/CourseDetails';
+import UpdateProfile from './pages/student/UpdateProfile';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import EducatorApprovals from './pages/admin/EducatorApprovals';
@@ -28,7 +30,8 @@ const AppContent = () => {
     location.pathname.startsWith('/my-courses') ||
     location.pathname.startsWith('/admin') ||
     location.pathname.startsWith('/admin-dashboard') ||
-    location.pathname.startsWith('/course/');
+    location.pathname.startsWith('/course/') ||
+    location.pathname.startsWith('/update-profile');
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
@@ -52,7 +55,9 @@ const AppContent = () => {
           <Route path="/educator/courses" element={<MyCourses />} />
           <Route path="/course/create" element={<CreateCourse />} />
           <Route path="/course/:id/curriculum" element={<CurriculumBuilder />} />
+          <Route path="/course/:id" element={<CourseDetailsPage />} />
           <Route path="/student-dashboard" element={<StudentDashboard />} />
+          <Route path="/update-profile" element={<UpdateProfile />} />
           <Route path="/browse" element={<BrowseCourse />} />
           <Route path="/my-courses" element={<MyCoursesPage />} />
           <Route path="/login" element={<Login />} />

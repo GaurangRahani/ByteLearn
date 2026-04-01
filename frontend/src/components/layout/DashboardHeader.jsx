@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Compass, 
@@ -10,10 +10,35 @@ import {
   TrendingUp, 
   Award,
   ChevronDown,
-  GraduationCap
+  GraduationCap,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react';
 
 const DashboardHeader = ({ studentName = 'Student' }) => {
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
+  const handleEditProfile = () => {
+    setIsProfileOpen(false);
+    navigate('/update-profile');
+  };
   const navItems = [
     { name: 'Dashboard', path: '/student-dashboard', icon: LayoutDashboard },
     { name: 'Browse', path: '/browse', icon: BookOpen },
@@ -58,19 +83,38 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
         </nav>
 
         {/* Profile */}
-        <div className="flex items-center gap-3 ml-8">
-          <button className="flex items-center gap-3 focus:outline-none">
+        <div className="flex items-center gap-3 ml-8 relative" ref={profileRef}>
+          <button 
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            className="flex items-center gap-3 focus:outline-none"
+          >
             <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 shadow-sm overflow-hidden">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 mt-1">
-                <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
-              </svg>
+              <UserIcon size={20} className="mt-1" fill="currentColor" />
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-[13px] font-bold text-slate-800 leading-tight">{studentName}</p>
-              <p className="text-[11px] text-slate-500 font-medium">Student</p>
+              <p className="text-[14px] font-bold text-slate-800 leading-tight">{studentName}</p>
+              <p className="text-[13px] text-slate-500 font-medium">Student</p>
             </div>
             <ChevronDown size={14} className="text-slate-400 ml-1" />
           </button>
+
+          {/* Dropdown Menu */}
+          {isProfileOpen && (
+            <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50">
+              <button 
+                onClick={handleEditProfile}
+                className="w-full text-left px-4 py-2.5 text-[14px] text-slate-700 font-medium hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2"
+              >
+                <UserIcon size={16} /> Edit Profile
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2.5 text-[14px] text-red-600 font-medium hover:bg-red-50 transition-colors flex items-center gap-2"
+              >
+                <LogOut size={16} /> Logout
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
