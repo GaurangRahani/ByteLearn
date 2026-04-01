@@ -110,9 +110,43 @@ const reviewEducator = async (req, res) => {
     }
 };
 
+const getAdminStats = async (req, res) => {
+    try {
+        const totalStudents = await User.countDocuments({ role: 'student' });
+        const totalEducators = await User.countDocuments({ role: 'educator' });
+        const totalCourses = await Course.countDocuments();
+        const pendingCoursesCount = await Course.countDocuments({ status: 'pending' });
+        const pendingEducatorsCount = await User.countDocuments({ role: 'educator', 'educatorApplication.status': 'pending' });
+
+        const pendingEducators = await User.find({ role: 'educator', 'educatorApplication.status': 'pending' })
+            .select('name email createdAt')
+            .limit(5);
+
+        const pendingCourses = await Course.find({ status: 'pending' })
+            .select('title educatorId createdAt')
+            .populate('educatorId', 'name')
+            .limit(5);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                totalStudents,
+                totalEducators,
+                totalCourses,
+                pendingApprovals: pendingCoursesCount + pendingEducatorsCount,
+                pendingEducators,
+                pendingCourses
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     getAllPendingCourses,
     reviewCourse,
     getAllEducators,
     reviewEducator,
+    getAdminStats
 };

@@ -6,7 +6,11 @@ const {
     reviewCourse,
     getAllEducators,
     reviewEducator,
+    getAdminStats
 } = require('../controller/adminController');
+
+// Admin Stats
+router.get('/stats', protect, admin, getAdminStats);
 
 // Course Review
 router.get('/courses/pending', protect, admin, getAllPendingCourses);
