@@ -20,6 +20,11 @@ router.route('/:moduleId')
 
 //nested
 const lessonRoutes = require('./lessonRoutes');
+const assignmentRoutes = require('./assignmentRoutes');
+const quizRoutes = require('./quizRoutes');
+
 router.use('/:moduleId/lessons', lessonRoutes);
+router.use('/:moduleId/assignments', assignmentRoutes);
+router.use('/:moduleId/quizzes', quizRoutes);
 
 module.exports = router;

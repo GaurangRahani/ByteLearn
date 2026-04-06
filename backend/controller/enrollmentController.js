@@ -17,7 +17,7 @@ const enrollInCourse = async (req, res) => {
         }
 
         const existingEnrollment = await Enrollment.findOne({ studentId, courseId });
-        
+
         if (existingEnrollment) {
             return res.status(400).json({ success: false, message: "You are already enrolled in this course" });
         }

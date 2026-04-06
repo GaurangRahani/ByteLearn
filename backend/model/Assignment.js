@@ -6,10 +6,12 @@ const assignmentSchema = new mongoose.Schema({
   instructions: { type: String },
   questionPdfUrl: { type: String },
   totalMarks: { type: Number },
-  dueDate: { type: Date },
-  order: { type: Number, required: true }
+  order: { type: Number, required: true } // Order is a shared sequence across Lessons, Quizzes, and Assignments within the same Module
 }, {
   timestamps: true
 });
+
+// Index for rapid sequential sorting across the unified timeline
+assignmentSchema.index({ moduleId: 1, order: 1 });
 
 module.exports = mongoose.model("Assignment", assignmentSchema);

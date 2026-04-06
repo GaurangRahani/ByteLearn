@@ -1,6 +1,8 @@
 const Lesson = require('../model/Lesson');
 const Module = require('../model/Module');
 const Course = require('../model/Course');
+const Assignment = require('../model/Assignment');
+const Quiz = require('../model/Quiz');
 const { uploadOnCloudinary } = require('../utils/cloudinary');
 const fs = require('fs');
 
@@ -29,8 +31,8 @@ const verifyModuleOwnership = async (moduleId, userId) => {
 
 const addLesson = async (req, res) => {
     try {
-        const { title, content, order } = req.body;
-        let { duration } = req.body; 
+        const { title, content } = req.body;
+        let { duration, order } = req.body; 
 
         if (!title) {
             cleanupTempFiles(req.files);
@@ -41,6 +43,21 @@ const addLesson = async (req, res) => {
         if (error) {
             cleanupTempFiles(req.files);
             return res.status(status).json({ message: error });
+        }
+
+        // --- Cross-Collection Unified Order Logic ---
+        if (!order) {
+            const [lastLesson, lastAssignment, lastQuiz] = await Promise.all([
+                Lesson.findOne({ moduleId: req.params.moduleId }).sort('-order'),
+                Assignment.findOne({ moduleId: req.params.moduleId }).sort('-order'),
+                Quiz.findOne({ moduleId: req.params.moduleId }).sort('-order')
+            ]);
+            const maxOrder = Math.max(
+                lastLesson?.order || 0,
+                lastAssignment?.order || 0,
+                lastQuiz?.order || 0
+            );
+            order = maxOrder + 1;
         }
 
         let videoUrl = "";
@@ -72,7 +89,6 @@ const addLesson = async (req, res) => {
             attachmentUrl,
             content,
             order,
-
             duration,
         });
 
