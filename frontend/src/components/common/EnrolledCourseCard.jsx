@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Users, Clock } from 'lucide-react';
 
 const EnrolledCourseCard = ({ enrollment, progress }) => {
@@ -77,9 +78,9 @@ const EnrolledCourseCard = ({ enrollment, progress }) => {
           </div>
 
           {/* Continue Learning Button */}
-          <button className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition-colors">
+          <Link to={`/learn/${enrollment._id}`} className="block w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition-colors text-center">
             Continue Learning
-          </button>
+          </Link>
         </div>
       </div>
     </div>
