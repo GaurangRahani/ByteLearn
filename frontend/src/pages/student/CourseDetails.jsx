@@ -52,7 +52,7 @@ const CourseDetails = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      alert("Enrolled successfully!"); // Option: implement toast later
+      alert("Enrolled successfully!"); 
       navigate('/my-courses');
     } catch (err) {
       if (err.response?.status === 401) {
@@ -97,17 +97,14 @@ const CourseDetails = () => {
       
       <main className="flex-grow max-w-[1240px] w-full mx-auto px-6 py-8">
         
-        {/* Back Link */}
         <Link to="/browse" className="inline-flex items-center text-slate-500 hover:text-blue-600 text-[15px] font-medium mb-6 transition-colors">
           <ArrowLeft size={18} className="mr-2" /> Back to Browse
         </Link>
         
         <div className="flex flex-col lg:flex-row gap-8">
           
-          {/* Left Column */}
           <div className="lg:w-[70%] flex flex-col gap-6">
             
-            {/* Header Card */}
             <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
               <div className="flex items-start justify-between mb-4">
                 <h1 className="text-[32px] font-bold text-slate-800 tracking-tight leading-tight pr-4">
@@ -134,7 +131,7 @@ const CourseDetails = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Users size={18} className="text-slate-400" />
-                  <span>234 students enrolled</span>
+                  <span>{course.enrolledStudents || 0} students enrolled</span>
                 </div>
                 <div className="flex items-center gap-1.5 font-medium text-slate-700">
                   <Star size={18} className="text-amber-400 fill-amber-400" />
@@ -182,19 +179,29 @@ const CourseDetails = () => {
                           </div>
                         ))}
 
-                        {/* Visual Mock Detailing for Quizzes and Assignments (as requested strictly for matching UI) */}
-                        {index === 0 && (
+                        {/* Assignments */}
+                        {module.assignments && module.assignments.length > 0 && (
                           <div className="mt-2 flex flex-col gap-2">
-                            <div className="flex items-center gap-3 ml-2">
-                              <span className="flex items-center gap-2.5 text-amber-600 bg-amber-50 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold border border-amber-100/50 w-max tracking-tight">
-                                <FileText size={15} /> HTML Structure Assignment
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3 ml-2">
-                              <span className="flex items-center gap-2.5 text-purple-600 bg-purple-50 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold border border-purple-100/50 w-max tracking-tight">
-                                <HelpCircle size={15} /> HTML Basics Quiz
-                              </span>
-                            </div>
+                            {module.assignments.map((assignment) => (
+                              <div key={assignment._id} className="flex items-center gap-3 ml-2">
+                                <span className="flex items-center gap-2.5 text-amber-600 bg-amber-50 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold border border-amber-100/50 w-max tracking-tight">
+                                  <FileText size={15} /> {assignment.title}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Quizzes */}
+                        {module.quizzes && module.quizzes.length > 0 && (
+                          <div className="mt-2 flex flex-col gap-2">
+                            {module.quizzes.map((quiz) => (
+                              <div key={quiz._id} className="flex items-center gap-3 ml-2">
+                                <span className="flex items-center gap-2.5 text-purple-600 bg-purple-50 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold border border-purple-100/50 w-max tracking-tight">
+                                  <HelpCircle size={15} /> {quiz.title}
+                                </span>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -208,7 +215,6 @@ const CourseDetails = () => {
 
           </div>
 
-          {/* Right Column (Sticky Enrollment Card) */}
           <div className="lg:w-[30%] relative">
              <div className="sticky top-6">
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">

@@ -12,7 +12,8 @@ import Login from './pages/auth/Login';
 import Header from './components/layout/Header';
 import StudentDashboard from './pages/student/StudentDashboard';
 import BrowseCourse from './pages/student/BrowseCourse';
-import MyCoursesPage from './pages/student/MyCoursesPage';
+import MyCourse from './pages/student/MyCourse';
+import ContinueLearning from './pages/student/continueLearning';
 import CourseDetailsPage from './pages/student/CourseDetails';
 import UpdateProfile from './pages/student/UpdateProfile';
 
@@ -31,6 +32,7 @@ const AppContent = () => {
     location.pathname.startsWith('/admin') ||
     location.pathname.startsWith('/admin-dashboard') ||
     location.pathname.startsWith('/course/') ||
+    location.pathname.startsWith('/learn/') ||
     location.pathname.startsWith('/update-profile');
 
   return (
@@ -59,7 +61,9 @@ const AppContent = () => {
           <Route path="/student-dashboard" element={<StudentDashboard />} />
           <Route path="/update-profile" element={<UpdateProfile />} />
           <Route path="/browse" element={<BrowseCourse />} />
-          <Route path="/my-courses" element={<MyCoursesPage />} />
+          <Route path="/my-courses" element={<MyCourse />} />
+          <Route path="/course/:id/learn" element={<ContinueLearning />} />
+          <Route path="/learn/:id" element={<ContinueLearning />} />
           <Route path="/login" element={<Login />} />
         </Routes>
       </main>

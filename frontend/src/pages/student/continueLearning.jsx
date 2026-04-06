@@ -1,0 +1,436 @@
+import React, { useState, useEffect } from 'react';
+import DashboardHeader from '../../components/layout/DashboardHeader';
+import {
+  PlayCircle,
+  CheckCircle,
+  Circle,
+  FileText,
+  HelpCircle,
+  Download,
+  Upload,
+  Clock,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
+
+const simulatedCourseData = {
+  id: "course-mern-101",
+  title: "MERN Stack Deep Dive",
+  modules: [
+    {
+      id: "mod-1",
+      title: "Frontend Fundamentals",
+      items: [
+        {
+          id: "item-1",
+          type: "lesson",
+          title: "Introduction to React Components",
+          duration: "15:30",
+          content: "This lesson covers the fundamentals of React components, props, and JSX syntax. Follow along with the video and take notes."
+        },
+        {
+          id: "item-2",
+          type: "lesson",
+          title: "Advanced State Management",
+          duration: "20:15",
+          content: "Deep dive into useState, useEffect, and the React Context API for managing global state."
+        },
+        {
+          id: "item-3",
+          type: "assignment",
+          title: "React UI Components Assignment",
+          instructions: "Complete the assignment by following the guidelines in the PDF below. Submit your work before the due date to receive feedback from your educator.",
+          status: "Not Submitted",
+          dueDate: "2026-06-15"
+        },
+        {
+          id: "item-4",
+          type: "quiz",
+          title: "React Core Concepts Quiz",
+          estimatedTime: "10 mins"
+        }
+      ]
+    },
+    {
+      id: "mod-2",
+      title: "Backend with Node & Express",
+      items: [
+        {
+          id: "item-5",
+          type: "lesson",
+          title: "RESTful API Design",
+          duration: "18:45",
+          content: "Learn how to structure RESTful APIs using Express.js routing, controllers, and middleware."
+        },
+        {
+          id: "item-6",
+          type: "assignment",
+          title: "JWT Authentication Architecture",
+          instructions: "Implement JWT based authentication for your backend API and secure specific endpoints. Review the architectural diagram in the PDF.",
+          status: "Graded: 92/100",
+          dueDate: "2026-07-01",
+          submittedOn: "2026-06-25"
+        },
+        {
+          id: "item-7",
+          type: "quiz",
+          title: "Node.js Security Best Practices",
+          estimatedTime: "15 mins"
+        }
+      ]
+    }
+  ]
+};
+
+const initialCompletionState = {
+  "item-1": true,
+  "item-2": false,
+  "item-3": false,
+  "item-4": false,
+  "item-5": false,
+  "item-6": true,
+  "item-7": false
+};
+
+const ContinueLearning = () => {
+  const [course, setCourse] = useState(null);
+  const [completions, setCompletions] = useState({});
+  const [activeItemId, setActiveItemId] = useState(null);
+  const [progressPercentage, setProgressPercentage] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourseData = async () => {
+      setIsLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      setCourse(simulatedCourseData);
+      setCompletions(initialCompletionState);
+
+      if (simulatedCourseData.modules.length > 0 && simulatedCourseData.modules[0].items.length > 0) {
+        setActiveItemId(simulatedCourseData.modules[0].items[0].id);
+      }
+      setIsLoading(false);
+    };
+
+    fetchCourseData();
+  }, []);
+
+  useEffect(() => {
+    if (!course) return;
+
+    let totalItems = 0;
+    let completedItems = 0;
+
+    course.modules.forEach(mod => {
+      mod.items.forEach(item => {
+        totalItems++;
+        if (completions[item.id]) {
+          completedItems++;
+        }
+      });
+    });
+
+    const calculatedProgress = totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100);
+    setProgressPercentage(calculatedProgress);
+
+  }, [completions, course]);
+
+  const toggleCompletion = async (itemId) => {
+    const newStatus = !completions[itemId];
+    setCompletions(prev => ({
+      ...prev,
+      [itemId]: newStatus
+    }));
+  };
+
+  const getActiveItemDetails = () => {
+    if (!course) return null;
+    let currentModule = null;
+    let currentItem = null;
+    let itemIndex = -1;
+    let moduleIndex = -1;
+
+    for (let i = 0; i < course.modules.length; i++) {
+      const mod = course.modules[i];
+      const idx = mod.items.findIndex(it => it.id === activeItemId);
+      if (idx !== -1) {
+        currentModule = mod;
+        currentItem = mod.items[idx];
+        itemIndex = idx;
+        moduleIndex = i;
+        break;
+      }
+    }
+
+    return { currentModule, currentItem, moduleIndex, itemIndex };
+  };
+
+  if (isLoading || !course) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <DashboardHeader />
+        <div className="flex-grow flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  const { currentModule, currentItem } = getActiveItemDetails();
+
+  const getIconForType = (type, isCompleted, isActive) => {
+    if (isCompleted) {
+      return <CheckCircle size={18} className={`${isActive ? 'text-white' : 'text-emerald-500'}`} />;
+    }
+    if (type === 'lesson') {
+      return <PlayCircle size={18} className={`${isActive ? 'text-white' : 'text-slate-400'}`} />;
+    }
+    if (type === 'assignment') {
+      return <FileText size={18} className={`${isActive ? 'text-white' : 'text-amber-500'}`} />;
+    }
+    if (type === 'quiz') {
+      return <HelpCircle size={18} className={`${isActive ? 'text-white' : 'text-purple-500'}`} />;
+    }
+    return <Circle size={18} className="text-slate-400" />;
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans mb-16">
+      <DashboardHeader />
+
+      <main className="flex-grow max-w-[1400px] w-full mx-auto px-6 py-8">
+
+        {/* Course Title and Progress Header */}
+        <div className="mb-8">
+          <h1 className="text-[28px] font-bold text-slate-800 mb-4 tracking-tight">
+            {course.title}
+          </h1>
+          <div className="flex items-center gap-4 max-w-2xl">
+            <div className="flex-grow h-2.5 bg-slate-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-600 transition-all duration-500 ease-out"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <span className="text-sm font-semibold text-slate-600 w-24">
+              {progressPercentage}% Complete
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-8">
+
+          {/* LEFT COLUMN: Persistent Modules Navigation */}
+          <div className="lg:w-[32%] flex-shrink-0">
+            <div className="bg-white border text-base border-slate-200 rounded-2xl shadow-sm overflow-hidden sticky top-6">
+              <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+                <h2 className="font-bold text-slate-800 text-lg">Course Content</h2>
+              </div>
+
+              <div className="max-h-[calc(100vh-250px)] overflow-y-auto hidden-scrollbar pb-4 p-2">
+                {course.modules.map((mod, index) => (
+                  <div key={mod.id} className="mb-4 last:mb-0">
+                    <h3 className="font-semibold text-slate-800 text-[15px] px-3 py-2 mb-1">
+                      Module {index + 1}: {mod.title}
+                    </h3>
+                    <div className="flex flex-col gap-1">
+                      {mod.items.map((item) => {
+                        const isActive = activeItemId === item.id;
+                        const isCompleted = completions[item.id];
+
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => setActiveItemId(item.id)}
+                            className={`w-full text-left flex items-center justify-between px-3 py-3 rounded-xl transition-colors ${isActive
+                                ? 'bg-blue-600 text-white shadow-md'
+                                : 'hover:bg-slate-50 text-slate-600'
+                              }`}
+                          >
+                            <div className="flex items-center gap-3 pr-2">
+                              <div className="flex-shrink-0">
+                                {getIconForType(item.type, isCompleted, isActive)}
+                              </div>
+                              <span className={`text-[14.5px] font-medium truncate ${isActive ? 'text-white' : 'text-slate-700'}`}>
+                                {item.title}
+                              </span>
+                            </div>
+
+                            {/* Right side metadata (duration) */}
+                            {item.type === 'lesson' && item.duration && (
+                              <span className={`text-[12px] font-medium flex-shrink-0 ${isActive ? 'text-blue-100' : 'text-slate-400'}`}>
+                                {item.duration}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:w-[68%] flex flex-col gap-6">
+
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden min-h-[500px] flex flex-col">
+
+              {currentItem?.type === 'lesson' && (
+                <>
+                  <div className="w-full aspect-video bg-[#EBF1FF] flex flex-col items-center justify-center relative">
+                    <button className="h-20 w-20 bg-white/60 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all text-blue-600 group">
+                      <PlayCircle size={40} className="ml-1 group-hover:scale-110 transition-transform" />
+                    </button>
+                    <p className="mt-4 text-blue-800/60 font-medium text-sm">Video player would be here</p>
+                    <p className="mt-1 text-blue-900 font-semibold">{currentItem.title}</p>
+                  </div>
+
+                  {/* Lesson Content details */}
+                  <div className="p-8 flex-grow flex flex-col">
+                    <h2 className="text-2xl font-bold text-slate-800 mb-3">{currentItem.title}</h2>
+                    <p className="text-slate-600 leading-relaxed text-[15.5px]">
+                      {currentItem.content}
+                    </p>
+
+                    <div className="mt-auto pt-10 flex border-t border-slate-100 items-center justify-between">
+                      <button className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors flex items-center gap-2 text-sm">
+                        <ChevronLeft size={16} /> Previous
+                      </button>
+                      <button
+                        onClick={() => toggleCompletion(currentItem.id)}
+                        className={`px-8 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${completions[currentItem.id]
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
+                          }`}
+                      >
+                        {completions[currentItem.id] ? <><CheckCircle size={18} /> Completed</> : 'Mark as Complete'}
+                      </button>
+                      <button className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors flex items-center gap-2 text-sm">
+                        Next <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {currentItem?.type === 'assignment' && (
+                <div className="p-8 flex flex-col h-full">
+                  <div className="mb-2">
+                    <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{currentModule?.title}</span>
+                  </div>
+                  <h2 className="text-[32px] font-bold text-slate-800 tracking-tight leading-tight mb-4">
+                    {currentItem.title}
+                  </h2>
+
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="flex items-center gap-2 text-slate-500 text-sm font-medium">
+                      <Clock size={16} />
+                      Due: {new Date(currentItem.dueDate).toLocaleDateString()}
+                    </div>
+
+                    {/* Grading Status Badge */}
+                    {currentItem.status.includes('Graded') ? (
+                      <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">
+                        {currentItem.status}
+                      </span>
+                    ) : completions[currentItem.id] ? (
+                      <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full">
+                        Pending Review
+                      </span>
+                    ) : (
+                      <span className="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1 rounded-full">
+                        Not Submitted
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Instructions Card */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-8">
+                    <h3 className="text-lg font-bold text-slate-800 mb-4">Instructions</h3>
+                    <p className="text-slate-600 text-[15px] leading-relaxed mb-6">
+                      {currentItem.instructions}
+                    </p>
+                    <button className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-2 border-slate-200 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-50 transition-all text-[15px]">
+                      <Download size={18} />
+                      Download Assignment PDF
+                    </button>
+                  </div>
+
+                  {/* Submission Area */}
+                  {completions[currentItem.id] && currentItem.submittedOn ? (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle className="text-emerald-500 mt-0.5" size={24} />
+                        <div>
+                          <h3 className="font-bold text-emerald-900 text-lg">Submitted Successfully</h3>
+                          <p className="text-emerald-700 text-sm mt-1">
+                            Submitted on {new Date(currentItem.submittedOn).toLocaleDateString()}. Your educator will review this shortly.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-10 flex flex-col items-center justify-center text-center transition-colors hover:bg-slate-100 hover:border-blue-400 cursor-pointer group">
+                      <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                        <Upload size={28} className="text-blue-600" />
+                      </div>
+                      <h3 className="text-[17px] font-bold text-slate-800 mb-2">Upload Completed PDF</h3>
+                      <p className="text-slate-500 text-sm max-w-sm mb-6">
+                        Drag and drop your PDF submission here, or click to browse files from your computer.
+                      </p>
+                      <button
+                        onClick={() => toggleCompletion(currentItem.id)}
+                        className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg"
+                      >
+                        Simulate Submission
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {currentItem?.type === 'quiz' && (
+                <div className="flex flex-col items-center justify-center p-12 h-full min-h-[500px] text-center bg-gradient-to-b from-white to-slate-50">
+                  <div className="h-24 w-24 bg-purple-100 rounded-full flex items-center justify-center mb-6">
+                    <HelpCircle size={48} className="text-purple-600" />
+                  </div>
+                  <h2 className="text-[32px] font-bold text-slate-800 tracking-tight leading-tight mb-3">
+                    {currentItem.title}
+                  </h2>
+                  <p className="text-slate-500 text-[16px] max-w-md mb-8">
+                    This quiz contains multiple-choice questions to test your knowledge on this module. Estimated time: {currentItem.estimatedTime}.
+                  </p>
+
+                  <div className="bg-purple-50 text-purple-700 border border-purple-200 px-6 py-4 rounded-xl font-semibold flex flex-col items-center gap-2 w-full max-w-md">
+                    <span className="flex items-center gap-2"><Clock size={20} /> Quiz Engine Coming Soon</span>
+                    <span className="text-sm font-medium opacity-80">We're finalizing the testing module interface.</span>
+                  </div>
+
+                  {!completions[currentItem.id] && (
+                    <button
+                      onClick={() => toggleCompletion(currentItem.id)}
+                      className="mt-8 px-8 py-3 bg-transparent border-2 border-slate-200 hover:border-purple-600 hover:text-purple-700 text-slate-600 font-semibold rounded-xl transition-all"
+                    >
+                      Simulate Quiz Completion
+                    </button>
+                  )}
+                  {completions[currentItem.id] && (
+                    <div className="mt-8 flex items-center gap-2 text-emerald-600 font-bold bg-emerald-50 px-6 py-3 rounded-xl border border-emerald-100">
+                      <CheckCircle size={20} /> Quiz Marked Complete
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default ContinueLearning;

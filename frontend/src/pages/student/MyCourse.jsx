@@ -4,7 +4,7 @@ import axios from 'axios';
 import DashboardHeader from '../../components/layout/DashboardHeader';
 import EnrolledCourseCard from '../../components/common/EnrolledCourseCard';
 
-const MyCoursesPage = () => {
+const MyCourse = () => {
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -101,4 +101,4 @@ const MyCoursesPage = () => {
   );
 };
 
-export default MyCoursesPage;
+export default MyCourse;
