@@ -135,25 +135,18 @@ const getCourseById = async (req, res) => {
             .populate({
                 path: 'modules',
                 options: { sort: { order: 1 } },
-                populate: {
-                    path: 'lessons',
-                    options: { sort: { order: 1 } },
-                    transform: (doc) => {
-                        const lesson = doc.toObject ? doc.toObject() : doc;
-                        // No preview — always hide video and content from public catalog
-                        delete lesson.videoUrl;
-                        delete lesson.attachmentUrl;
-                        delete lesson.content;
-                        return lesson;
-                    }
-                }
-            });
+                populate: [
+                    { path: 'lessons', options: { sort: { order: 1 } } },
+                    { path: 'quizzes', options: { sort: { order: 1 } } },
+                    { path: 'assignments', options: { sort: { order: 1 } } }
+                ]
+            })
+            .lean();
 
         if (!course) {
             return res.status(404).json({ success: false, message: 'Course not found' });
         }
 
-        // If course is not approved, only the owning educator or an admin can view it
         if (course.status !== 'approved') {
             const userId = req.user ? req.user._id.toString() : null;
             const userRole = req.user ? req.user.role : null;
@@ -164,6 +157,31 @@ const getCourseById = async (req, res) => {
                 return res.status(404).json({ success: false, message: 'Course not found' });
             }
         }
+
+        if (course.modules) {
+            course.modules.forEach(module => {
+                if (module.lessons) {
+                    module.lessons.forEach(lesson => {
+                        delete lesson.videoUrl;
+                        delete lesson.attachmentUrl;
+                        delete lesson.content;
+                    });
+                }
+                if (module.quizzes) {
+                    module.quizzes.forEach(quiz => {
+                        delete quiz.questions;
+                    });
+                }
+                if (module.assignments) {
+                    module.assignments.forEach(assignment => {
+                        delete assignment.questions;
+                    });
+                }
+            });
+        }
+
+        const enrolledStudents = await Enrollment.countDocuments({ courseId: course._id });
+        course.enrolledStudents = enrolledStudents;
 
         res.status(200).json({ success: true, data: course });
     } catch (error) {
@@ -185,7 +203,6 @@ const updateCourse = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Not authorized to update this course' });
         }
 
-        //Explicitly whitelist updatable fields
         const allowedUpdates = {
             title: req.body.title,
             description: req.body.description,
@@ -197,12 +214,10 @@ const updateCourse = async (req, res) => {
             language: req.body.language,
         };
 
-        //Remove undefined keys 
         Object.keys(allowedUpdates).forEach(
             (key) => allowedUpdates[key] === undefined && delete allowedUpdates[key]
         );
 
-        //thumbnail upload
         if (req.file) {
             const uploadedImage = await uploadOnCloudinary(req.file.path);
             if (!uploadedImage) {
@@ -244,7 +259,6 @@ const deleteCourse = async (req, res) => {
     }
 };
 
-//educator submit course for admin review
 const submitForReview = async (req, res) => {
     try {
         const course = await Course.findById(req.params.id);
@@ -253,7 +267,6 @@ const submitForReview = async (req, res) => {
             return res.status(404).json({ message: 'Course not found' });
         }
 
-        //Ownership check
         if (course.educatorId.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized to submit this course' });
         }
