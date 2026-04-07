@@ -20,9 +20,8 @@ const Login = () => {
 
       console.log("Login Response Data:", res.data);
 
-      // The response is the user object directly, not wrapped
-      const userData = res.data;
-      const token = res.data.token;
+      const userData = res.data?.data || res.data;
+      const token = userData.token || res.data.token;
 
       if (token) {
         localStorage.setItem('token', token);
@@ -33,7 +32,7 @@ const Login = () => {
       const { role, isVerified, educatorApplication } = userData;
       console.log("Session Role Index:", role);
 
-      if (!isVerified) {
+      if (isVerified === false) {
         navigate('/verify-otp', { state: { email } });
         return;
       }
@@ -46,23 +45,21 @@ const Login = () => {
         const status = educatorApplication?.status;
         console.log("Educator Status found:", status);
         if (status === 'pending') {
-          console.log("Redirecting to Educator Status page");
           navigate('/educator-status');
         } else if (status === 'approved') {
-          console.log("Redirecting to Educator Dashboard");
           navigate('/educator-dashboard');
         } else if (status === 'rejected') {
-          console.log("Redirecting to Educator Rejected page");
           navigate('/educator-rejected');
         } else {
-          console.log("Unknown status, defaulting to status page");
           navigate('/educator-status');
         }
       }
 
     } catch (err) {
-      const errorMessage = err.response?.data?.message;
-      if (err.response?.status === 403 || (errorMessage && errorMessage.includes('Account not verified'))) {
+      const errorMessage = err.response?.data?.message || '';
+      console.error("Login catch block error:", err.response || err);
+      
+      if (err.response?.status === 403 && errorMessage.toLowerCase().includes('not verified')) {
         navigate('/verify-otp', { state: { email } });
       } else {
         setError(errorMessage || 'Login failed. Please check your credentials.');

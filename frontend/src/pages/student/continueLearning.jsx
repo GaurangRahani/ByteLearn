@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import DashboardHeader from '../../components/layout/DashboardHeader';
 import {
   PlayCircle,
@@ -13,108 +15,83 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-const simulatedCourseData = {
-  id: "course-mern-101",
-  title: "MERN Stack Deep Dive",
-  modules: [
-    {
-      id: "mod-1",
-      title: "Frontend Fundamentals",
-      items: [
-        {
-          id: "item-1",
-          type: "lesson",
-          title: "Introduction to React Components",
-          duration: "15:30",
-          content: "This lesson covers the fundamentals of React components, props, and JSX syntax. Follow along with the video and take notes."
-        },
-        {
-          id: "item-2",
-          type: "lesson",
-          title: "Advanced State Management",
-          duration: "20:15",
-          content: "Deep dive into useState, useEffect, and the React Context API for managing global state."
-        },
-        {
-          id: "item-3",
-          type: "assignment",
-          title: "React UI Components Assignment",
-          instructions: "Complete the assignment by following the guidelines in the PDF below. Submit your work before the due date to receive feedback from your educator.",
-          status: "Not Submitted",
-          dueDate: "2026-06-15"
-        },
-        {
-          id: "item-4",
-          type: "quiz",
-          title: "React Core Concepts Quiz",
-          estimatedTime: "10 mins"
-        }
-      ]
-    },
-    {
-      id: "mod-2",
-      title: "Backend with Node & Express",
-      items: [
-        {
-          id: "item-5",
-          type: "lesson",
-          title: "RESTful API Design",
-          duration: "18:45",
-          content: "Learn how to structure RESTful APIs using Express.js routing, controllers, and middleware."
-        },
-        {
-          id: "item-6",
-          type: "assignment",
-          title: "JWT Authentication Architecture",
-          instructions: "Implement JWT based authentication for your backend API and secure specific endpoints. Review the architectural diagram in the PDF.",
-          status: "Graded: 92/100",
-          dueDate: "2026-07-01",
-          submittedOn: "2026-06-25"
-        },
-        {
-          id: "item-7",
-          type: "quiz",
-          title: "Node.js Security Best Practices",
-          estimatedTime: "15 mins"
-        }
-      ]
-    }
-  ]
-};
-
-const initialCompletionState = {
-  "item-1": true,
-  "item-2": false,
-  "item-3": false,
-  "item-4": false,
-  "item-5": false,
-  "item-6": true,
-  "item-7": false
-};
-
 const ContinueLearning = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [completions, setCompletions] = useState({});
   const [activeItemId, setActiveItemId] = useState(null);
   const [progressPercentage, setProgressPercentage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchCourseData = async () => {
-      setIsLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 800));
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
 
-      setCourse(simulatedCourseData);
-      setCompletions(initialCompletionState);
+        const res = await axios.get(`/api/courses/learn/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-      if (simulatedCourseData.modules.length > 0 && simulatedCourseData.modules[0].items.length > 0) {
-        setActiveItemId(simulatedCourseData.modules[0].items[0].id);
+        const courseData = res.data.data.course;
+        const progressData = res.data.data.progress;
+
+        const formattedModules = (courseData.modules || []).map((mod) => {
+          const items = [];
+          if (mod.lessons) {
+             mod.lessons.forEach(l => items.push({ ...l, type: 'lesson', id: l._id }));
+          }
+          if (mod.assignments) {
+             mod.assignments.forEach(a => items.push({ ...a, type: 'assignment', id: a._id }));
+          }
+          if (mod.quizzes) {
+             mod.quizzes.forEach(q => items.push({ ...q, type: 'quiz', id: q._id }));
+          }
+          return {
+             id: mod._id,
+             title: mod.title,
+             items
+          };
+        });
+
+        courseData.modules = formattedModules;
+        setCourse(courseData);
+
+        const newCompletions = {};
+        if (progressData) {
+            if (progressData.completedLessons) {
+                progressData.completedLessons.forEach(cId => newCompletions[cId] = true);
+            }
+            if (progressData.completedAssignments) {
+                progressData.completedAssignments.forEach(cId => newCompletions[cId] = true);
+            }
+            if (progressData.completedQuizzes) {
+                progressData.completedQuizzes.forEach(cId => newCompletions[cId] = true);
+            }
+        }
+        setCompletions(newCompletions);
+
+        if (formattedModules.length > 0 && formattedModules[0].items.length > 0) {
+          setActiveItemId(formattedModules[0].items[0].id);
+        }
+      } catch (err) {
+        console.error('Error fetching course data:', err);
+        setError(err.response?.data?.message || 'Failed to fetch course content.');
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
-    fetchCourseData();
-  }, []);
+    if (id) {
+       fetchCourseData();
+    }
+  }, [id, navigate]);
 
   useEffect(() => {
     if (!course) return;
@@ -166,12 +143,24 @@ const ContinueLearning = () => {
     return { currentModule, currentItem, moduleIndex, itemIndex };
   };
 
-  if (isLoading || !course) {
+  if (isLoading || (!course && !error)) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
         <DashboardHeader />
         <div className="flex-grow flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+       <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <DashboardHeader />
+        <div className="flex-grow flex flex-col items-center justify-center p-6 text-center">
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">Oops! Something went wrong</h2>
+          <p className="text-slate-600 mb-6">{error}</p>
         </div>
       </div>
     );
@@ -221,7 +210,6 @@ const ContinueLearning = () => {
 
         <div className="flex flex-col lg:flex-row gap-8">
 
-          {/* LEFT COLUMN: Persistent Modules Navigation */}
           <div className="lg:w-[32%] flex-shrink-0">
             <div className="bg-white border text-base border-slate-200 rounded-2xl shadow-sm overflow-hidden sticky top-6">
               <div className="p-5 border-b border-slate-100 bg-slate-50/50">
@@ -257,7 +245,6 @@ const ContinueLearning = () => {
                               </span>
                             </div>
 
-                            {/* Right side metadata (duration) */}
                             {item.type === 'lesson' && item.duration && (
                               <span className={`text-[12px] font-medium flex-shrink-0 ${isActive ? 'text-blue-100' : 'text-slate-400'}`}>
                                 {item.duration}
