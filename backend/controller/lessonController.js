@@ -60,31 +60,26 @@ const addLesson = async (req, res) => {
             order = maxOrder + 1;
         }
 
-        let videoUrl = "";
-        if (req.files?.video?.[0]) {
-            const uploadedVideo = await uploadOnCloudinary(req.files.video[0].path);
-            if (!uploadedVideo) {
-                return res.status(500).json({ message: 'Error uploading video to Cloudinary' });
-            }
-            videoUrl = uploadedVideo.secure_url;
+        let videoUrl = null;
+        let attachmentUrl = null;
 
-            if (uploadedVideo.duration) {
-                duration = Math.round(uploadedVideo.duration);
-            }
+        if (req.body.lessonType === 'video' && req.files?.video?.[0]) {
+            const uploadedVideo = await uploadOnCloudinary(req.files.video[0].path);
+            if (!uploadedVideo) return res.status(500).json({ message: 'Error uploading video to Cloudinary' });
+            videoUrl = uploadedVideo.secure_url;
+            if (uploadedVideo.duration) duration = Math.round(uploadedVideo.duration);
         }
 
-        let attachmentUrl = "";
-        if (req.files?.attachment?.[0]) {
+        if (req.body.lessonType === 'article' && req.files?.attachment?.[0]) {
             const uploadedAttachment = await uploadOnCloudinary(req.files.attachment[0].path);
-            if (!uploadedAttachment) {
-                return res.status(500).json({ message: 'Error uploading attachment to Cloudinary' });
-            }
+            if (!uploadedAttachment) return res.status(500).json({ message: 'Error uploading image to Cloudinary' });
             attachmentUrl = uploadedAttachment.secure_url;
         }
 
         const lesson = await Lesson.create({
             moduleId: req.params.moduleId,
             title,
+            lessonType: req.body.lessonType || 'video',
             videoUrl,
             attachmentUrl,
             content,

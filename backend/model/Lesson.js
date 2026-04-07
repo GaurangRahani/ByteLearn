@@ -3,11 +3,12 @@ const mongoose = require("mongoose");
 const lessonSchema = new mongoose.Schema({
   moduleId: { type: mongoose.Schema.Types.ObjectId, ref: "Module" },
   title: { type: String, required: true },
-  videoUrl: String,
-  content: String, // text lesson
-  attachmentUrl: { type: String }, 
-  duration: Number,
-  order: { type: Number, required: true }, // Order is a shared sequence across Lessons, Quizzes, and Assignments within the same Module
+  lessonType: { type: String, enum: ['video', 'article'], default: 'video' },
+  videoUrl: { type: String, default: null },
+  content: { type: String, default: "" }, 
+  attachmentUrl: { type: String, default: null }, // Used as visual aid image for articles
+  duration: { type: Number, default: 0 },
+  order: { type: Number, required: true },
 }, { timestamps: true });
 
 // Index for rapid sequential sorting across the unified timeline
