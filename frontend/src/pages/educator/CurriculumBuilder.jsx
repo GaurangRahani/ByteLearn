@@ -331,7 +331,7 @@ const CurriculumBuilder = () => {
   const [isSavingModule, setIsSavingModule] = useState(false);
 
   // Lesson form state
-  const [newLessonData, setNewLessonData] = useState({ title: '', content: '', video: null, attachment: null });
+  const [newLessonData, setNewLessonData] = useState({ title: '', lessonType: 'video', content: '', video: null, attachment: null });
   const [isSavingLesson, setIsSavingLesson] = useState(false);
 
   // Assignment form state
@@ -403,7 +403,7 @@ const CurriculumBuilder = () => {
   const closeForm = () => {
     setActiveForm(null);
     setActiveModuleId(null);
-    setNewLessonData({ title: '', content: '', video: null, attachment: null });
+    setNewLessonData({ title: '', lessonType: 'video', content: '', video: null, attachment: null });
     setNewAssignmentData({ title: '', instructions: '', questionPdf: null, totalMarks: '' });
   };
 
@@ -442,9 +442,10 @@ const CurriculumBuilder = () => {
       const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('title', newLessonData.title.trim());
+      formData.append('lessonType', newLessonData.lessonType);
       formData.append('content', newLessonData.content.trim());
-      if (newLessonData.video) formData.append('video', newLessonData.video);
-      if (newLessonData.attachment) formData.append('attachment', newLessonData.attachment);
+      if (newLessonData.lessonType === 'video' && newLessonData.video) formData.append('video', newLessonData.video);
+      if (newLessonData.lessonType === 'article' && newLessonData.attachment) formData.append('attachment', newLessonData.attachment);
       const res = await axios.post(`/api/courses/${courseId}/modules/${activeModuleId}/lessons`, formData, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
@@ -605,68 +606,102 @@ const CurriculumBuilder = () => {
                     {activeForm === 'lesson' && activeModuleId === module._id ? (
                       <div className="bg-white rounded-2xl p-6 border border-blue-200 shadow-lg shadow-blue-500/5 mt-5 relative overflow-hidden">
                         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-cyan-400"></div>
-                        <div className="flex justify-between items-center mb-6 pt-1">
+                        <div className="flex justify-between items-center mb-5 pt-1">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600"><Video size={20} /></div>
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                              {newLessonData.lessonType === 'video' ? <Video size={20} /> : <FileText size={20} />}
+                            </div>
                             <div>
                               <h4 className="text-lg font-bold text-slate-800 tracking-tight">Add Lesson</h4>
-                              <p className="text-xs text-slate-500 font-medium">Upload video or text reading material for students</p>
+                              <p className="text-xs text-slate-500 font-medium">Choose the lesson format below</p>
                             </div>
                           </div>
                           <button onClick={closeForm} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400"><X size={20} /></button>
                         </div>
+
+                        {/* Lesson Type Toggle */}
+                        <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-6">
+                          <button
+                            type="button"
+                            onClick={() => setNewLessonData({ ...newLessonData, lessonType: 'video', attachment: null })}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${newLessonData.lessonType === 'video' ? 'bg-white text-blue-600 shadow-md shadow-blue-100' : 'text-slate-500 hover:text-slate-700'}`}
+                          >
+                            <Video size={16} /> 📺 Video Lesson
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setNewLessonData({ ...newLessonData, lessonType: 'article', video: null })}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${newLessonData.lessonType === 'article' ? 'bg-white text-emerald-600 shadow-md shadow-emerald-100' : 'text-slate-500 hover:text-slate-700'}`}
+                          >
+                            <FileText size={16} /> 📝 Article Lesson
+                          </button>
+                        </div>
+
                         <form onSubmit={handleLessonSubmit} className="space-y-5">
                           <div>
                             <Label>Lesson Title *</Label>
                             <Input autoFocus required placeholder="e.g. Introduction to React Components" value={newLessonData.title} onChange={e => setNewLessonData({ ...newLessonData, title: e.target.value })} />
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                          {/* Video Mode */}
+                          {newLessonData.lessonType === 'video' && (
                             <div>
-                              <Label>Video Content</Label>
-                              <label className="flex flex-col items-center justify-center w-full min-h-[140px] bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-blue-50/50 hover:border-blue-300 transition-colors group">
+                              <Label>Video File *</Label>
+                              <label className="flex flex-col items-center justify-center w-full min-h-[150px] bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-blue-50/50 hover:border-blue-300 transition-colors group">
                                 {newLessonData.video ? (
                                   <div className="text-center p-4">
                                     <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2"><Check size={20} strokeWidth={3} /></div>
-                                    <p className="text-sm font-semibold text-slate-700 truncate max-w-[180px]">{newLessonData.video.name}</p>
+                                    <p className="text-sm font-semibold text-slate-700 truncate max-w-[220px]">{newLessonData.video.name}</p>
                                     <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, video: null }); }} className="text-xs text-red-500 font-bold mt-1 hover:underline">Remove</button>
                                   </div>
                                 ) : (
-                                  <div className="flex flex-col items-center py-5">
-                                    <UploadCloud className="w-8 h-8 mb-2 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                                    <p className="text-sm font-semibold text-slate-600">Upload Video</p>
-                                    <p className="text-xs text-slate-500 mt-1">MP4, WebM (Max 100MB)</p>
+                                  <div className="flex flex-col items-center py-6">
+                                    <UploadCloud className="w-9 h-9 mb-2 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                                    <p className="text-sm font-semibold text-slate-600">Click to upload video</p>
+                                    <p className="text-xs text-slate-500 mt-1">MP4, WebM — Max 500MB</p>
                                   </div>
                                 )}
                                 <input type="file" className="hidden" accept="video/*" onChange={e => setNewLessonData({ ...newLessonData, video: e.target.files[0] })} />
                               </label>
+                              <div className="mt-4">
+                                <Label>Short Description (optional)</Label>
+                                <textarea rows="3" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm text-slate-700 placeholder:text-slate-400" placeholder="Brief summary of what this video covers..." value={newLessonData.content} onChange={e => setNewLessonData({ ...newLessonData, content: e.target.value })}></textarea>
+                              </div>
                             </div>
-                            <div>
-                              <Label>Resources (PDF/Docs)</Label>
-                              <label className="flex flex-col items-center justify-center w-full min-h-[140px] bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-emerald-50/50 hover:border-emerald-300 transition-colors group">
-                                {newLessonData.attachment ? (
-                                  <div className="text-center p-4">
-                                    <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2"><Check size={20} strokeWidth={3} /></div>
-                                    <p className="text-sm font-semibold text-slate-700 truncate max-w-[180px]">{newLessonData.attachment.name}</p>
-                                    <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, attachment: null }); }} className="text-xs text-red-500 font-bold mt-1 hover:underline">Remove</button>
-                                  </div>
-                                ) : (
-                                  <div className="flex flex-col items-center py-5">
-                                    <FileUp className="w-8 h-8 mb-2 text-slate-400 group-hover:text-emerald-500 transition-colors" />
-                                    <p className="text-sm font-semibold text-slate-600">Upload Resources</p>
-                                    <p className="text-xs text-slate-500 mt-1">PDF, ZIP, DOCX</p>
-                                  </div>
-                                )}
-                                <input type="file" className="hidden" accept=".pdf,.doc,.docx,.zip" onChange={e => setNewLessonData({ ...newLessonData, attachment: e.target.files[0] })} />
-                              </label>
+                          )}
+
+                          {/* Article Mode */}
+                          {newLessonData.lessonType === 'article' && (
+                            <div className="space-y-4">
+                              <div>
+                                <Label>Reading Content *</Label>
+                                <textarea rows="8" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm text-slate-700 placeholder:text-slate-400 leading-relaxed" placeholder="Write the full reading material here. Explain concepts clearly for students..." value={newLessonData.content} onChange={e => setNewLessonData({ ...newLessonData, content: e.target.value })}></textarea>
+                              </div>
+                              <div>
+                                <Label>Visual Aid — Image <span className="text-slate-400 font-normal">(optional)</span></Label>
+                                <label className="flex flex-col items-center justify-center w-full min-h-[130px] bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-emerald-50/50 hover:border-emerald-300 transition-colors group">
+                                  {newLessonData.attachment ? (
+                                    <div className="text-center p-4">
+                                      <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2"><Check size={20} strokeWidth={3} /></div>
+                                      <p className="text-sm font-semibold text-slate-700 truncate max-w-[220px]">{newLessonData.attachment.name}</p>
+                                      <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, attachment: null }); }} className="text-xs text-red-500 font-bold mt-1 hover:underline">Remove</button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col items-center py-5">
+                                      <FileUp className="w-8 h-8 mb-2 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                                      <p className="text-sm font-semibold text-slate-600">Upload diagram or image</p>
+                                      <p className="text-xs text-slate-500 mt-1">JPG, PNG, WEBP</p>
+                                    </div>
+                                  )}
+                                  <input type="file" className="hidden" accept="image/*" onChange={e => setNewLessonData({ ...newLessonData, attachment: e.target.files[0] })} />
+                                </label>
+                              </div>
                             </div>
-                          </div>
-                          <div>
-                            <Label>Reading Text / Description</Label>
-                            <textarea rows="4" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-700 placeholder:text-slate-400 text-sm" placeholder="Optional detailed text material..." value={newLessonData.content} onChange={e => setNewLessonData({ ...newLessonData, content: e.target.value })}></textarea>
-                          </div>
+                          )}
+
                           <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                             <button type="button" onClick={closeForm} className="px-6 py-2.5 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
-                            <button type="submit" disabled={isSavingLesson || !newLessonData.title.trim()} className="px-8 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:hover:scale-100">
+                            <button type="submit" disabled={isSavingLesson || !newLessonData.title.trim()} className={`px-8 py-2.5 text-white font-semibold rounded-xl shadow-lg transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:hover:scale-100 ${newLessonData.lessonType === 'video' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'}`}>
                               {isSavingLesson ? <><Loader2 size={18} className="animate-spin" /> Uploading...</> : <><Save size={18} /> Save Lesson</>}
                             </button>
                           </div>
