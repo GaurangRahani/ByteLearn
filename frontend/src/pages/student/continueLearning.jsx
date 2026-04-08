@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import AssignmentViewer from '../../components/common/AssignmentViewer';
 
 const ContinueLearning = () => {
   const { id } = useParams();
@@ -350,86 +351,11 @@ const ContinueLearning = () => {
               )}
 
               {currentItem?.type === 'assignment' && (
-                <div className="p-8 flex flex-col h-full">
-                  <div className="mb-2">
-                    <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{currentModule?.title}</span>
-                  </div>
-                  <h2 className="text-[32px] font-bold text-slate-800 tracking-tight leading-tight mb-4">
-                    {currentItem.title}
-                  </h2>
-
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="flex items-center gap-2 text-slate-500 text-sm font-medium">
-                      <Clock size={16} />
-                      Due: {currentItem.dueDate ? new Date(currentItem.dueDate).toLocaleDateString() : 'No Due Date'}
-                    </div>
-
-                    {/* Grading Status Badge */}
-                    {currentItem.status?.includes('Graded') ? (
-                      <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">
-                        {currentItem.status}
-                      </span>
-                    ) : completions[currentItem.id] ? (
-                      <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full">
-                        Pending Review
-                      </span>
-                    ) : (
-                      <span className="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1 rounded-full">
-                        Not Submitted
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Instructions Card */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-8">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Instructions</h3>
-                    <p className="text-slate-600 text-[15px] leading-relaxed mb-6">
-                      {currentItem.instructions}
-                    </p>
-                    <button 
-                      onClick={() => handleDownloadPDF(currentItem.questionPdfUrl, currentItem.title)}
-                      disabled={isDownloading}
-                      className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-2 font-semibold transition-all text-[15px] ${
-                        isDownloading 
-                          ? 'border-slate-200 text-slate-400 bg-slate-50 cursor-not-allowed' 
-                          : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                      }`}>
-                      <Download size={18} />
-                      {isDownloading ? "Downloading..." : "Download Assignment PDF"}
-                    </button>
-                  </div>
-
-                  {/* Submission Area */}
-                  {completions[currentItem.id] && currentItem.submittedOn ? (
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
-                      <div className="flex items-start gap-3">
-                        <CheckCircle className="text-emerald-500 mt-0.5" size={24} />
-                        <div>
-                          <h3 className="font-bold text-emerald-900 text-lg">Submitted Successfully</h3>
-                          <p className="text-emerald-700 text-sm mt-1">
-                            Submitted on {new Date(currentItem.submittedOn).toLocaleDateString()}. Your educator will review this shortly.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-10 flex flex-col items-center justify-center text-center transition-colors hover:bg-slate-100 hover:border-blue-400 cursor-pointer group">
-                      <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:scale-110 transition-transform">
-                        <Upload size={28} className="text-blue-600" />
-                      </div>
-                      <h3 className="text-[17px] font-bold text-slate-800 mb-2">Upload Completed PDF</h3>
-                      <p className="text-slate-500 text-sm max-w-sm mb-6">
-                        Drag and drop your PDF submission here, or click to browse files from your computer.
-                      </p>
-                      <button
-                        onClick={() => toggleCompletion(currentItem.id)}
-                        className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg"
-                      >
-                        Simulate Submission
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <AssignmentViewer
+                  assignment={currentItem}
+                  courseId={course._id}
+                  onComplete={() => toggleCompletion(currentItem.id)}
+                />
               )}
 
               {currentItem?.type === 'quiz' && (
