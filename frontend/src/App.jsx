@@ -20,6 +20,7 @@ import UpdateProfile from './pages/student/UpdateProfile';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import EducatorApprovals from './pages/admin/EducatorApprovals';
 import CourseApprovals from './pages/admin/CourseApprovals';
+import UserManagement from './pages/admin/UserManagement';
 import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
 
 const AppContent = () => {
@@ -47,6 +48,7 @@ const AppContent = () => {
              <Route path="/admin-dashboard" element={<AdminDashboard />} />
              <Route path="/admin/educators" element={<EducatorApprovals />} />
              <Route path="/admin/courses" element={<CourseApprovals />} />
+             <Route path="/admin/users" element={<UserManagement />} />
           </Route>
 
           <Route path="/register-student" element={<StudentRegister />} />
