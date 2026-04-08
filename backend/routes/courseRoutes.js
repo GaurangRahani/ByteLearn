@@ -11,6 +11,7 @@ const {
     reviewCourse,
     getAuthorizedCourseContent,
     getEducatorDashboardStats,
+    getSignedDownloadUrl,
 } = require('../controller/courseController');
 const { protect, optionalProtect, approvedEducator, educator, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -21,6 +22,8 @@ router.route('/')
 
 router.route('/dashboard-stats')
     .get(protect, educator, getEducatorDashboardStats);
+
+router.post('/download-url', protect, getSignedDownloadUrl);
 
 router.route('/my-courses')
     .get(protect, educator, getEducatorCourses);

@@ -5,25 +5,20 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const connectDB = require('./db/connection');
 
-//load env vars
 dotenv.config();
 
-//connection
 connectDB();
 
 const app = express();
 
-//Middleware
 app.use(express.json());
 app.use(cors());
 app.use(helmet());
 
-//Health Check
 app.get('/', (req, res) => {
     res.json({ message: 'ByteLearn API is running...' });
 });
 
-// Routes
 const authRoutes = require('./routes/authRoutes');
 const courseRoutes = require('./routes/courseRoutes');
 const enrollmentRoutes = require('./routes/enrollmentRoutes');

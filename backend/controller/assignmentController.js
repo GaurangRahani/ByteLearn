@@ -4,10 +4,9 @@ const Course = require('../model/Course');
 const Lesson = require('../model/Lesson');
 const Quiz = require('../model/Quiz');
 const mongoose = require('mongoose');
-const { uploadOnCloudinary } = require('../utils/cloudinary');
+const { uploadOnCloudinary, generateSignedPdfUrl } = require('../utils/cloudinary');
 const fs = require('fs');
 
-//safely delete temp files if single upload
 const cleanupTempFiles = (req) => {
     if (req.file && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
@@ -27,7 +26,6 @@ const addAssignment = async (req, res) => {
     try {
         let { title, instructions, totalMarks, order } = req.body;
 
-        // --- Data Sanitization & Constraints ---
         if (title) title = title.trim();
         if (!title) {
             cleanupTempFiles(req);
@@ -48,7 +46,6 @@ const addAssignment = async (req, res) => {
             return res.status(status).json({ message: error });
         }
 
-        // --- Cross-Collection Unified Order Logic ---
         if (!order) {
             const [lastLesson, lastAssignment, lastQuiz] = await Promise.all([
                 Lesson.findOne({ moduleId: req.params.moduleId }).sort('-order'),
@@ -88,12 +85,11 @@ const addAssignment = async (req, res) => {
             await session.commitTransaction();
             session.endSession();
             
-            // Return the first element since create() returns an array when inside a session
             res.status(201).json(assignment[0]);
         } catch (dbError) {
             await session.abortTransaction();
             session.endSession();
-            throw dbError; // Caught by the outer catch block
+            throw dbError;
         }
 
     } catch (error) {
@@ -167,4 +163,34 @@ const deleteAssignment = async (req, res) => {
     }
 };
 
-module.exports = { addAssignment, getAssignmentsByModule, updateAssignment, deleteAssignment };
+const getAssignmentPdfUrl = async (req, res) => {
+    try {
+        const assignment = await Assignment.findById(req.params.assignmentId);
+        if (!assignment || !assignment.questionPdfUrl) {
+            return res.status(404).json({ message: 'Assignment PDF not found' });
+        }
+
+        let url = assignment.questionPdfUrl;
+
+        if (url.includes('cloudinary.com') && (url.includes('/image/upload/') || url.includes('/raw/upload/'))) {
+            const resourceType = url.includes('/raw/') ? 'raw' : 'image';
+            const parts = url.split('/upload/');
+            if (parts.length === 2) {
+                const afterUpload = decodeURIComponent(parts[1]); 
+                const pathParts = afterUpload.split('/');
+                let versionStr = null;
+                if (pathParts[0].match(/^v\d+$/)) {
+                    versionStr = pathParts.shift();
+                }
+                const publicIdWithExt = pathParts.join('/'); 
+                
+                url = generateSignedPdfUrl(publicIdWithExt, versionStr, resourceType);
+            }
+        }
+        res.json({ url });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { addAssignment, getAssignmentsByModule, updateAssignment, deleteAssignment, getAssignmentPdfUrl };

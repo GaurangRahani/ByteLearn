@@ -326,6 +326,48 @@ const getAuthorizedCourseContent = async (req, res) => {
     }
 };
 
+const getSignedDownloadUrl = async (req, res) => {
+    try {
+        const { fileUrl } = req.body;
+        if (!fileUrl) {
+            return res.status(400).json({ success: false, message: 'fileUrl is required' });
+        }
+
+        const cloudinary = require('cloudinary').v2;
+
+        const resourceType = fileUrl.includes('/raw/') ? 'raw' : 'image';
+
+        const urlParts = fileUrl.split('/upload/');
+        if (urlParts.length < 2) {
+            return res.status(400).json({ success: false, message: "Invalid Cloudinary URL" });
+        }
+        
+        const afterUpload = decodeURIComponent(urlParts[1]);
+
+        const versionMatch = afterUpload.match(/^v(\d+)\//);
+        const versionStr = versionMatch ? versionMatch[1] : undefined;
+        const withoutVersion = afterUpload.replace(/^v\d+\//, '');
+
+        const options = {
+            resource_type: resourceType,
+            flags: 'attachment',
+            secure: true,
+            analytics: false
+        };
+        
+        if (versionStr) {
+            options.version = versionStr;
+        }
+
+        const downloadUrl = cloudinary.utils.url(withoutVersion, options);
+        
+        return res.status(200).json({ success: true, downloadUrl });
+    } catch (error) {
+        console.error("Error securing download url: ", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     createCourse,
     getEducatorCourses,
@@ -336,4 +378,5 @@ module.exports = {
     submitForReview,
     getAuthorizedCourseContent,
     getEducatorDashboardStats,
+    getSignedDownloadUrl,
 };
