@@ -24,6 +24,7 @@ const ContinueLearning = () => {
   const [progressPercentage, setProgressPercentage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -53,6 +54,7 @@ const ContinueLearning = () => {
           if (mod.quizzes) {
              mod.quizzes.forEach(q => items.push({ ...q, type: 'quiz', id: q._id }));
           }
+          items.sort((a, b) => (a.order || 0) - (b.order || 0));
           return {
              id: mod._id,
              title: mod.title,
@@ -77,8 +79,15 @@ const ContinueLearning = () => {
         }
         setCompletions(newCompletions);
 
-        if (formattedModules.length > 0 && formattedModules[0].items.length > 0) {
-          setActiveItemId(formattedModules[0].items[0].id);
+        let firstItemId = null;
+        for (const mod of formattedModules) {
+          if (mod.items && mod.items.length > 0) {
+            firstItemId = mod.items[0].id;
+            break;
+          }
+        }
+        if (firstItemId) {
+          setActiveItemId(firstItemId);
         }
       } catch (err) {
         console.error('Error fetching course data:', err);
@@ -141,6 +150,44 @@ const ContinueLearning = () => {
     }
 
     return { currentModule, currentItem, moduleIndex, itemIndex };
+  };
+
+  const handleDownloadPDF = async (url, title) => {
+    if (!url) {
+      alert('No PDF available for this assignment.');
+      return;
+    }
+    
+    try {
+      setIsDownloading(true);
+      
+      let downloadUrl = url;
+      if (url.includes('cloudinary.com')) {
+        const token = localStorage.getItem('token');
+        const res = await axios.post('/api/courses/download-url', 
+          { fileUrl: url },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.data && res.data.downloadUrl) {
+          downloadUrl = res.data.downloadUrl;
+        }
+      }
+
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', `${title?.replace(/\s+/g, '_')}_Assignment.pdf` || 'Assignment.pdf');
+      link.target = '_blank';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+    } catch (err) {
+      console.error('Error initiating download:', err);
+      alert('Failed to authorize PDF download. Please try again or contact support.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   if (isLoading || (!course && !error)) {
@@ -314,11 +361,11 @@ const ContinueLearning = () => {
                   <div className="flex items-center gap-4 mb-8">
                     <div className="flex items-center gap-2 text-slate-500 text-sm font-medium">
                       <Clock size={16} />
-                      Due: {new Date(currentItem.dueDate).toLocaleDateString()}
+                      Due: {currentItem.dueDate ? new Date(currentItem.dueDate).toLocaleDateString() : 'No Due Date'}
                     </div>
 
                     {/* Grading Status Badge */}
-                    {currentItem.status.includes('Graded') ? (
+                    {currentItem.status?.includes('Graded') ? (
                       <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">
                         {currentItem.status}
                       </span>
@@ -339,9 +386,16 @@ const ContinueLearning = () => {
                     <p className="text-slate-600 text-[15px] leading-relaxed mb-6">
                       {currentItem.instructions}
                     </p>
-                    <button className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-2 border-slate-200 text-slate-700 font-semibold hover:border-slate-300 hover:bg-slate-50 transition-all text-[15px]">
+                    <button 
+                      onClick={() => handleDownloadPDF(currentItem.questionPdfUrl, currentItem.title)}
+                      disabled={isDownloading}
+                      className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-2 font-semibold transition-all text-[15px] ${
+                        isDownloading 
+                          ? 'border-slate-200 text-slate-400 bg-slate-50 cursor-not-allowed' 
+                          : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                      }`}>
                       <Download size={18} />
-                      Download Assignment PDF
+                      {isDownloading ? "Downloading..." : "Download Assignment PDF"}
                     </button>
                   </div>
 
@@ -387,7 +441,7 @@ const ContinueLearning = () => {
                     {currentItem.title}
                   </h2>
                   <p className="text-slate-500 text-[16px] max-w-md mb-8">
-                    This quiz contains multiple-choice questions to test your knowledge on this module. Estimated time: {currentItem.estimatedTime}.
+                    This quiz contains multiple-choice questions to test your knowledge on this module. Estimated time: {currentItem.estimatedTime || 'N/A'}.
                   </p>
 
                   <div className="bg-purple-50 text-purple-700 border border-purple-200 px-6 py-4 rounded-xl font-semibold flex flex-col items-center gap-2 w-full max-w-md">
