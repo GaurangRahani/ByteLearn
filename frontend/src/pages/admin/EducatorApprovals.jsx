@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  Users, 
   ShieldCheck, 
-  Search, 
-  Eye, 
   X, 
-  Check, 
-  Slash,
+  Check,
   Clock,
   Download,
   AlertCircle,
   FileText,
-  Briefcase
+  Briefcase,
+  Loader2,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import AdminHeader from '../../components/layout/AdminHeader';
 
@@ -108,7 +107,7 @@ const EducatorApprovals = () => {
                        <tr key={edu._id} className="group hover:bg-slate-50/50 transition-colors">
                           <td className="px-8 py-6">
                              <div className="flex items-center gap-3">
-                                <img src={edu.profilePicture || `https://ui-avatars.com/api/?name=${edu.name}`} alt={edu.name} className="w-10 h-10 rounded-xl object-cover bg-slate-100 border border-slate-100" />
+                                 <img src={edu.profilePicture || `https://ui-avatars.com/api/?name=${edu.name}&background=EFF6FF&color=2563EB`} alt={edu.name} className="w-10 h-10 rounded-xl object-cover bg-slate-100 border border-slate-100" />
                                 <span className="text-sm font-bold text-slate-800 tracking-tight whitespace-nowrap">{edu.name}</span>
                              </div>
                           </td>
@@ -148,7 +147,7 @@ const EducatorApprovals = () => {
                 {/* Modal Header */}
                 <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10 shadow-sm">
                    <div className="flex items-center gap-4">
-                      <img src={selectedEducator.profilePicture || `https://ui-avatars.com/api/?name=${selectedEducator.name}`} className="w-14 h-14 rounded-2xl object-cover border-2 border-slate-50" />
+                       <img src={selectedEducator.profilePicture || `https://ui-avatars.com/api/?name=${selectedEducator.name}&background=EFF6FF&color=2563EB`} alt={selectedEducator.name} className="w-14 h-14 rounded-2xl object-cover border-2 border-slate-50" />
                       <div>
                          <h2 className="text-xl font-bold text-slate-800 tracking-tight">{selectedEducator.name}</h2>
                          <p className="text-sm font-medium text-slate-400 capitalize">{selectedEducator.email}</p>
@@ -167,13 +166,13 @@ const EducatorApprovals = () => {
                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                             <FileText size={14} className="text-blue-500" /> Qualifications
                          </label>
-                         <p className="text-sm text-slate-700 font-medium leading-relaxed bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">{selectedEducator.educatorApplication?.qualifications}</p>
+                         <p className="text-sm text-slate-700 font-medium leading-relaxed bg-white p-6 rounded-2xl border border-slate-100 shadow-sm min-h-[80px]">{selectedEducator.educatorApplication?.qualifications || <span className="text-slate-300 italic">Not provided</span>}</p>
                       </div>
                       <div>
                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                              <Briefcase size={14} className="text-blue-500" /> Professional Experience
                          </label>
-                         <p className="text-sm text-slate-700 font-medium leading-relaxed bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">{selectedEducator.educatorApplication?.experience}</p>
+                          <p className="text-sm text-slate-700 font-medium leading-relaxed bg-white p-6 rounded-2xl border border-slate-100 shadow-sm min-h-[80px]">{selectedEducator.educatorApplication?.experience || <span className="text-slate-300 italic">Not provided</span>}</p>
                       </div>
                    </div>
 
@@ -214,14 +213,14 @@ const EducatorApprovals = () => {
                         disabled={isProcessing}
                         className="flex items-center justify-center gap-3 px-8 py-4 bg-white border-2 border-slate-100 text-slate-400 font-black uppercase tracking-widest rounded-2xl hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all active:scale-95 disabled:opacity-50"
                      >
-                        Reject
+                        <XCircle size={18} /> Reject
                      </button>
                      <button 
                         onClick={() => handleReview(selectedEducator._id, 'approved')}
                         disabled={isProcessing}
                         className="flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-95 disabled:opacity-50"
                      >
-                        {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+                        {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
                         Approve
                      </button>
                   </div>
