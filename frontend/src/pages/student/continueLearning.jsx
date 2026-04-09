@@ -400,29 +400,39 @@ const ContinueLearning = () => {
                     {currentItem.title}
                   </h2>
                   <p className="text-slate-500 text-[16px] max-w-md mb-8">
-                    This quiz contains multiple-choice questions to test your knowledge on this module. Estimated time: {currentItem.estimatedTime || 'N/A'}.
+                    This quiz contains multiple-choice questions to test your knowledge on this module.
                   </p>
 
-                  <div className="bg-purple-50 text-purple-700 border border-purple-200 px-6 py-4 rounded-xl font-semibold flex flex-col items-center gap-2 w-full max-w-md">
-                    <span className="flex items-center gap-2"><Clock size={20} /> Quiz Engine Coming Soon</span>
-                    <span className="text-sm font-medium opacity-80">We're finalizing the testing module interface.</span>
+                  <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-10">
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Time Limit</span>
+                      <div className="flex items-center gap-2 text-lg font-bold text-slate-800">
+                        <Clock size={18} className="text-purple-500" />
+                        {currentItem.duration || '15'} mins
+                      </div>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Passing Score</span>
+                      <div className="flex items-center gap-2 text-lg font-bold text-slate-800">
+                        <CheckCircle size={18} className="text-emerald-500" />
+                        {currentItem.passingScore || '60'}%
+                      </div>
+                    </div>
                   </div>
 
-                  {!completions[currentItem.id] && (
-                    <button
-                      onClick={() => toggleCompletion(currentItem.id)}
-                      className="mt-8 px-8 py-3 bg-transparent border-2 border-slate-200 hover:border-purple-600 hover:text-purple-700 text-slate-600 font-semibold rounded-xl transition-all"
-                    >
-                      Simulate Quiz Completion
-                    </button>
-                  )}
-                  {completions[currentItem.id] && (
-                    <div className="mt-8 flex items-center gap-2 text-emerald-600 font-bold bg-emerald-50 px-6 py-3 rounded-xl border border-emerald-100">
-                      <CheckCircle size={20} /> Quiz Marked Complete
-                    </div>
-                  )}
+                  <button
+                    onClick={() => navigate(`/quiz/${currentItem.id}`)}
+                    className="px-12 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all transform hover:scale-105 active:scale-95 uppercase tracking-wide flex items-center gap-3"
+                  >
+                    Start Quiz <ChevronRight size={20} />
+                  </button>
+
+                  <p className="mt-6 text-xs text-slate-400 font-medium font-sans">
+                    Note: Progress is saved automatically. You must achieve the passing score to complete this unit.
+                  </p>
                 </div>
               )}
+
 
             </div>
           </div>

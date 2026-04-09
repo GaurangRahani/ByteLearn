@@ -16,6 +16,9 @@ import MyCourse from './pages/student/MyCourse';
 import ContinueLearning from './pages/student/continueLearning';
 import CourseDetailsPage from './pages/student/CourseDetails';
 import UpdateProfile from './pages/student/UpdateProfile';
+import ActiveQuiz from './pages/student/ActiveQuiz';
+
+
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import EducatorApprovals from './pages/admin/EducatorApprovals';
@@ -34,7 +37,10 @@ const AppContent = () => {
     location.pathname.startsWith('/admin-dashboard') ||
     location.pathname.startsWith('/course/') ||
     location.pathname.startsWith('/learn/') ||
-    location.pathname.startsWith('/update-profile');
+    location.pathname.startsWith('/update-profile') ||
+    location.pathname.startsWith('/quiz/');
+
+
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
@@ -66,7 +72,10 @@ const AppContent = () => {
           <Route path="/my-courses" element={<MyCourse />} />
           <Route path="/course/:id/learn" element={<ContinueLearning />} />
           <Route path="/learn/:id" element={<ContinueLearning />} />
+          <Route path="/quiz/:id" element={<ActiveQuiz />} />
+
           <Route path="/login" element={<Login />} />
+
         </Routes>
       </main>
     </div>
