@@ -34,6 +34,8 @@ const ContinueLearning = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [quizHistory, setQuizHistory] = useState([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -110,6 +112,31 @@ const ContinueLearning = () => {
        fetchCourseData();
     }
   }, [id, navigate]);
+
+  useEffect(() => {
+    const fetchQuizHistory = async () => {
+      const { currentItem } = getActiveItemDetails();
+      if (!currentItem || currentItem.type !== 'quiz') {
+        setQuizHistory([]);
+        return;
+      }
+
+      try {
+        setIsHistoryLoading(true);
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`/api/quiz-attempts/history/${currentItem.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setQuizHistory(res.data);
+      } catch (err) {
+        console.error("Error fetching quiz history:", err);
+      } finally {
+        setIsHistoryLoading(false);
+      }
+    };
+
+    fetchQuizHistory();
+  }, [activeItemId]);
 
   useEffect(() => {
     if (!course) return;
@@ -420,12 +447,64 @@ const ContinueLearning = () => {
                     </div>
                   </div>
 
+                  {/* Quiz History Section */}
+                  {quizHistory.length > 0 && (
+                    <div className="w-full max-w-2xl mb-10 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                        <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Attempt History</h3>
+                        <span className="text-xs font-medium text-slate-500 bg-slate-200 px-2 py-1 rounded-full">{quizHistory.length} Attempts</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead>
+                            <tr className="text-slate-400 border-b border-slate-50">
+                              <th className="px-6 py-3 font-semibold">#</th>
+                              <th className="px-6 py-3 font-semibold">Date</th>
+                              <th className="px-6 py-3 font-semibold">Score</th>
+                              <th className="px-6 py-3 font-semibold">Time</th>
+                              <th className="px-6 py-3 font-semibold text-right">Result</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50">
+                            {quizHistory.map((attempt) => (
+                              <tr key={attempt._id} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="px-6 py-4 font-bold text-slate-700">{attempt.attemptNumber}</td>
+                                <td className="px-6 py-4 text-slate-600">
+                                  {new Date(attempt.submittedAt).toLocaleDateString()}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex flex-col">
+                                    <span className="font-bold text-slate-800">{attempt.score}/{attempt.totalMarksPossible}</span>
+                                    <span className="text-[10px] text-slate-400">{Math.round((attempt.score / attempt.totalMarksPossible) * 100)}%</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-slate-600">
+                                  {Math.floor(attempt.timeTaken / 60)}m {attempt.timeTaken % 60}s
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                                    attempt.passed 
+                                      ? 'bg-emerald-100 text-emerald-700' 
+                                      : 'bg-rose-100 text-rose-700'
+                                  }`}>
+                                    {attempt.passed ? 'PASSED' : 'FAILED'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
                   <button
-                    onClick={() => navigate(`/quiz/${currentItem.id}`)}
+                    onClick={() => navigate(`/quiz/${currentItem.id}`, { state: { courseId: course?._id } })}
                     className="px-12 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all transform hover:scale-105 active:scale-95 uppercase tracking-wide flex items-center gap-3"
                   >
-                    Start Quiz <ChevronRight size={20} />
+                    {quizHistory.length > 0 ? 'Retake Quiz' : 'Start Quiz'} <ChevronRight size={20} />
                   </button>
+
 
                   <p className="mt-6 text-xs text-slate-400 font-medium font-sans">
                     Note: Progress is saved automatically. You must achieve the passing score to complete this unit.

@@ -1,64 +1,149 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Clock, BookOpen, CheckCircle2, Circle } from 'lucide-react';
-
-const mockQuizData = {
-  title: "Intermediate JavaScript Concepts",
-  questions: [
-    { id: '1', text: "What is the result of '2' + 2?", options: ["4", "'22'", "undefined", "NaN"] },
-    { id: '2', text: "Which keyword is used to define a constant variable?", options: ["var", "let", "const", "def"] },
-    { id: '3', text: "What does DOM stand for?", options: ["Data Object Model", "Document Object Model", "Digital Object Management", "Dynamic Object Mode"] },
-    { id: '4', text: "Which array method adds an element to the end?", options: ["pop()", "shift()", "unshift()", "push()"] },
-    { id: '5', text: "What is the default value of an uninitialized variable?", options: ["null", "0", "undefined", "NaN"] },
-    { id: '6', text: "Which operator is used for strict equality?", options: ["==", "===", "=", "!="] },
-    { id: '7', text: "How do you write a comment in JavaScript?", options: ["# comment", "<!-- comment -->", "// comment", "** comment"] },
-    { id: '8', text: "What is an Anonymous function?", options: ["A function with no name", "A function with no arguments", "A function that is never called", "A private function"] },
-    { id: '9', text: "Which method converts a JSON string to a JavaScript object?", options: ["JSON.stringify()", "JSON.parse()", "JSON.convert()", "JSON.object()"] },
-    { id: '10', text: "What is the correct way to check the length of an array 'arr'?", options: ["arr.size()", "arr.length", "arr.count", "length(arr)"] },
-  ]
-};
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
+import { ChevronLeft, ChevronRight, Clock, BookOpen, CheckCircle2, Circle, Loader2 } from 'lucide-react';
 
 const ActiveQuiz = () => {
+    const { id: quizId } = useParams();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const courseId = location.state?.courseId;
 
+    const [quizData, setQuizData] = useState(null);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [resolvedCourseId, setResolvedCourseId] = useState(courseId);
     const [answers, setAnswers] = useState({});
-    const [timeLeft, setTimeLeft] = useState(900); // 15:00 minutes
+    const [timeLeft, setTimeLeft] = useState(null);
+    const [startTime, setStartTime] = useState(null);
+    const [attemptNumber, setAttemptNumber] = useState(1);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        if (timeLeft <= 0) return;
+        const initializeQuiz = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    navigate('/login');
+                    return;
+                }
+
+                const startRes = await axios.post('/api/quiz-attempts/start', {
+                    quizId,
+                    courseId
+                }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                // New backend returns { quiz, questions, attemptNumber, courseId }
+                const { quiz, questions, attemptNumber: nextAttemptNum, courseId: backendCourseId } = startRes.data;
+                
+                setQuizData({ ...quiz, questions }); // Combine quiz meta and questions
+                setAttemptNumber(nextAttemptNum);
+                setResolvedCourseId(backendCourseId || courseId);
+                setTimeLeft((quiz.duration || 15) * 60);
+                setStartTime(Date.now());
+                setIsLoading(false);
+            } catch (err) {
+                console.error("Quiz Initialization Error:", err);
+                setIsLoading(false);
+            }
+        };
+
+        if (quizId) initializeQuiz();
+    }, [quizId, courseId, navigate]);
+
+    useEffect(() => {
+        if (timeLeft === null || timeLeft <= 0 || isSubmitting) {
+            if (timeLeft === 0 && !isSubmitting) {
+                handleSubmit();
+            }
+            return;
+        }
+
         const timer = setInterval(() => {
             setTimeLeft(prev => prev - 1);
         }, 1000);
+
         return () => clearInterval(timer);
-    }, [timeLeft]);
+    }, [timeLeft, isSubmitting]);
 
     const formatTime = (seconds) => {
+        if (seconds === null) return "00:00";
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
     const handleOptionSelect = (index) => {
-        const questionId = mockQuizData.questions[currentQuestionIndex].id;
+        const questionId = quizData.questions[currentQuestionIndex]._id;
         setAnswers(prev => ({
             ...prev,
             [questionId]: index
         }));
     };
 
-    const goToPrevious = () => {
-        if (currentQuestionIndex > 0) {
-            setCurrentQuestionIndex(prev => prev - 1);
+    const handleSubmit = async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+
+        try {
+            const token = localStorage.getItem('token');
+            const formattedAnswers = Object.entries(answers).map(([qId, sOpt]) => ({
+                questionId: qId,
+                selectedOption: sOpt
+            }));
+
+            // Calculate time taken in seconds
+            const timeTaken = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+
+            const res = await axios.post('/api/quiz-attempts/submit', {
+                quizId,
+                courseId: resolvedCourseId,
+                attemptNumber,
+                timeTaken,
+                answers: formattedAnswers
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            navigate('/quiz-result', { state: { resultData: res.data, courseId: resolvedCourseId } });
+        } catch (err) {
+            console.error("Submission Error:", err);
+            setIsSubmitting(false);
+            alert("Failed to submit quiz. Please check your connection.");
         }
+    };
+
+    const goToPrevious = () => {
+        if (currentQuestionIndex > 0) setCurrentQuestionIndex(prev => prev - 1);
     };
 
     const goToNext = () => {
-        if (currentQuestionIndex < mockQuizData.questions.length - 1) {
-            setCurrentQuestionIndex(prev => prev + 1);
-        }
+        if (currentQuestionIndex < quizData.questions.length - 1) setCurrentQuestionIndex(prev => prev + 1);
     };
 
-    const currentQuestion = mockQuizData.questions[currentQuestionIndex];
-    const selectedOption = answers[currentQuestion.id];
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                    <p className="text-slate-600 font-medium">Initializing quiz attempt...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!quizData || !quizData.questions.length) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <p className="text-slate-600">No questions found for this quiz.</p>
+            </div>
+        );
+    }
+
+    const currentQuestion = quizData.questions[currentQuestionIndex];
+    const selectedOption = answers[currentQuestion._id];
 
     return (
         <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -73,7 +158,7 @@ const ActiveQuiz = () => {
                                 <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Quiz</h2>
                             </div>
                             <h1 className="text-xl font-bold text-slate-900 leading-tight">
-                                {mockQuizData.title}
+                                {quizData.title}
                             </h1>
                         </div>
 
@@ -92,12 +177,12 @@ const ActiveQuiz = () => {
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-6">Question Map</h2>
                             <div className="grid grid-cols-5 gap-3">
-                                {mockQuizData.questions.map((q, idx) => {
-                                    const isAnswered = answers[q.id] !== undefined;
+                                {quizData.questions.map((q, idx) => {
+                                    const isAnswered = answers[q._id] !== undefined;
                                     const isActive = currentQuestionIndex === idx;
                                     return (
                                         <button
-                                            key={q.id}
+                                            key={q._id}
                                             onClick={() => setCurrentQuestionIndex(idx)}
                                             className={`
                                                 aspect-square flex items-center justify-center rounded-lg text-sm font-bold transition-all duration-200
@@ -109,21 +194,6 @@ const ActiveQuiz = () => {
                                         </button>
                                     );
                                 })}
-                            </div>
-                            
-                            <div className="mt-8 pt-6 border-t border-slate-100 space-y-3 font-medium text-xs text-slate-500">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded bg-blue-600"></div>
-                                    <span>Answered</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded bg-slate-100 border border-slate-200"></div>
-                                    <span>Unanswered</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-4 border-2 border-blue-600 rounded"></div>
-                                    <span>Active</span>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -142,12 +212,12 @@ const ActiveQuiz = () => {
                             </button>
                             
                             <span className="text-sm font-semibold text-slate-500">
-                                Question <span className="text-slate-900">{currentQuestionIndex + 1}</span> of {mockQuizData.questions.length}
+                                Question <span className="text-slate-900">{currentQuestionIndex + 1}</span> of {quizData.questions.length}
                             </span>
 
                             <button
                                 onClick={goToNext}
-                                disabled={currentQuestionIndex === mockQuizData.questions.length - 1}
+                                disabled={currentQuestionIndex === quizData.questions.length - 1}
                                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
                             >
                                 Next
@@ -159,7 +229,7 @@ const ActiveQuiz = () => {
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-h-[550px] flex flex-col">
                             <div className="p-8 md:p-12 flex-grow">
                                 <h3 className="text-2xl md:text-3xl font-bold text-slate-800 mb-12 leading-snug">
-                                    {currentQuestion.text}
+                                    {currentQuestion.question}
                                 </h3>
 
                                 <div className="space-y-4">
@@ -201,8 +271,12 @@ const ActiveQuiz = () => {
                             {/* Action Footer */}
                             <div className="bg-slate-50/50 border-t border-slate-100 p-6 flex justify-between items-center">
                                 <p className="text-xs text-slate-400 font-medium italic">Progress auto-saved.</p>
-                                <button className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3.5 rounded-xl font-bold transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-200 uppercase tracking-wide text-sm">
-                                    Submit Quiz
+                                <button 
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3.5 rounded-xl font-bold transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-200 uppercase tracking-wide text-sm flex items-center gap-2"
+                                >
+                                    {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : 'Submit Quiz'}
                                 </button>
                             </div>
                         </div>
@@ -214,4 +288,3 @@ const ActiveQuiz = () => {
 };
 
 export default ActiveQuiz;
-
