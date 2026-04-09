@@ -22,7 +22,6 @@ const createQuizWithQuestions = async (req, res) => {
         let { title, passingScore, duration, attemptsAllowed, questions } = req.body;
         const moduleId = req.params.moduleId;
 
-        // 1. Data Sanitization & Basic Validation
         if (title) title = title.trim();
         if (!title) {
             return res.status(400).json({ message: 'Quiz title is required' });
@@ -32,13 +31,11 @@ const createQuizWithQuestions = async (req, res) => {
             return res.status(400).json({ message: 'A quiz must contain at least one question' });
         }
 
-        // 2. Ownership Verification
         const { error, status } = await verifyModuleOwnership(moduleId, req.user._id);
         if (error) {
             return res.status(status).json({ message: error });
         }
 
-        // 3. Question (MCQ) Validation Rules
         let totalQuizMarks = 0;
         for (let i = 0; i < questions.length; i++) {
             const q = questions[i];
@@ -62,12 +59,10 @@ const createQuizWithQuestions = async (req, res) => {
             totalQuizMarks += q.marks;
         }
 
-        // 4. Quiz Metadata Validation
         if (passingScore !== undefined && passingScore > totalQuizMarks) {
             throw new Error(`Passing score (${passingScore}) cannot be higher than the total marks available (${totalQuizMarks}).`);
         }
 
-        // 5. Global "Sibling" Order Calculation
         const [lastLesson, lastAssignment, lastQuiz] = await Promise.all([
             Lesson.findOne({ moduleId }).sort('-order'),
             Assignment.findOne({ moduleId }).sort('-order'),
@@ -82,7 +77,6 @@ const createQuizWithQuestions = async (req, res) => {
 
         const newOrder = maxOrder + 1;
 
-        // 6. Database Insertion
         const quiz = (await Quiz.create([{
             moduleId,
             title,
@@ -92,7 +86,6 @@ const createQuizWithQuestions = async (req, res) => {
             order: newOrder
         }], { session }))[0];
 
-        // Assign the generated quizId and internal ordering to each question
         const processedQuestions = questions.map(q => ({
             quizId: quiz._id,
             question: q.question.trim(),
@@ -106,7 +99,6 @@ const createQuizWithQuestions = async (req, res) => {
         await session.commitTransaction();
         session.endSession();
 
-        // 7. Success Response
         const populatedQuiz = await Quiz.findById(quiz._id).populate('questions').lean();
 
         res.status(201).json({
@@ -120,7 +112,6 @@ const createQuizWithQuestions = async (req, res) => {
     } catch (err) {
         await session.abortTransaction();
         session.endSession();
-        // Send a 400 status if it's a validation error we threw manually
         const status = err.message.includes('Question') || err.message.includes('Passing score') ? 400 : 500;
         res.status(status).json({ success: false, message: err.message });
     }
@@ -139,7 +130,21 @@ const getQuizzesByModule = async (req, res) => {
     }
 };
 
+const getQuizById = async (req, res) => {
+    try {
+        const quiz = await Quiz.findById(req.params.id).populate('questions');
+        if (!quiz) {
+            return res.status(404).json({ success: false, message: 'Quiz not found' });
+        }
+        res.status(200).json({ success: true, data: quiz });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
 module.exports = {
     createQuizWithQuestions,
-    getQuizzesByModule
+    getQuizzesByModule,
+    getQuizById
 };
+

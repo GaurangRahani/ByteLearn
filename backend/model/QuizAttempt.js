@@ -5,7 +5,6 @@ const quizAttemptSchema = new mongoose.Schema({
   quizId: { type: mongoose.Schema.Types.ObjectId, ref: "Quiz", required: true },
   courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true },
   attemptNumber: { type: Number, default: 1 },
-  status: { type: String, enum: ['in-progress', 'completed', 'timed-out', 'abandoned'], default: 'in-progress' },
   answers: [{
       questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Question", required: true },
       selectedOption: { type: Number, default: null },
@@ -23,7 +22,5 @@ const quizAttemptSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 quizAttemptSchema.index({ studentId: 1, quizId: 1, attemptNumber: -1 });
-quizAttemptSchema.index({ courseId: 1, status: 1 });
-quizAttemptSchema.index({ status: 1, startedAt: 1 });
 
 module.exports = mongoose.model('QuizAttempt', quizAttemptSchema);

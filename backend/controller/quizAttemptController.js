@@ -1,6 +1,8 @@
 const QuizAttempt = require('../model/QuizAttempt');
 const Quiz = require('../model/Quiz');
 const Question = require('../model/Question');
+const Module = require('../model/Module');
+
 
 /**
  * @desc    Start a new quiz attempt
@@ -9,41 +11,42 @@ const Question = require('../model/Question');
  */
 const startAttempt = async (req, res) => {
     try {
-        const { quizId, courseId } = req.body;
+        let { quizId, courseId } = req.body;
         const studentId = req.user._id;
 
-        if (!quizId || !courseId) {
-            return res.status(400).json({ message: 'quizId and courseId are required' });
+        if (!quizId) {
+            return res.status(400).json({ message: 'quizId is required' });
         }
 
-        const quiz = await Quiz.findById(quizId);
+        const quiz = await Quiz.findById(quizId).populate('moduleId');
         if (!quiz) {
             return res.status(404).json({ message: 'Quiz not found' });
         }
 
+        if (!courseId && quiz.moduleId) {
+            courseId = quiz.moduleId.courseId;
+        }
+
+        if (!courseId) {
+            return res.status(400).json({ message: 'courseId could not be resolved. Please provide it in the request body.' });
+        }
+
+
         const questions = await Question.find({ quizId });
-        const totalQuestions = questions.length;
-        const totalMarksPossible = questions.reduce((acc, q) => acc + (q.marks || 0), 0);
+        
+        // Count existing attempts to calculate the next attemptNumber
+        const attemptCount = await QuizAttempt.countDocuments({ studentId, quizId });
+        const attemptNumber = attemptCount + 1;
 
-        const lastAttempt = await QuizAttempt.findOne({ studentId, quizId }).sort({ attemptNumber: -1 });
-        const attemptNumber = lastAttempt ? lastAttempt.attemptNumber + 1 : 1;
-
-        const newAttempt = await QuizAttempt.create({
-            studentId,
-            quizId,
-            courseId,
+        res.status(200).json({
+            quiz,
+            questions,
             attemptNumber,
-            totalQuestions,
-            totalMarksPossible,
-            passingScoreSnap: quiz.passingScore || 0,
-            status: 'in-progress',
-            startedAt: Date.now()
+            courseId
         });
-
-        res.status(201).json(newAttempt);
     } catch (error) {
         console.error('Start Attempt Error:', error);
-        res.status(500).json({ message: error.message || 'Error starting quiz attempt' });
+        res.status(500).json({ message: error.message || 'Error preparing quiz attempt' });
     }
 };
 
@@ -54,23 +57,23 @@ const startAttempt = async (req, res) => {
  */
 const submitAttempt = async (req, res) => {
     try {
-        const { attemptId, answers } = req.body; 
+        const { quizId, courseId, attemptNumber, timeTaken, answers } = req.body; 
+        const studentId = req.user._id;
 
-        if (!attemptId || !Array.isArray(answers)) {
-            return res.status(400).json({ message: 'attemptId and answers array are required' });
+        if (!quizId || !courseId || !Array.isArray(answers)) {
+            return res.status(400).json({ message: 'quizId, courseId, and answers array are required' });
         }
 
-        const attempt = await QuizAttempt.findById(attemptId);
-        if (!attempt) {
-            return res.status(404).json({ message: 'Quiz attempt not found' });
+        const quiz = await Quiz.findById(quizId);
+        if (!quiz) {
+            return res.status(404).json({ message: 'Quiz not found' });
         }
 
-        if (attempt.status !== 'in-progress') {
-            return res.status(400).json({ message: 'This attempt has already been submitted or is not in progress' });
-        }
-
-        const questions = await Question.find({ quizId: attempt.quizId });
+        const questions = await Question.find({ quizId });
         const questionMap = new Map(questions.map(q => [q._id.toString(), q]));
+        
+        const totalQuestions = questions.length;
+        const totalMarksPossible = questions.reduce((acc, q) => acc + (q.marks || 0), 0);
 
         let finalScore = 0;
         const gradedAnswers = answers.map(submittedAns => {
@@ -100,24 +103,52 @@ const submitAttempt = async (req, res) => {
             };
         });
 
-        const passed = finalScore >= attempt.passingScoreSnap;
-        const submittedAt = new Date();
-        const timeTaken = Math.floor((submittedAt - attempt.startedAt) / 1000); // Time in seconds
+        const passed = finalScore >= (quiz.passingScore || 0);
 
-        attempt.answers = gradedAnswers;
-        attempt.score = finalScore;
-        attempt.passed = passed;
-        attempt.status = 'completed';
-        attempt.submittedAt = submittedAt;
-        attempt.timeTaken = timeTaken;
+        const newAttempt = await QuizAttempt.create({
+            studentId,
+            quizId,
+            courseId,
+            attemptNumber: attemptNumber || 1,
+            answers: gradedAnswers,
+            score: finalScore,
+            totalMarksPossible,
+            totalQuestions,
+            passingScoreSnap: quiz.passingScore || 0,
+            passed,
+            submittedAt: new Date(),
+            timeTaken
+        });
 
-        await attempt.save();
-
-        res.status(200).json(attempt);
+        res.status(201).json(newAttempt);
     } catch (error) {
         console.error('Submit Attempt Error:', error);
         res.status(500).json({ message: error.message || 'Error submitting quiz attempt' });
     }
 };
 
-module.exports = { startAttempt, submitAttempt };
+/**
+ * @desc    Get student's attempt history for a quiz
+ * @route   GET /api/quiz-attempts/history/:quizId
+ * @access  Private (Student)
+ */
+const getStudentQuizHistory = async (req, res) => {
+    try {
+        const { quizId } = req.params;
+        const studentId = req.user._id;
+
+        if (!quizId) {
+            return res.status(400).json({ message: 'quizId is required' });
+        }
+
+        const history = await QuizAttempt.find({ studentId, quizId })
+            .sort({ attemptNumber: -1 });
+
+        res.status(200).json(history);
+    } catch (error) {
+        console.error('Get History Error:', error);
+        res.status(500).json({ message: error.message || 'Error fetching quiz history' });
+    }
+};
+
+module.exports = { startAttempt, submitAttempt, getStudentQuizHistory };

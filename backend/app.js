@@ -25,6 +25,8 @@ const enrollmentRoutes = require('./routes/enrollmentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const submissionRoutes = require('./routes/submissionRoutes');
 const quizAttemptRoutes = require('./routes/quizAttemptRoutes');
+const quizRoutes = require('./routes/quizRoutes');
+
 
 
 app.use('/api/auth', authRoutes);
@@ -33,6 +35,8 @@ app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/quiz-attempts', quizAttemptRoutes);
+app.use('/api/quizzes', quizRoutes);
+
 
 
 app.use((err, req, res, next) => {
