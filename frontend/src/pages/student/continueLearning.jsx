@@ -15,8 +15,16 @@ import {
   ChevronRight
 } from 'lucide-react';
 import AssignmentViewer from '../../components/common/AssignmentViewer';
+import CustomVideoPlayer from '../../components/common/CustomVideoPlayer';
+
+
+const isImage = (url) => {
+  if (!url) return false;
+  return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+};
 
 const ContinueLearning = () => {
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
@@ -47,7 +55,7 @@ const ContinueLearning = () => {
         const formattedModules = (courseData.modules || []).map((mod) => {
           const items = [];
           if (mod.lessons) {
-             mod.lessons.forEach(l => items.push({ ...l, type: 'lesson', id: l._id }));
+             mod.lessons.forEach(l => items.push({ ...l, type: l.videoUrl ? 'video' : 'text', id: l._id }));
           }
           if (mod.assignments) {
              mod.assignments.forEach(a => items.push({ ...a, type: 'assignment', id: a._id }));
@@ -220,8 +228,8 @@ const ContinueLearning = () => {
     if (isCompleted) {
       return <CheckCircle size={18} className={`${isActive ? 'text-white' : 'text-emerald-500'}`} />;
     }
-    if (type === 'lesson') {
-      return <PlayCircle size={18} className={`${isActive ? 'text-white' : 'text-slate-400'}`} />;
+    if (type === 'text' || type === 'video') {
+      return type === 'video' ? <PlayCircle size={18} className={`${isActive ? 'text-white' : 'text-slate-400'}`} /> : <FileText size={18} className={`${isActive ? 'text-white' : 'text-slate-400'}`} />;
     }
     if (type === 'assignment') {
       return <FileText size={18} className={`${isActive ? 'text-white' : 'text-amber-500'}`} />;
@@ -293,7 +301,7 @@ const ContinueLearning = () => {
                               </span>
                             </div>
 
-                            {item.type === 'lesson' && item.duration && (
+                            {(item.type === 'text' || item.type === 'video') && item.duration && (
                               <span className={`text-[12px] font-medium flex-shrink-0 ${isActive ? 'text-blue-100' : 'text-slate-400'}`}>
                                 {item.duration}
                               </span>
@@ -312,22 +320,47 @@ const ContinueLearning = () => {
 
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden min-h-[500px] flex flex-col">
 
-              {currentItem?.type === 'lesson' && (
+              {(currentItem?.type === 'text' || currentItem?.type === 'video') && (
                 <>
-                  <div className="w-full aspect-video bg-[#EBF1FF] flex flex-col items-center justify-center relative">
-                    <button className="h-20 w-20 bg-white/60 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all text-blue-600 group">
-                      <PlayCircle size={40} className="ml-1 group-hover:scale-110 transition-transform" />
-                    </button>
-                    <p className="mt-4 text-blue-800/60 font-medium text-sm">Video player would be here</p>
-                    <p className="mt-1 text-blue-900 font-semibold">{currentItem.title}</p>
-                  </div>
+                  {currentItem.type === 'video' && (
+                    <CustomVideoPlayer videoUrl={currentItem.videoUrl} title={currentItem.title} />
+                  )}
 
                   {/* Lesson Content details */}
                   <div className="p-8 flex-grow flex flex-col">
-                    <h2 className="text-2xl font-bold text-slate-800 mb-3">{currentItem.title}</h2>
-                    <p className="text-slate-600 leading-relaxed text-[15.5px]">
-                      {currentItem.content}
-                    </p>
+                    <h2 className="text-[32px] font-bold text-slate-800 mb-6 tracking-tight leading-tight">
+                      {currentItem.title}
+                    </h2>
+                    
+                    <div 
+                      className="text-slate-600 leading-relaxed text-[17px] space-y-4 prose prose-slate max-w-none"
+                      dangerouslySetInnerHTML={{ __html: currentItem.content }}
+                    />
+
+                    {currentItem.attachmentUrl && (
+                      <div className="mt-10 pt-8 border-t border-slate-100">
+                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-[0.1em] mb-4">
+                          Lesson Attachment
+                        </h3>
+                        {isImage(currentItem.attachmentUrl) ? (
+                          <div className="flex justify-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                            <img 
+                              src={currentItem.attachmentUrl} 
+                              alt={currentItem.title} 
+                              className="max-w-full h-auto rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
+                            />
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => handleDownloadPDF(currentItem.attachmentUrl, currentItem.title)}
+                            className="flex items-center gap-3 px-6 py-3.5 bg-slate-50 hover:bg-white hover:text-blue-600 hover:border-blue-200 border border-slate-200 text-slate-700 rounded-xl transition-all font-semibold shadow-sm group"
+                          >
+                            <Download size={20} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
+                            <span>Download Resource Materials</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
 
                     <div className="mt-auto pt-10 flex border-t border-slate-100 items-center justify-between">
                       <button className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors flex items-center gap-2 text-sm">
