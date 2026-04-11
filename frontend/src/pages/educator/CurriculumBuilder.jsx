@@ -8,6 +8,7 @@ import {
   AlertCircle, Layers, PlusCircle
 } from 'lucide-react';
 import EducatorHeader from '../../components/layout/EducatorHeader';
+import GradingConfiguration from './GradingConfiguration';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Reusable Label
@@ -122,8 +123,8 @@ const QuizBuilder = ({ moduleId, courseId, onSave, onCancel }) => {
             <HelpCircle size={20} />
           </div>
           <div>
-             <h4 className="text-lg font-bold text-slate-800 tracking-tight">Create Quiz</h4>
-             <p className="text-xs text-slate-500 font-medium">Add questions, options, and set passing criteria</p>
+            <h4 className="text-lg font-bold text-slate-800 tracking-tight">Create Quiz</h4>
+            <p className="text-xs text-slate-500 font-medium">Add questions, options, and set passing criteria</p>
           </div>
         </div>
         <button onClick={onCancel} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors"><X size={20} /></button>
@@ -163,7 +164,7 @@ const QuizBuilder = ({ moduleId, courseId, onSave, onCancel }) => {
         <div className="space-y-5">
           {questions.map((q, qIdx) => (
             <div key={qIdx} className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm space-y-5 relative">
-              
+
               <div className="absolute -left-3 top-6 w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-bold text-indigo-600 ring-4 ring-white shadow-sm">
                 {qIdx + 1}
               </div>
@@ -209,13 +210,13 @@ const QuizBuilder = ({ moduleId, courseId, onSave, onCancel }) => {
                       {q.correctAnswer === oIdx && <Check size={14} strokeWidth={3} />}
                     </button>
                     <div className="flex-1 relative">
-                       <Input
-                         required
-                         placeholder={`Option ${oIdx + 1}`}
-                         value={opt}
-                         onChange={e => updateOption(qIdx, oIdx, e.target.value)}
-                         className={q.correctAnswer === oIdx ? 'border-emerald-200 bg-emerald-50/30 font-semibold' : ''}
-                       />
+                      <Input
+                        required
+                        placeholder={`Option ${oIdx + 1}`}
+                        value={opt}
+                        onChange={e => updateOption(qIdx, oIdx, e.target.value)}
+                        className={q.correctAnswer === oIdx ? 'border-emerald-200 bg-emerald-50/30 font-semibold' : ''}
+                      />
                     </div>
                     {q.options.length > 2 && (
                       <button type="button" onClick={() => removeOption(qIdx, oIdx)} className="mt-2 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0">
@@ -261,26 +262,26 @@ const QuizBuilder = ({ moduleId, courseId, onSave, onCancel }) => {
 // Content Item Row
 const ContentItem = ({ item }) => {
   const typeConfig = {
-    lesson: { 
-      icon: item.videoUrl ? <Video size={18} /> : <FileText size={18} />, 
-      bg: 'bg-white hover:border-blue-200', 
-      iconBg: 'bg-blue-50 text-blue-600', 
-      label: item.videoUrl ? 'Video Lesson' : 'Text Lesson', 
-      badgeColor: 'text-blue-600 bg-blue-50' 
+    lesson: {
+      icon: item.videoUrl ? <Video size={18} /> : <FileText size={18} />,
+      bg: 'bg-white hover:border-blue-200',
+      iconBg: 'bg-blue-50 text-blue-600',
+      label: item.videoUrl ? 'Video Lesson' : 'Text Lesson',
+      badgeColor: 'text-blue-600 bg-blue-50'
     },
-    quiz: { 
-      icon: <HelpCircle size={18} />, 
-      bg: 'bg-white hover:border-indigo-200', 
-      iconBg: 'bg-indigo-50 text-indigo-600', 
-      label: 'Quiz Assessment', 
-      badgeColor: 'text-indigo-600 bg-indigo-50' 
+    quiz: {
+      icon: <HelpCircle size={18} />,
+      bg: 'bg-white hover:border-indigo-200',
+      iconBg: 'bg-indigo-50 text-indigo-600',
+      label: 'Quiz Assessment',
+      badgeColor: 'text-indigo-600 bg-indigo-50'
     },
-    assignment: { 
-      icon: <ClipboardList size={18} />, 
-      bg: 'bg-white hover:border-amber-200', 
-      iconBg: 'bg-amber-50 text-amber-600', 
-      label: item.totalMarks ? `${item.totalMarks} Marks` : 'Ungraded Task', 
-      badgeColor: 'text-amber-600 bg-amber-50' 
+    assignment: {
+      icon: <ClipboardList size={18} />,
+      bg: 'bg-white hover:border-amber-200',
+      iconBg: 'bg-amber-50 text-amber-600',
+      label: item.totalMarks ? `${item.totalMarks} Marks` : 'Ungraded Task',
+      badgeColor: 'text-amber-600 bg-amber-50'
     },
   };
   const cfg = typeConfig[item._type] || typeConfig.lesson;
@@ -316,19 +317,23 @@ const CurriculumBuilder = () => {
   const [modules, setModules] = useState([]);
   const [educatorName, setEducatorName] = useState('Educator');
 
-  // Expanded module state
+
   const [expandedModuleId, setExpandedModuleId] = useState(null);
-  const [moduleContent, setModuleContent] = useState({}); // { moduleId: [unified sorted items] }
+  const [moduleContent, setModuleContent] = useState({});
+
+
   const [loadingContent, setLoadingContent] = useState(false);
 
-  // Active form state: null | 'lesson' | 'quiz' | 'assignment'
-  const [activeForm, setActiveForm] = useState(null);
   const [activeModuleId, setActiveModuleId] = useState(null);
 
-  // Module creation
+  // Tab State
+  const [activeTab, setActiveTab] = useState('curriculum');
   const [isAddingModule, setIsAddingModule] = useState(false);
   const [newModuleTitle, setNewModuleTitle] = useState('');
   const [isSavingModule, setIsSavingModule] = useState(false);
+
+  // Active form state: null | 'lesson' | 'quiz' | 'assignment'
+  const [activeForm, setActiveForm] = useState(null);
 
   // Lesson form state
   const [newLessonData, setNewLessonData] = useState({ title: '', lessonType: 'video', content: '', video: null, attachment: null });
@@ -538,289 +543,327 @@ const CurriculumBuilder = () => {
       </div>
 
       <main className="max-w-4xl mx-auto px-4 py-10 pb-32">
-        {/* Header Area */}
-        <div className="mb-10 text-center md:text-left">
-          <h2 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">Curriculum Builder</h2>
-          <p className="text-slate-500 text-lg">Structure your course by creating modules and adding diverse learning materials.</p>
-        </div>
-
-        {/* Modules Accordion */}
-        <div className="space-y-5">
-          {modules.map((module, index) => {
-            const isExpanded = expandedModuleId === module._id;
-            const items = moduleContent[module._id] || [];
-            
-            return (
-              <div key={module._id} className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${isExpanded ? 'border-indigo-200 shadow-md shadow-indigo-500/5' : 'border-slate-200 shadow-sm hover:border-slate-300'}`}>
-
-                {/* Module Header Bar */}
-                <div
-                  onClick={() => toggleModule(module._id)}
-                  className={`p-5 flex items-center justify-between cursor-pointer group transition-colors ${isExpanded ? 'bg-indigo-50/30' : 'hover:bg-slate-50/50'}`}
-                >
-                  <div className="flex items-center gap-5">
-                    <div className="text-slate-300 group-hover:text-slate-500 transition-colors hidden sm:block">
-                      <GripVertical size={20} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-1">Module {index + 1}</p>
-                      <h3 className="text-lg font-bold text-slate-800">{module.title}</h3>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="hidden md:flex gap-2">
-                       {items.length > 0 ? (
-                         <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-md">{items.length} Items</span>
-                       ) : (
-                         <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-3 py-1 rounded-md border border-slate-100">Empty Layout</span>
-                       )}
-                    </div>
-                    <div className={`p-1.5 rounded-full transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-indigo-100 text-indigo-600' : 'text-slate-400 bg-slate-100 group-hover:bg-slate-200'}`}>
-                      <ChevronDown size={18} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Expanded Content Area */}
-                {isExpanded && (
-                  <div className="border-t border-slate-100 bg-slate-50/30 p-5 sm:p-7 space-y-5">
-
-                    {/* Content Items List */}
-                    {loadingContent && !moduleContent[module._id] ? (
-                      <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-indigo-400" size={28} /></div>
-                    ) : items.length === 0 && !activeForm ? (
-                      <div className="py-12 text-center bg-white rounded-xl border border-dashed border-slate-300">
-                        <Layers className="mx-auto h-10 w-10 text-slate-300 mb-3" />
-                        <p className="text-sm font-semibold text-slate-500">Module is empty</p>
-                        <p className="text-xs text-slate-400 mt-1">Add your first lesson, quiz, or assignment below.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {items.map((item) => (
-                          <ContentItem key={item._id} item={item} />
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Forms */}
-                    {activeForm === 'lesson' && activeModuleId === module._id ? (
-                      <div className="bg-white rounded-2xl p-6 border border-blue-200 shadow-lg shadow-blue-500/5 mt-5 relative overflow-hidden">
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-cyan-400"></div>
-                        <div className="flex justify-between items-center mb-5 pt-1">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                              {newLessonData.lessonType === 'video' ? <Video size={20} /> : <FileText size={20} />}
-                            </div>
-                            <div>
-                              <h4 className="text-lg font-bold text-slate-800 tracking-tight">Add Lesson</h4>
-                              <p className="text-xs text-slate-500 font-medium">Choose the lesson format below</p>
-                            </div>
-                          </div>
-                          <button onClick={closeForm} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400"><X size={20} /></button>
-                        </div>
-
-                        {/* Lesson Type Toggle */}
-                        <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-6">
-                          <button
-                            type="button"
-                            onClick={() => setNewLessonData({ ...newLessonData, lessonType: 'video', attachment: null })}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${newLessonData.lessonType === 'video' ? 'bg-white text-blue-600 shadow-md shadow-blue-100' : 'text-slate-500 hover:text-slate-700'}`}
-                          >
-                            <Video size={16} /> 📺 Video Lesson
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setNewLessonData({ ...newLessonData, lessonType: 'article', video: null })}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${newLessonData.lessonType === 'article' ? 'bg-white text-emerald-600 shadow-md shadow-emerald-100' : 'text-slate-500 hover:text-slate-700'}`}
-                          >
-                            <FileText size={16} /> 📝 Article Lesson
-                          </button>
-                        </div>
-
-                        <form onSubmit={handleLessonSubmit} className="space-y-5">
-                          <div>
-                            <Label>Lesson Title *</Label>
-                            <Input autoFocus required placeholder="e.g. Introduction to React Components" value={newLessonData.title} onChange={e => setNewLessonData({ ...newLessonData, title: e.target.value })} />
-                          </div>
-
-                          {/* Video Mode */}
-                          {newLessonData.lessonType === 'video' && (
-                            <div>
-                              <Label>Video File *</Label>
-                              <label className="flex flex-col items-center justify-center w-full min-h-[150px] bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-blue-50/50 hover:border-blue-300 transition-colors group">
-                                {newLessonData.video ? (
-                                  <div className="text-center p-4">
-                                    <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2"><Check size={20} strokeWidth={3} /></div>
-                                    <p className="text-sm font-semibold text-slate-700 truncate max-w-[220px]">{newLessonData.video.name}</p>
-                                    <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, video: null }); }} className="text-xs text-red-500 font-bold mt-1 hover:underline">Remove</button>
-                                  </div>
-                                ) : (
-                                  <div className="flex flex-col items-center py-6">
-                                    <UploadCloud className="w-9 h-9 mb-2 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                                    <p className="text-sm font-semibold text-slate-600">Click to upload video</p>
-                                    <p className="text-xs text-slate-500 mt-1">MP4, WebM — Max 500MB</p>
-                                  </div>
-                                )}
-                                <input type="file" className="hidden" accept="video/*" onChange={e => setNewLessonData({ ...newLessonData, video: e.target.files[0] })} />
-                              </label>
-                              <div className="mt-4">
-                                <Label>Short Description (optional)</Label>
-                                <textarea rows="3" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm text-slate-700 placeholder:text-slate-400" placeholder="Brief summary of what this video covers..." value={newLessonData.content} onChange={e => setNewLessonData({ ...newLessonData, content: e.target.value })}></textarea>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Article Mode */}
-                          {newLessonData.lessonType === 'article' && (
-                            <div className="space-y-4">
-                              <div>
-                                <Label>Reading Content *</Label>
-                                <textarea rows="8" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm text-slate-700 placeholder:text-slate-400 leading-relaxed" placeholder="Write the full reading material here. Explain concepts clearly for students..." value={newLessonData.content} onChange={e => setNewLessonData({ ...newLessonData, content: e.target.value })}></textarea>
-                              </div>
-                              <div>
-                                <Label>Visual Aid — Image <span className="text-slate-400 font-normal">(optional)</span></Label>
-                                <label className="flex flex-col items-center justify-center w-full min-h-[130px] bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-emerald-50/50 hover:border-emerald-300 transition-colors group">
-                                  {newLessonData.attachment ? (
-                                    <div className="text-center p-4">
-                                      <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2"><Check size={20} strokeWidth={3} /></div>
-                                      <p className="text-sm font-semibold text-slate-700 truncate max-w-[220px]">{newLessonData.attachment.name}</p>
-                                      <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, attachment: null }); }} className="text-xs text-red-500 font-bold mt-1 hover:underline">Remove</button>
-                                    </div>
-                                  ) : (
-                                    <div className="flex flex-col items-center py-5">
-                                      <FileUp className="w-8 h-8 mb-2 text-slate-400 group-hover:text-emerald-500 transition-colors" />
-                                      <p className="text-sm font-semibold text-slate-600">Upload diagram or image</p>
-                                      <p className="text-xs text-slate-500 mt-1">JPG, PNG, WEBP</p>
-                                    </div>
-                                  )}
-                                  <input type="file" className="hidden" accept="image/*" onChange={e => setNewLessonData({ ...newLessonData, attachment: e.target.files[0] })} />
-                                </label>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                            <button type="button" onClick={closeForm} className="px-6 py-2.5 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
-                            <button type="submit" disabled={isSavingLesson || !newLessonData.title.trim()} className={`px-8 py-2.5 text-white font-semibold rounded-xl shadow-lg transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:hover:scale-100 ${newLessonData.lessonType === 'video' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'}`}>
-                              {isSavingLesson ? <><Loader2 size={18} className="animate-spin" /> Uploading...</> : <><Save size={18} /> Save Lesson</>}
-                            </button>
-                          </div>
-                        </form>
-                      </div>
-
-                    ) : activeForm === 'quiz' && activeModuleId === module._id ? (
-                      <QuizBuilder
-                        moduleId={module._id}
-                        courseId={courseId}
-                        onSave={(quiz) => {
-                          pushItem(module._id, { ...quiz, _type: 'quiz' });
-                          closeForm();
-                        }}
-                        onCancel={closeForm}
-                      />
-
-                    ) : activeForm === 'assignment' && activeModuleId === module._id ? (
-                      <div className="bg-white rounded-2xl p-6 border border-amber-200 shadow-lg shadow-amber-500/5 mt-5 relative overflow-hidden">
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-400"></div>
-                        <div className="flex justify-between items-center mb-6 pt-1">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600"><ClipboardList size={20} /></div>
-                            <div>
-                               <h4 className="text-lg font-bold text-slate-800 tracking-tight">Add Assignment</h4>
-                               <p className="text-xs text-slate-500 font-medium">Create a task for students to complete and submit</p>
-                            </div>
-                          </div>
-                          <button onClick={closeForm} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400"><X size={20} /></button>
-                        </div>
-                        <form onSubmit={handleAssignmentSubmit} className="space-y-5">
-                          <div>
-                            <Label>Assignment Title *</Label>
-                            <Input required placeholder="e.g. Build a Functional React Component" value={newAssignmentData.title} onChange={e => setNewAssignmentData({ ...newAssignmentData, title: e.target.value })} className="focus:ring-amber-500/20 focus:border-amber-500" />
-                          </div>
-                          <div>
-                            <Label>Total Marks (Optional)</Label>
-                            <Input type="number" placeholder="e.g. 100" value={newAssignmentData.totalMarks} onChange={e => setNewAssignmentData({ ...newAssignmentData, totalMarks: e.target.value })} className="focus:ring-amber-500/20 focus:border-amber-500 max-w-xs" />
-                          </div>
-                          <div>
-                            <Label>Instructions</Label>
-                            <textarea rows="4" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium text-slate-700 placeholder:text-slate-400 text-sm" placeholder="Provide detailed instructions for the task..." value={newAssignmentData.instructions} onChange={e => setNewAssignmentData({ ...newAssignmentData, instructions: e.target.value })}></textarea>
-                          </div>
-                          <div>
-                            <Label>Question Paper / Assets (.pdf)</Label>
-                            <input type="file" accept=".pdf" onChange={e => setNewAssignmentData({ ...newAssignmentData, questionPdf: e.target.files[0] })} className="w-full text-sm text-slate-600 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-amber-50 file:text-amber-700 file:font-semibold hover:file:bg-amber-100 transition-all cursor-pointer bg-slate-50 border border-slate-200 rounded-xl p-1.5" />
-                          </div>
-                          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                            <button type="button" onClick={closeForm} className="px-6 py-2.5 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
-                            <button type="submit" disabled={isSavingAssignment || !newAssignmentData.title.trim()} className="px-8 py-2.5 bg-amber-500 text-white font-semibold rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:hover:scale-100">
-                              {isSavingAssignment ? <><Loader2 size={18} className="animate-spin" /> Saving...</> : <><Save size={18} /> Save Assignment</>}
-                            </button>
-                          </div>
-                        </form>
-                      </div>
-
-                    ) : (
-                      /* 3-Button Premium Action Strip */
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                        <button
-                          onClick={() => openForm('lesson', module._id)}
-                          className="py-4 bg-white border border-slate-200 rounded-xl text-slate-600 font-semibold text-sm hover:border-blue-300 hover:shadow-md hover:shadow-blue-500/5 transition-all flex items-center justify-center gap-3 group"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors"><Video size={16} /></div>
-                          Add Lesson
-                        </button>
-                        <button
-                          onClick={() => openForm('quiz', module._id)}
-                          className="py-4 bg-white border border-slate-200 rounded-xl text-slate-600 font-semibold text-sm hover:border-indigo-300 hover:shadow-md hover:shadow-indigo-500/5 transition-all flex items-center justify-center gap-3 group"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors"><HelpCircle size={16} /></div>
-                          Add Quiz
-                        </button>
-                        <button
-                          onClick={() => openForm('assignment', module._id)}
-                          className="py-4 bg-white border border-slate-200 rounded-xl text-slate-600 font-semibold text-sm hover:border-amber-300 hover:shadow-md hover:shadow-amber-500/5 transition-all flex items-center justify-center gap-3 group"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-colors"><ClipboardList size={16} /></div>
-                          Add Assignment
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Add Module Container */}
-          {isAddingModule ? (
-            <div className="bg-white rounded-2xl border border-blue-200 p-8 shadow-xl shadow-blue-500/10">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><BookOpen size={24} /></div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800 tracking-tight">New Module</h3>
-                  <p className="text-sm text-slate-500 font-medium">Create a new section for your course</p>
-                </div>
-              </div>
-              <form onSubmit={handleAddModule}>
-                <Input autoFocus placeholder="e.g. Chapter 1: Getting Started" value={newModuleTitle} onChange={e => setNewModuleTitle(e.target.value)} className="text-lg font-bold mb-6 py-4 px-5" />
-                <div className="flex justify-end gap-3">
-                  <button type="button" onClick={() => setIsAddingModule(false)} className="px-6 py-3 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
-                  <button type="submit" disabled={isSavingModule || !newModuleTitle.trim()} className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:hover:scale-100">
-                    {isSavingModule ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                    Create Module
-                  </button>
-                </div>
-              </form>
+        <div className="mb-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+            <div className="text-center md:text-left">
+              <h2 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">
+                {activeTab === 'curriculum' ? 'Curriculum Builder' : 'Grading & Certification'}
+              </h2>
+              <p className="text-slate-500 text-lg">
+                {activeTab === 'curriculum'
+                  ? 'Structure your course by creating modules and learning materials.'
+                  : 'Define the rules of success, weighting, and certification criteria.'}
+              </p>
             </div>
-          ) : (
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="flex border-b border-slate-200 mb-8">
             <button
-              onClick={() => setIsAddingModule(true)}
-              className="w-full py-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-500 font-semibold hover:border-slate-400 hover:text-slate-700 hover:bg-slate-100/50 transition-all flex items-center justify-center gap-3 group"
+              onClick={() => setActiveTab('curriculum')}
+              className={`pb-4 px-6 text-sm font-bold transition-all relative ${activeTab === 'curriculum' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
             >
-              <PlusCircle size={24} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
-              Add New Module
+              Curriculum Modules
+              {activeTab === 'curriculum' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full shadow-[0_-2px_10px_rgba(37,99,235,0.2)]" />}
             </button>
-          )}
+            <button
+              onClick={() => setActiveTab('grading')}
+              className={`pb-4 px-6 text-sm font-bold transition-all relative ${activeTab === 'grading' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Grading & Success Rules
+              {activeTab === 'grading' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full shadow-[0_-2px_10px_rgba(37,99,235,0.2)]" />}
+            </button>
+          </div>
         </div>
+
+        {activeTab === 'grading' ? (
+          <GradingConfiguration
+            courseId={courseId}
+            initialConfig={course?.gradingConfiguration}
+            onSaved={(updatedCourse) => setCourse(updatedCourse)}
+          />
+        ) : (
+          <>
+            <div className="space-y-5">
+              {modules.map((module, index) => {
+                const isExpanded = expandedModuleId === module._id;
+                const items = moduleContent[module._id] || [];
+
+                return (
+                  <div key={module._id} className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${isExpanded ? 'border-indigo-200 shadow-md shadow-indigo-500/5' : 'border-slate-200 shadow-sm hover:border-slate-300'}`}>
+
+                    {/* Module Header Bar */}
+                    <div
+                      onClick={() => toggleModule(module._id)}
+                      className={`p-5 flex items-center justify-between cursor-pointer group transition-colors ${isExpanded ? 'bg-indigo-50/30' : 'hover:bg-slate-50/50'}`}
+                    >
+                      <div className="flex items-center gap-5">
+                        <div className="text-slate-300 group-hover:text-slate-500 transition-colors hidden sm:block">
+                          <GripVertical size={20} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-1">Module {index + 1}</p>
+                          <h3 className="text-lg font-bold text-slate-800">{module.title}</h3>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="hidden md:flex gap-2">
+                          {items.length > 0 ? (
+                            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-md">{items.length} Items</span>
+                          ) : (
+                            <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-3 py-1 rounded-md border border-slate-100">Empty Layout</span>
+                          )}
+                        </div>
+                        <div className={`p-1.5 rounded-full transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-indigo-100 text-indigo-600' : 'text-slate-400 bg-slate-100 group-hover:bg-slate-200'}`}>
+                          <ChevronDown size={18} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expanded Content Area */}
+                    {isExpanded && (
+                      <div className="border-t border-slate-100 bg-slate-50/30 p-5 sm:p-7 space-y-5">
+
+                        {/* Content Items List */}
+                        {loadingContent && !moduleContent[module._id] ? (
+                          <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-indigo-400" size={28} /></div>
+                        ) : items.length === 0 && !activeForm ? (
+                          <div className="py-12 text-center bg-white rounded-xl border border-dashed border-slate-300">
+                            <Layers className="mx-auto h-10 w-10 text-slate-300 mb-3" />
+                            <p className="text-sm font-semibold text-slate-500">Module is empty</p>
+                            <p className="text-xs text-slate-400 mt-1">Add your first lesson, quiz, or assignment below.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {items.map((item) => (
+                              <ContentItem key={item._id} item={item} />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Forms */}
+                        {activeForm === 'lesson' && activeModuleId === module._id ? (
+                          <div className="bg-white rounded-2xl p-6 border border-blue-200 shadow-lg shadow-blue-500/5 mt-5 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-cyan-400"></div>
+                            <div className="flex justify-between items-center mb-5 pt-1">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                                  {newLessonData.lessonType === 'video' ? <Video size={20} /> : <FileText size={20} />}
+                                </div>
+                                <div>
+                                  <h4 className="text-lg font-bold text-slate-800 tracking-tight">Add Lesson</h4>
+                                  <p className="text-xs text-slate-500 font-medium">Choose the lesson format below</p>
+                                </div>
+                              </div>
+                              <button onClick={closeForm} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400"><X size={20} /></button>
+                            </div>
+
+                            {/* Lesson Type Toggle */}
+                            <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-6">
+                              <button
+                                type="button"
+                                onClick={() => setNewLessonData({ ...newLessonData, lessonType: 'video', attachment: null })}
+                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${newLessonData.lessonType === 'video' ? 'bg-white text-blue-600 shadow-md shadow-blue-100' : 'text-slate-500 hover:text-slate-700'}`}
+                              >
+                                <Video size={16} /> 📺 Video Lesson
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setNewLessonData({ ...newLessonData, lessonType: 'article', video: null })}
+                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${newLessonData.lessonType === 'article' ? 'bg-white text-emerald-600 shadow-md shadow-emerald-100' : 'text-slate-500 hover:text-slate-700'}`}
+                              >
+                                <FileText size={16} /> 📝 Article Lesson
+                              </button>
+                            </div>
+
+                            <form onSubmit={handleLessonSubmit} className="space-y-5">
+                              <div>
+                                <Label>Lesson Title *</Label>
+                                <Input autoFocus required placeholder="e.g. Introduction to React Components" value={newLessonData.title} onChange={e => setNewLessonData({ ...newLessonData, title: e.target.value })} />
+                              </div>
+
+                              {/* Video Mode */}
+                              {newLessonData.lessonType === 'video' && (
+                                <div>
+                                  <Label>Video File *</Label>
+                                  <label className="flex flex-col items-center justify-center w-full min-h-[150px] bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-blue-50/50 hover:border-blue-300 transition-colors group">
+                                    {newLessonData.video ? (
+                                      <div className="text-center p-4">
+                                        <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2"><Check size={20} strokeWidth={3} /></div>
+                                        <p className="text-sm font-semibold text-slate-700 truncate max-w-[220px]">{newLessonData.video.name}</p>
+                                        <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, video: null }); }} className="text-xs text-red-500 font-bold mt-1 hover:underline">Remove</button>
+                                      </div>
+                                    ) : (
+                                      <div className="flex flex-col items-center py-6">
+                                        <UploadCloud className="w-9 h-9 mb-2 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                                        <p className="text-sm font-semibold text-slate-600">Click to upload video</p>
+                                        <p className="text-xs text-slate-500 mt-1">MP4, WebM — Max 500MB</p>
+                                      </div>
+                                    )}
+                                    <input type="file" className="hidden" accept="video/*" onChange={e => setNewLessonData({ ...newLessonData, video: e.target.files[0] })} />
+                                  </label>
+                                  <div className="mt-4">
+                                    <Label>Short Description (optional)</Label>
+                                    <textarea rows="3" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm text-slate-700 placeholder:text-slate-400" placeholder="Brief summary of what this video covers..." value={newLessonData.content} onChange={e => setNewLessonData({ ...newLessonData, content: e.target.value })}></textarea>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Article Mode */}
+                              {newLessonData.lessonType === 'article' && (
+                                <div className="space-y-4">
+                                  <div>
+                                    <Label>Reading Content *</Label>
+                                    <textarea rows="8" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm text-slate-700 placeholder:text-slate-400 leading-relaxed" placeholder="Write the full reading material here. Explain concepts clearly for students..." value={newLessonData.content} onChange={e => setNewLessonData({ ...newLessonData, content: e.target.value })}></textarea>
+                                  </div>
+                                  <div>
+                                    <Label>Visual Aid — Image <span className="text-slate-400 font-normal">(optional)</span></Label>
+                                    <label className="flex flex-col items-center justify-center w-full min-h-[130px] bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-emerald-50/50 hover:border-emerald-300 transition-colors group">
+                                      {newLessonData.attachment ? (
+                                        <div className="text-center p-4">
+                                          <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2"><Check size={20} strokeWidth={3} /></div>
+                                          <p className="text-sm font-semibold text-slate-700 truncate max-w-[220px]">{newLessonData.attachment.name}</p>
+                                          <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, attachment: null }); }} className="text-xs text-red-500 font-bold mt-1 hover:underline">Remove</button>
+                                        </div>
+                                      ) : (
+                                        <div className="flex flex-col items-center py-5">
+                                          <FileUp className="w-8 h-8 mb-2 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                                          <p className="text-sm font-semibold text-slate-600">Upload diagram or image</p>
+                                          <p className="text-xs text-slate-500 mt-1">JPG, PNG, WEBP</p>
+                                        </div>
+                                      )}
+                                      <input type="file" className="hidden" accept="image/*" onChange={e => setNewLessonData({ ...newLessonData, attachment: e.target.files[0] })} />
+                                    </label>
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                                <button type="button" onClick={closeForm} className="px-6 py-2.5 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
+                                <button type="submit" disabled={isSavingLesson || !newLessonData.title.trim()} className={`px-8 py-2.5 text-white font-semibold rounded-xl shadow-lg transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:hover:scale-100 ${newLessonData.lessonType === 'video' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'}`}>
+                                  {isSavingLesson ? <><Loader2 size={18} className="animate-spin" /> Uploading...</> : <><Save size={18} /> Save Lesson</>}
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+
+                        ) : activeForm === 'quiz' && activeModuleId === module._id ? (
+                          <QuizBuilder
+                            moduleId={module._id}
+                            courseId={courseId}
+                            onSave={(quiz) => {
+                              pushItem(module._id, { ...quiz, _type: 'quiz' });
+                              closeForm();
+                            }}
+                            onCancel={closeForm}
+                          />
+
+                        ) : activeForm === 'assignment' && activeModuleId === module._id ? (
+                          <div className="bg-white rounded-2xl p-6 border border-amber-200 shadow-lg shadow-amber-500/5 mt-5 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-400"></div>
+                            <div className="flex justify-between items-center mb-6 pt-1">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600"><ClipboardList size={20} /></div>
+                                <div>
+                                  <h4 className="text-lg font-bold text-slate-800 tracking-tight">Add Assignment</h4>
+                                  <p className="text-xs text-slate-500 font-medium">Create a task for students to complete and submit</p>
+                                </div>
+                              </div>
+                              <button onClick={closeForm} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400"><X size={20} /></button>
+                            </div>
+                            <form onSubmit={handleAssignmentSubmit} className="space-y-5">
+                              <div>
+                                <Label>Assignment Title *</Label>
+                                <Input required placeholder="e.g. Build a Functional React Component" value={newAssignmentData.title} onChange={e => setNewAssignmentData({ ...newAssignmentData, title: e.target.value })} className="focus:ring-amber-500/20 focus:border-amber-500" />
+                              </div>
+                              <div>
+                                <Label>Total Marks (Optional)</Label>
+                                <Input type="number" placeholder="e.g. 100" value={newAssignmentData.totalMarks} onChange={e => setNewAssignmentData({ ...newAssignmentData, totalMarks: e.target.value })} className="focus:ring-amber-500/20 focus:border-amber-500 max-w-xs" />
+                              </div>
+                              <div>
+                                <Label>Instructions</Label>
+                                <textarea rows="4" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium text-slate-700 placeholder:text-slate-400 text-sm" placeholder="Provide detailed instructions for the task..." value={newAssignmentData.instructions} onChange={e => setNewAssignmentData({ ...newAssignmentData, instructions: e.target.value })}></textarea>
+                              </div>
+                              <div>
+                                <Label>Question Paper / Assets (.pdf)</Label>
+                                <input type="file" accept=".pdf" onChange={e => setNewAssignmentData({ ...newAssignmentData, questionPdf: e.target.files[0] })} className="w-full text-sm text-slate-600 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-amber-50 file:text-amber-700 file:font-semibold hover:file:bg-amber-100 transition-all cursor-pointer bg-slate-50 border border-slate-200 rounded-xl p-1.5" />
+                              </div>
+                              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                                <button type="button" onClick={closeForm} className="px-6 py-2.5 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
+                                <button type="submit" disabled={isSavingAssignment || !newAssignmentData.title.trim()} className="px-8 py-2.5 bg-amber-500 text-white font-semibold rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:hover:scale-100">
+                                  {isSavingAssignment ? <><Loader2 size={18} className="animate-spin" /> Saving...</> : <><Save size={18} /> Save Assignment</>}
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+
+                        ) : (
+                          /* 3-Button Premium Action Strip */
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                            <button
+                              onClick={() => openForm('lesson', module._id)}
+                              className="py-4 bg-white border border-slate-200 rounded-xl text-slate-600 font-semibold text-sm hover:border-blue-300 hover:shadow-md hover:shadow-blue-500/5 transition-all flex items-center justify-center gap-3 group"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors"><Video size={16} /></div>
+                              Add Lesson
+                            </button>
+                            <button
+                              onClick={() => openForm('quiz', module._id)}
+                              className="py-4 bg-white border border-slate-200 rounded-xl text-slate-600 font-semibold text-sm hover:border-indigo-300 hover:shadow-md hover:shadow-indigo-500/5 transition-all flex items-center justify-center gap-3 group"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors"><HelpCircle size={16} /></div>
+                              Add Quiz
+                            </button>
+                            <button
+                              onClick={() => openForm('assignment', module._id)}
+                              className="py-4 bg-white border border-slate-200 rounded-xl text-slate-600 font-semibold text-sm hover:border-amber-300 hover:shadow-md hover:shadow-amber-500/5 transition-all flex items-center justify-center gap-3 group"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-colors"><ClipboardList size={16} /></div>
+                              Add Assignment
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Add Module Container */}
+            <div className="mt-8">
+              {isAddingModule ? (
+                <div className="bg-white rounded-2xl border border-blue-200 p-8 shadow-xl shadow-blue-500/10 animate-in zoom-in-95 duration-200">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><BookOpen size={24} /></div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-800 tracking-tight">New Module</h3>
+                      <p className="text-sm text-slate-500 font-medium">Create a new section for your course</p>
+                    </div>
+                  </div>
+                  <form onSubmit={handleAddModule}>
+                    <Input autoFocus placeholder="e.g. Chapter 1: Getting Started" value={newModuleTitle} onChange={e => setNewModuleTitle(e.target.value)} className="text-lg font-bold mb-6 py-4 px-5" />
+                    <div className="flex justify-end gap-3">
+                      <button type="button" onClick={() => setIsAddingModule(false)} className="px-6 py-3 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
+                      <button type="submit" disabled={isSavingModule || !newModuleTitle.trim()} className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:hover:scale-100">
+                        {isSavingModule ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                        Create Module
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsAddingModule(true)}
+                  className="w-full py-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-500 font-semibold hover:border-slate-400 hover:text-slate-700 hover:bg-slate-100/50 transition-all flex items-center justify-center gap-3 group"
+                >
+                  <PlusCircle size={24} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
+                  Add New Module
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
