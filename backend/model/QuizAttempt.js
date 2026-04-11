@@ -66,14 +66,12 @@ const quizAttemptSchema = new mongoose.Schema({
     type: Date
   },
   timeTaken: {
-    type: Number //Duration in seconds
+    type: Number
   }
 }, { timestamps: true });
 
-// Strictly enforce one attempt per student per quiz
 quizAttemptSchema.index({ studentId: 1, quizId: 1 }, { unique: true });
 
-// For admin dashboards
 quizAttemptSchema.index({ courseId: 1 });
 
 module.exports = mongoose.model('QuizAttempt', quizAttemptSchema);

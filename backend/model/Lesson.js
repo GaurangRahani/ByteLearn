@@ -6,12 +6,11 @@ const lessonSchema = new mongoose.Schema({
   lessonType: { type: String, enum: ['video', 'article'], default: 'video' },
   videoUrl: { type: String, default: null },
   content: { type: String, default: "" }, 
-  attachmentUrl: { type: String, default: null }, // Used as visual aid image for articles
+  attachmentUrl: { type: String, default: null },
   duration: { type: Number, default: 0 },
   order: { type: Number, required: true },
 }, { timestamps: true });
 
-// Index for rapid sequential sorting across the unified timeline
 lessonSchema.index({ moduleId: 1, order: 1 });
 
 module.exports = mongoose.model("Lesson", lessonSchema);

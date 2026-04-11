@@ -430,6 +430,51 @@ const getSignedDownloadUrl = async (req, res) => {
     }
 };
 
+const markLessonComplete = async (req, res) => {
+    try {
+        const studentId = req.user._id;
+        const courseId = req.params.courseId;
+        const { lessonId } = req.body;
+
+        // 1. Find the Enrollment document
+        const enrollment = await Enrollment.findOne({ studentId, courseId });
+        if (!enrollment) {
+            return res.status(404).json({ success: false, message: "Enrollment not found" });
+        }
+
+        // 2. Use $addToSet to push lessonId into completedLessons
+        await Enrollment.updateOne(
+            { _id: enrollment._id },
+            { $addToSet: { completedLessons: lessonId } }
+        );
+
+        // 3. Recalculate progressPercentage
+        const updatedEnrollment = await Enrollment.findById(enrollment._id);
+        const course = await Course.findById(courseId).populate({
+            path: 'modules',
+            populate: ['lessons', 'quizzes', 'assignments']
+        });
+
+        if (course) {
+            let totalItems = 0;
+            course.modules.forEach(m => {
+                totalItems += (m.lessons?.length || 0) + (m.quizzes?.length || 0) + (m.assignments?.length || 0);
+            });
+
+            const completedCount = updatedEnrollment.completedLessons.length + 
+                                   updatedEnrollment.completedQuizzes.length + 
+                                   updatedEnrollment.completedAssignments.length;
+            
+            updatedEnrollment.progressPercentage = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
+            await updatedEnrollment.save();
+        }
+
+        res.status(200).json({ success: true, progress: updatedEnrollment });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     createCourse,
     getEducatorCourses,
@@ -441,4 +486,5 @@ module.exports = {
     getAuthorizedCourseContent,
     getEducatorDashboardStats,
     getSignedDownloadUrl,
+    markLessonComplete,
 };
