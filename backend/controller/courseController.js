@@ -198,7 +198,7 @@ const getCourseById = async (req, res) => {
                 if (module.lessons) {
                     module.lessons.forEach(lesson => {
                         delete lesson.videoUrl;
-                        delete lesson.attachmentUrl;
+                        delete lesson.notesUrl;
                         delete lesson.content;
                     });
                 }

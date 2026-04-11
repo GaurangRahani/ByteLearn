@@ -61,19 +61,21 @@ const addLesson = async (req, res) => {
         }
 
         let videoUrl = null;
-        let attachmentUrl = null;
+        let notesUrl = null;
 
-        if (req.body.lessonType === 'video' && req.files?.video?.[0]) {
-            const uploadedVideo = await uploadOnCloudinary(req.files.video[0].path);
-            if (!uploadedVideo) return res.status(500).json({ message: 'Error uploading video to Cloudinary' });
-            videoUrl = uploadedVideo.secure_url;
-            if (uploadedVideo.duration) duration = Math.round(uploadedVideo.duration);
+        if (req.body.lessonType === 'video') {
+            if (req.files?.video?.[0]) {
+                const uploadedVideo = await uploadOnCloudinary(req.files.video[0].path);
+                if (!uploadedVideo) return res.status(500).json({ message: 'Error uploading video to Cloudinary' });
+                videoUrl = uploadedVideo.secure_url;
+                if (uploadedVideo.duration) duration = Math.round(uploadedVideo.duration);
+            }
         }
 
-        if (req.body.lessonType === 'article' && req.files?.attachment?.[0]) {
-            const uploadedAttachment = await uploadOnCloudinary(req.files.attachment[0].path);
-            if (!uploadedAttachment) return res.status(500).json({ message: 'Error uploading image to Cloudinary' });
-            attachmentUrl = uploadedAttachment.secure_url;
+        if (req.files?.notes?.[0]) {
+            const uploadedNotes = await uploadOnCloudinary(req.files.notes[0].path);
+            if (!uploadedNotes) return res.status(500).json({ message: 'Error uploading notes to Cloudinary' });
+            notesUrl = uploadedNotes.secure_url;
         }
 
         const lesson = await Lesson.create({
@@ -81,7 +83,7 @@ const addLesson = async (req, res) => {
             title,
             lessonType: req.body.lessonType || 'video',
             videoUrl,
-            attachmentUrl,
+            notesUrl,
             content,
             order,
             duration,
@@ -139,10 +141,10 @@ const updateLesson = async (req, res) => {
             }
         }
 
-        if (req.files?.attachment?.[0]) {
-            const uploadedAttachment = await uploadOnCloudinary(req.files.attachment[0].path);
-            if (!uploadedAttachment) return res.status(500).json({ message: 'Error uploading new attachment' });
-            allowedUpdates.attachmentUrl = uploadedAttachment.secure_url;
+        if (req.files?.notes?.[0]) {
+            const uploadedNotes = await uploadOnCloudinary(req.files.notes[0].path);
+            if (!uploadedNotes) return res.status(500).json({ message: 'Error uploading notes' });
+            allowedUpdates.notesUrl = uploadedNotes.secure_url;
         }
 
         const updatedLesson = await Lesson.findByIdAndUpdate(

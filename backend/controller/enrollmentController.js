@@ -69,7 +69,36 @@ const getMyCourses = async (req, res) => {
     }
 };
 
+const getEducatorRoster = async (req, res) => {
+    try {
+        const educatorId = req.user._id;
+
+        // Find courses owned by this educator
+        const educatorCourses = await Course.find({ educatorId }).select('_id');
+        const courseIds = educatorCourses.map(c => c._id);
+
+        if (courseIds.length === 0) {
+            return res.status(200).json({ success: true, count: 0, data: [] });
+        }
+
+        const enrollments = await Enrollment.find({ courseId: { $in: courseIds } })
+            .populate('studentId', 'name email profilePicture')
+            .populate('courseId', 'title')
+            .sort({ enrolledAt: -1 }) // Newest enrollments first
+            .lean();
+
+        res.status(200).json({
+            success: true,
+            count: enrollments.length,
+            data: enrollments
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     enrollInCourse,
-    getMyCourses
+    getMyCourses,
+    getEducatorRoster
 };
