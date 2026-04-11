@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Book, CheckCircle, Award, Clock, ArrowRight, FileText } from 'lucide-react';
 import DashboardHeader from '../../components/layout/DashboardHeader';
@@ -180,9 +180,9 @@ const StudentDashboard = () => {
           >
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-[19px] font-bold text-slate-900">Recent Quizzes</h2>
-              <button className="text-blue-600 text-sm font-bold flex items-center gap-1.5 hover:gap-2.5 transition-all">
+              <Link to="/quizzes" className="text-blue-600 text-sm font-bold flex items-center gap-1.5 hover:gap-2.5 transition-all">
                 View History <ArrowRight size={16} />
-              </button>
+              </Link>
             </div>
             
             <div className="space-y-4">
@@ -222,9 +222,9 @@ const StudentDashboard = () => {
           >
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-[19px] font-bold text-slate-900">Assignments Status</h2>
-              <button className="text-blue-600 text-sm font-bold flex items-center gap-1.5 hover:gap-2.5 transition-all">
+              <Link to="/assignments" className="text-blue-600 text-sm font-bold flex items-center gap-1.5 hover:gap-2.5 transition-all">
                 Check Portal <ArrowRight size={16} />
-              </button>
+              </Link>
             </div>
 
             <div className="space-y-4">

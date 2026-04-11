@@ -21,6 +21,7 @@ import UpdateProfile from './pages/student/UpdateProfile';
 import ActiveQuiz from './pages/student/ActiveQuiz';
 import QuizResultPage from './pages/student/QuizResultPage';
 import Assignments from './pages/student/Assignments';
+import Quizzes from './pages/student/Quizzes';
 
 
 
@@ -45,7 +46,8 @@ const AppContent = () => {
     location.pathname.startsWith('/update-profile') ||
     location.pathname.startsWith('/quiz/') ||
     location.pathname.startsWith('/quiz-result') ||
-    location.pathname.startsWith('/assignments');
+    location.pathname.startsWith('/assignments') ||
+    location.pathname.startsWith('/quizzes');
 
 
 
@@ -85,6 +87,7 @@ const AppContent = () => {
           <Route path="/quiz/:id" element={<ActiveQuiz />} />
           <Route path="/quiz-result" element={<QuizResultPage />} />
           <Route path="/assignments" element={<Assignments />} />
+          <Route path="/quizzes" element={<Quizzes />} />
 
 
           <Route path="/login" element={<Login />} />
