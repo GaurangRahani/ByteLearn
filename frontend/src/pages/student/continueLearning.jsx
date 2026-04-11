@@ -12,15 +12,44 @@ import {
   Upload,
   Clock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Lock
 } from 'lucide-react';
 import AssignmentViewer from '../../components/common/AssignmentViewer';
 import CustomVideoPlayer from '../../components/common/CustomVideoPlayer';
+import QuizViewer from '../../components/common/QuizViewer';
 
 
 const isImage = (url) => {
   if (!url) return false;
   return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+};
+
+const enrichCourseWithLocks = (modules, completions) => {
+  let globalLockActive = false; 
+
+  return modules.map((mod) => {
+    const sortedItems = [...mod.items].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    const enrichedItems = sortedItems.map((item) => {
+      const isUnlocked = !globalLockActive;
+      
+      const isCompleted = !!completions[item.id];
+      
+
+      if (!isCompleted) {
+        globalLockActive = true;
+      }
+      
+      return { ...item, isUnlocked, isCompleted };
+    });
+
+    return { 
+      ...mod, 
+      items: enrichedItems, 
+      isUnlocked: enrichedItems.length > 0 ? enrichedItems[0].isUnlocked : !globalLockActive 
+    };
+  });
 };
 
 const ContinueLearning = () => {
@@ -89,6 +118,10 @@ const ContinueLearning = () => {
             }
         }
         setCompletions(newCompletions);
+
+        // Apply Unlocking Algorithm
+        courseData.modules = enrichCourseWithLocks(formattedModules, newCompletions);
+        setCourse(courseData);
 
         let firstItemId = null;
         for (const mod of formattedModules) {
@@ -159,11 +192,46 @@ const ContinueLearning = () => {
   }, [completions, course]);
 
   const toggleCompletion = async (itemId) => {
-    const newStatus = !completions[itemId];
-    setCompletions(prev => ({
-      ...prev,
-      [itemId]: newStatus
-    }));
+    try {
+      const { currentItem } = getActiveItemDetails();
+      if (!currentItem) return;
+
+      const token = localStorage.getItem('token');
+      
+      // If it's a lesson (text/video), we mark it complete on the backend
+      if (currentItem.type === 'text' || currentItem.type === 'video') {
+        const res = await axios.patch(`/api/courses/learn/${id}/complete-lesson`, 
+          { lessonId: itemId },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (res.data.success) {
+           const progressData = res.data.progress;
+           const newCompletions = {};
+           if (progressData.completedLessons) progressData.completedLessons.forEach(cId => newCompletions[cId] = true);
+           if (progressData.completedAssignments) progressData.completedAssignments.forEach(cId => newCompletions[cId] = true);
+           if (progressData.completedQuizzes) progressData.completedQuizzes.forEach(cId => newCompletions[cId] = true);
+           
+           setCompletions(newCompletions);
+           setCourse(prev => ({
+             ...prev,
+             modules: enrichCourseWithLocks(prev.modules, newCompletions)
+           }));
+        }
+      } else {
+        // For Quizzes and Assignments, the respective components handle backend sync
+        // and tell us to update our local state via onComplete
+        const newCompletions = { ...completions, [itemId]: true };
+        setCompletions(newCompletions);
+        setCourse(prev => ({
+          ...prev,
+          modules: enrichCourseWithLocks(prev.modules, newCompletions)
+        }));
+      }
+    } catch (err) {
+      console.error("Error updating completion status:", err);
+      alert("Failed to update progress. Please try again.");
+    }
   };
 
   const getActiveItemDetails = () => {
@@ -309,29 +377,43 @@ const ContinueLearning = () => {
                       {mod.items.map((item) => {
                         const isActive = activeItemId === item.id;
                         const isCompleted = completions[item.id];
+                        const isUnlocked = item.isUnlocked;
 
                         return (
                           <button
                             key={item.id}
-                            onClick={() => setActiveItemId(item.id)}
+                            onClick={() => isUnlocked && setActiveItemId(item.id)}
+                            disabled={!isUnlocked}
                             className={`w-full text-left flex items-center justify-between px-3 py-3 rounded-xl transition-colors ${isActive
                                 ? 'bg-blue-600 text-white shadow-md'
-                                : 'hover:bg-slate-50 text-slate-600'
-                              }`}
+                                : isUnlocked 
+                                  ? 'hover:bg-slate-50 text-slate-700' 
+                                  : 'opacity-50 cursor-not-allowed text-slate-400 bg-slate-50/50'
+                              } ${!isUnlocked ? 'pointer-events-none' : ''}`}
                           >
                             <div className="flex items-center gap-3 pr-2">
                               <div className="flex-shrink-0">
-                                {getIconForType(item.type, isCompleted, isActive)}
+                                {!isUnlocked ? (
+                                  <Lock size={16} className="text-slate-400" />
+                                ) : (
+                                  getIconForType(item.type, isCompleted, isActive)
+                                )}
                               </div>
-                              <span className={`text-[14.5px] font-medium truncate ${isActive ? 'text-white' : 'text-slate-700'}`}>
+                              <span className={`text-[14.5px] font-medium truncate ${isActive ? 'text-white' : isUnlocked ? 'text-slate-700' : 'text-slate-400'}`}>
                                 {item.title}
                               </span>
                             </div>
 
-                            {(item.type === 'text' || item.type === 'video') && item.duration && (
+                            {isUnlocked && (item.type === 'text' || item.type === 'video') && item.duration && (
                               <span className={`text-[12px] font-medium flex-shrink-0 ${isActive ? 'text-blue-100' : 'text-slate-400'}`}>
                                 {item.duration}
                               </span>
+                            )}
+                            
+                            {!isUnlocked && (
+                               <div className="flex-shrink-0">
+                                  <div className="h-1.5 w-1.5 rounded-full bg-slate-200" />
+                               </div>
                             )}
                           </button>
                         );
@@ -419,97 +501,10 @@ const ContinueLearning = () => {
               )}
 
               {currentItem?.type === 'quiz' && (
-                <div className="flex flex-col items-center justify-center p-12 h-full min-h-[500px] text-center bg-gradient-to-b from-white to-slate-50">
-                  <div className="h-24 w-24 bg-purple-100 rounded-full flex items-center justify-center mb-6">
-                    <HelpCircle size={48} className="text-purple-600" />
-                  </div>
-                  <h2 className="text-[32px] font-bold text-slate-800 tracking-tight leading-tight mb-3">
-                    {currentItem.title}
-                  </h2>
-                  <p className="text-slate-500 text-[16px] max-w-md mb-8">
-                    This quiz contains multiple-choice questions to test your knowledge on this module.
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-10">
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Time Limit</span>
-                      <div className="flex items-center gap-2 text-lg font-bold text-slate-800">
-                        <Clock size={18} className="text-purple-500" />
-                        {currentItem.duration || '15'} mins
-                      </div>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Passing Score</span>
-                      <div className="flex items-center gap-2 text-lg font-bold text-slate-800">
-                        <CheckCircle size={18} className="text-emerald-500" />
-                        {currentItem.passingScore || '60'}%
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Quiz History Section */}
-                  {quizHistory.length > 0 && (
-                    <div className="w-full max-w-2xl mb-10 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                        <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Attempt History</h3>
-                        <span className="text-xs font-medium text-slate-500 bg-slate-200 px-2 py-1 rounded-full">{quizHistory.length} Attempts</span>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                          <thead>
-                            <tr className="text-slate-400 border-b border-slate-50">
-                              <th className="px-6 py-3 font-semibold">#</th>
-                              <th className="px-6 py-3 font-semibold">Date</th>
-                              <th className="px-6 py-3 font-semibold">Score</th>
-                              <th className="px-6 py-3 font-semibold">Time</th>
-                              <th className="px-6 py-3 font-semibold text-right">Result</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-50">
-                            {quizHistory.map((attempt) => (
-                              <tr key={attempt._id} className="hover:bg-slate-50/80 transition-colors">
-                                <td className="px-6 py-4 font-bold text-slate-700">{attempt.attemptNumber}</td>
-                                <td className="px-6 py-4 text-slate-600">
-                                  {new Date(attempt.submittedAt).toLocaleDateString()}
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex flex-col">
-                                    <span className="font-bold text-slate-800">{attempt.score}/{attempt.totalMarksPossible}</span>
-                                    <span className="text-[10px] text-slate-400">{Math.round((attempt.score / attempt.totalMarksPossible) * 100)}%</span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-slate-600">
-                                  {Math.floor(attempt.timeTaken / 60)}m {attempt.timeTaken % 60}s
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                                    attempt.passed 
-                                      ? 'bg-emerald-100 text-emerald-700' 
-                                      : 'bg-rose-100 text-rose-700'
-                                  }`}>
-                                    {attempt.passed ? 'PASSED' : 'FAILED'}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => navigate(`/quiz/${currentItem.id}`, { state: { courseId: course?._id } })}
-                    className="px-12 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all transform hover:scale-105 active:scale-95 uppercase tracking-wide flex items-center gap-3"
-                  >
-                    {quizHistory.length > 0 ? 'Retake Quiz' : 'Start Quiz'} <ChevronRight size={20} />
-                  </button>
-
-
-                  <p className="mt-6 text-xs text-slate-400 font-medium font-sans">
-                    Note: Progress is saved automatically. You must achieve the passing score to complete this unit.
-                  </p>
-                </div>
+                <QuizViewer 
+                  quizId={currentItem.id} 
+                  onComplete={() => toggleCompletion(currentItem.id)}
+                />
               )}
 
 
