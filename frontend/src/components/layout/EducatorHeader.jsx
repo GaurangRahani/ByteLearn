@@ -22,10 +22,8 @@ const EducatorHeader = ({ educatorName, activePage }) => {
 
   const navLinks = [
     { name: 'Dashboard', path: '/educator-dashboard', icon: <LayoutDashboard size={16} /> },
-    { name: 'Create Course', path: '/course/create', icon: <Plus size={16} /> },
     { name: 'My Courses', path: '/educator/courses', icon: <BookOpen size={16} /> },
-    { name: 'Assignments', path: '/educator/assignments', icon: <FileText size={16} /> },
-    { name: 'Quizzes', path: '/educator/quizzes', icon: <HelpCircle size={16} /> },
+    { name: 'Student Management', path: '/educator/student-management', icon: <Users size={16} /> },
     { name: 'Queries', path: '/educator/queries', icon: <MessageSquare size={16} /> },
   ];
 
