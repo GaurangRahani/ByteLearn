@@ -149,11 +149,11 @@ const getAllCourses = async (req, res) => {
             query.title = { $regex: search, $options: "i" };
         }
         if (category) {
-            query.category = category;
+            query.category = { $regex: new RegExp(`^${category}$`, 'i') }; 
         }
 
         const courses = await Course.find(query)
-            .select("title thumbnail price isPaid level rating totalRatings description educatorId")
+            .select("title thumbnail price isPaid level rating totalRatings description educatorId category")
             .populate("educatorId", "name")
             .sort({ createdAt: -1 });
 

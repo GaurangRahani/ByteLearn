@@ -27,6 +27,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const submissionRoutes = require('./routes/submissionRoutes');
 const quizAttemptRoutes = require('./routes/quizAttemptRoutes');
 const quizRoutes = require('./routes/quizRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 
 
@@ -37,6 +38,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/quiz-attempts', quizAttemptRoutes);
 app.use('/api/quizzes', quizRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 
 

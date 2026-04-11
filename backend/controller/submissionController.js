@@ -213,4 +213,18 @@ const getSubmissionById = async (req, res) => {
     }
 };
 
-module.exports = { submitAssignment, getEducatorSubmissions, gradeSubmission, getSubmissionById };
+const getMySubmissions = async (req, res) => {
+    try {
+        const studentId = req.user._id;
+        const submissions = await Submission.find({ studentId })
+            .populate('assignmentId', 'title totalMarks dueDate')
+            .populate('courseId', 'title thumbnail')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json(submissions);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { submitAssignment, getEducatorSubmissions, gradeSubmission, getSubmissionById, getMySubmissions };
