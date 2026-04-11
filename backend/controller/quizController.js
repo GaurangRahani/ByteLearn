@@ -3,6 +3,8 @@ const Question = require('../model/Question');
 const Module = require('../model/Module');
 const Lesson = require('../model/Lesson');
 const Assignment = require('../model/Assignment');
+const QuizAttempt = require('../model/QuizAttempt');
+const Enrollment = require('../model/Enrollment');
 const mongoose = require('mongoose');
 
 const verifyModuleOwnership = async (moduleId, userId) => {
@@ -142,9 +144,94 @@ const getQuizById = async (req, res) => {
     }
 };
 
+const submitQuiz = async (req, res) => {
+    try {
+        const { quizId, courseId, answers } = req.body;
+        const studentId = req.user._id;
+
+        // 1. Validation & Attempt Check
+        const quiz = await Quiz.findById(quizId);
+        if (!quiz) {
+            return res.status(404).json({ message: "Quiz not found." });
+        }
+
+        const previousAttempts = await QuizAttempt.countDocuments({ studentId, quizId });
+
+        if (previousAttempts >= quiz.attemptsAllowed) {
+            return res.status(403).json({ message: "Maximum attempts reached for this quiz." });
+        }
+
+        // 2. Grading Logic
+        const questions = await Question.find({ quizId });
+        let score = 0;
+        let totalMaxMarks = 0;
+        const totalQuestions = questions.length;
+
+        const gradedAnswers = answers.map(answer => {
+            const question = questions.find(q => q._id.toString() === answer.questionId.toString());
+            const isCorrect = question ? question.correctAnswer === answer.selectedOption : false;
+            const marksEarned = isCorrect ? (question.marks || 0) : 0;
+            
+            if (isCorrect) score += marksEarned;
+            
+            return {
+                questionId: answer.questionId,
+                selectedOption: answer.selectedOption,
+                isCorrect,
+                marksEarned
+            };
+        });
+
+        questions.forEach(q => {
+            totalMaxMarks += (q.marks || 0);
+        });
+
+        const percentage = totalMaxMarks > 0 ? (score / totalMaxMarks) * 100 : 0;
+        const passed = percentage >= quiz.passingScore;
+
+        // 3. Save the Attempt
+        const quizAttempt = await QuizAttempt.create({
+            studentId,
+            quizId,
+            courseId,
+            attemptNumber: previousAttempts + 1,
+            answers: gradedAnswers,
+            score,
+            totalMarksPossible: totalMaxMarks,
+            totalQuestions,
+            percentage,
+            passingScoreSnap: quiz.passingScore,
+            passed,
+            submittedAt: new Date()
+        });
+
+        // 4. Progress Tracking Integration (Enrollment Model)
+        const enrollment = await Enrollment.findOne({ studentId, courseId });
+        if (enrollment) {
+            const alreadyCompleted = enrollment.completedQuizzes.some(id => id.toString() === quizId.toString());
+            if (passed && !alreadyCompleted) {
+                enrollment.completedQuizzes.push(quizId);
+                await enrollment.save();
+            }
+        }
+
+        // 5. Response
+        res.status(200).json({ 
+            success: true, 
+            message: "Quiz submitted successfully.", 
+            data: quizAttempt 
+        });
+
+    } catch (err) {
+        console.error("Submit Quiz Error:", err);
+        res.status(500).json({ message: err.message });
+    }
+};
+
 module.exports = {
     createQuizWithQuestions,
     getQuizzesByModule,
-    getQuizById
+    getQuizById,
+    submitQuiz
 };
 

@@ -22,7 +22,6 @@ const enrollmentSchema = new mongoose.Schema({
   completedAt: Date,
 }, { timestamps: true });
 
-//prevents duplicate enrollements
 enrollmentSchema.index({ studentId: 1, courseId: 1 }, { unique: true });
 
 module.exports = mongoose.model("Enrollment", enrollmentSchema);
