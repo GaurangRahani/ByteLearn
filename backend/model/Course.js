@@ -28,6 +28,16 @@ const courseSchema = new mongoose.Schema({
   totalLessons: Number,
   rating: { type: Number, default: 0 },
   totalRatings: { type: Number, default: 0 },
+  gradingConfiguration: {
+    quizWeight: { type: Number, default: 50 },
+    assignmentWeight: { type: Number, default: 50 },
+    minGradeToPass: { type: Number, default: 70 },
+    isCertificationEnabled: { type: Boolean, default: false },
+    gradingScale: [{
+      label: { type: String, required: true },
+      minScore: { type: Number, required: true }
+    }]
+  }
 }, { timestamps: true });
 
 courseSchema.virtual('modules', {

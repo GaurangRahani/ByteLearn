@@ -12,6 +12,41 @@ const cleanupTempFile = (file) => {
     }
 };
 
+const validateGradingConfig = (config) => {
+    if (!config) return null;
+    const quizWeight = Number(config.quizWeight || 0);
+    const assignmentWeight = Number(config.assignmentWeight || 0);
+    const minGradeToPass = Number(config.minGradeToPass || 0);
+    const isCertificationEnabled = !!config.isCertificationEnabled;
+    const gradingScale = config.gradingScale;
+
+    //The 100% Rule
+    if ((quizWeight + assignmentWeight) !== 100) {
+        return "Quiz Weight and Assignment Weight must sum up to exactly 100%.";
+    }
+
+
+    if (gradingScale && gradingScale.length > 0) {
+        for (let i = 0; i < gradingScale.length - 1; i++) {
+            if (Number(gradingScale[i].minScore) <= Number(gradingScale[i + 1].minScore)) {
+                return `Grading scale must be in descending order. "${gradingScale[i].label}" (${gradingScale[i].minScore}) cannot be less than or equal to "${gradingScale[i + 1].label}" (${gradingScale[i + 1].minScore}).`;
+            }
+        }
+
+
+        if (isCertificationEnabled) {
+            const coversThreshold = gradingScale.some(grade => Number(grade.minScore) <= minGradeToPass);
+            if (!coversThreshold) {
+                return `Certification is enabled, but no grade level in your scale covers the "Minimum Grade to Pass" (${minGradeToPass}%).`;
+            }
+        }
+    } else if (isCertificationEnabled) {
+        return "Certification is enabled, but no grading scale is defined.";
+    }
+
+    return null;
+};
+
 const createCourse = async (req, res) => {
     try {
         const { title, description, category, level, price, isPaid, language } = req.body;
@@ -191,6 +226,9 @@ const getCourseById = async (req, res) => {
 
 const updateCourse = async (req, res) => {
     try {
+        console.log(`[UpdateCourse] ID: ${req.params.id}`);
+        console.log(`[UpdateCourse] Body:`, JSON.stringify(req.body, null, 2));
+
         const course = await Course.findById(req.params.id);
 
         if (!course) {
@@ -212,7 +250,26 @@ const updateCourse = async (req, res) => {
             price: req.body.price,
             isPaid: req.body.isPaid,
             language: req.body.language,
+            gradingConfiguration: req.body.gradingConfiguration,
         };
+
+        if (allowedUpdates.gradingConfiguration) {
+            // Parse if it's coming as a string (if from multipart form)
+            if (typeof allowedUpdates.gradingConfiguration === 'string') {
+                try {
+                    allowedUpdates.gradingConfiguration = JSON.parse(allowedUpdates.gradingConfiguration);
+                } catch (e) {
+                    cleanupTempFile(req.file);
+                    return res.status(400).json({ success: false, message: 'Invalid gradingConfiguration format' });
+                }
+            }
+
+            const error = validateGradingConfig(allowedUpdates.gradingConfiguration);
+            if (error) {
+                cleanupTempFile(req.file);
+                return res.status(400).json({ success: false, message: error });
+            }
+        }
 
         Object.keys(allowedUpdates).forEach(
             (key) => allowedUpdates[key] === undefined && delete allowedUpdates[key]
@@ -282,6 +339,11 @@ const submitForReview = async (req, res) => {
             return res.status(400).json({ message: 'You cannot submit an empty course. Add at least one module first.' });
         }
 
+        const configError = validateGradingConfig(course.gradingConfiguration);
+        if (configError) {
+            return res.status(400).json({ message: `Invalid Grading Configuration: ${configError}` });
+        }
+
         course.status = 'pending';
         course.adminFeedback = undefined;
         await course.save();
@@ -341,7 +403,7 @@ const getSignedDownloadUrl = async (req, res) => {
         if (urlParts.length < 2) {
             return res.status(400).json({ success: false, message: "Invalid Cloudinary URL" });
         }
-        
+
         const afterUpload = decodeURIComponent(urlParts[1]);
 
         const versionMatch = afterUpload.match(/^v(\d+)\//);
@@ -354,13 +416,13 @@ const getSignedDownloadUrl = async (req, res) => {
             secure: true,
             analytics: false
         };
-        
+
         if (versionStr) {
             options.version = versionStr;
         }
 
         const downloadUrl = cloudinary.utils.url(withoutVersion, options);
-        
+
         return res.status(200).json({ success: true, downloadUrl });
     } catch (error) {
         console.error("Error securing download url: ", error);
