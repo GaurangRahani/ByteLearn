@@ -1,4 +1,5 @@
 const Submission = require('../model/Submission');
+const Enrollment = require('../model/Enrollment');
 const { uploadOnCloudinary } = require('../utils/cloudinary');
 const fs = require('fs');
 
@@ -34,7 +35,13 @@ const submitAssignment = async (req, res) => {
             fileUrl: uploadedFile.secure_url
         });
 
-        res.status(201).json({ success: true, data: submission });
+        const updatedEnrollment = await Enrollment.findOneAndUpdate(
+            { studentId: req.user._id, courseId: req.body.courseId },
+            { $addToSet: { completedAssignments: req.body.assignmentId } },
+            { new: true }
+        );
+
+        res.status(201).json({ success: true, data: submission, progress: updatedEnrollment });
 
     } catch (error) {
         if (req.file && fs.existsSync(req.file.path)) {

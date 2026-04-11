@@ -2,10 +2,11 @@ const Course = require('../model/Course');
 const Module = require('../model/Module');
 const Lesson = require('../model/Lesson');
 const Enrollment = require('../model/Enrollment');
+const Submission = require('../model/Submission');
+const QuizAttempt = require('../model/QuizAttempt');
 const { uploadOnCloudinary } = require('../utils/cloudinary');
 const fs = require('fs');
 
-//delete a temp file if it exists
 const cleanupTempFile = (file) => {
     if (file && fs.existsSync(file.path)) {
         fs.unlinkSync(file.path);
@@ -20,7 +21,6 @@ const validateGradingConfig = (config) => {
     const isCertificationEnabled = !!config.isCertificationEnabled;
     const gradingScale = config.gradingScale;
 
-    //The 100% Rule
     if ((quizWeight + assignmentWeight) !== 100) {
         return "Quiz Weight and Assignment Weight must sum up to exactly 100%.";
     }
@@ -382,7 +382,10 @@ const getAuthorizedCourseContent = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Course not found' });
         }
 
-        res.status(200).json({ success: true, data: { course, progress: enrollment } });
+        const submissions = await Submission.find({ studentId, courseId }).lean();
+        const quizAttempts = await QuizAttempt.find({ studentId, courseId }).lean();
+
+        res.status(200).json({ success: true, data: { course, progress: enrollment, submissions, quizAttempts } });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -436,19 +439,16 @@ const markLessonComplete = async (req, res) => {
         const courseId = req.params.courseId;
         const { lessonId } = req.body;
 
-        // 1. Find the Enrollment document
         const enrollment = await Enrollment.findOne({ studentId, courseId });
         if (!enrollment) {
             return res.status(404).json({ success: false, message: "Enrollment not found" });
         }
 
-        // 2. Use $addToSet to push lessonId into completedLessons
         await Enrollment.updateOne(
             { _id: enrollment._id },
             { $addToSet: { completedLessons: lessonId } }
         );
 
-        // 3. Recalculate progressPercentage
         const updatedEnrollment = await Enrollment.findById(enrollment._id);
         const course = await Course.findById(courseId).populate({
             path: 'modules',

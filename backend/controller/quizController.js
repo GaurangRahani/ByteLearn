@@ -145,152 +145,73 @@ const getQuizById = async (req, res) => {
     }
 };
 
-const submitQuiz = async (req, res) => {
-    try {
-        const { quizId, courseId, answers } = req.body;
-        const studentId = req.user._id;
-
-        // 1. Validation & Attempt Check
-        const quiz = await Quiz.findById(quizId);
-        if (!quiz) {
-            return res.status(404).json({ message: "Quiz not found." });
-        }
-
-        const previousAttempts = await QuizAttempt.countDocuments({ studentId, quizId });
-
-        if (previousAttempts >= quiz.attemptsAllowed) {
-            return res.status(403).json({ message: "Maximum attempts reached for this quiz." });
-        }
-
-        // 2. Grading Logic
-        const questions = await Question.find({ quizId });
-        let score = 0;
-        let totalMaxMarks = 0;
-        const totalQuestions = questions.length;
-
-        const gradedAnswers = answers.map(answer => {
-            const question = questions.find(q => q._id.toString() === answer.questionId.toString());
-            const isCorrect = question ? question.correctAnswer === answer.selectedOption : false;
-            const marksEarned = isCorrect ? (question.marks || 0) : 0;
-            
-            if (isCorrect) score += marksEarned;
-            
-            return {
-                questionId: answer.questionId,
-                selectedOption: answer.selectedOption,
-                isCorrect,
-                marksEarned
-            };
-        });
-
-        questions.forEach(q => {
-            totalMaxMarks += (q.marks || 0);
-        });
-
-        const percentage = totalMaxMarks > 0 ? (score / totalMaxMarks) * 100 : 0;
-        const passed = percentage >= quiz.passingScore;
-
-        // 3. Save the Attempt
-        const quizAttempt = await QuizAttempt.create({
-            studentId,
-            quizId,
-            courseId,
-            attemptNumber: previousAttempts + 1,
-            answers: gradedAnswers,
-            score,
-            totalMarksPossible: totalMaxMarks,
-            totalQuestions,
-            percentage,
-            passingScoreSnap: quiz.passingScore,
-            passed,
-            submittedAt: new Date()
-        });
-
-        // 4. Progress Tracking Integration (Enrollment Model)
-        const enrollment = await Enrollment.findOne({ studentId, courseId });
-        if (enrollment) {
-            const alreadyCompleted = enrollment.completedQuizzes.some(id => id.toString() === quizId.toString());
-            if (passed && !alreadyCompleted) {
-                enrollment.completedQuizzes.push(quizId);
-                await enrollment.save();
-            }
-        }
-
-        // 5. Response
-        res.status(200).json({ 
-            success: true, 
-            message: "Quiz submitted successfully.", 
-            data: quizAttempt 
-        });
-
-    } catch (err) {
-        console.error("Submit Quiz Error:", err);
-        res.status(500).json({ message: err.message });
-    }
-};
-
-const startOrResumeQuiz = async (req, res) => {
+const initializeOrResumeQuiz = async (req, res) => {
     try {
         const { quizId } = req.params;
         const studentId = req.user._id;
 
-        let attempt = await QuizAttempt.findOne({ studentId, quizId }).populate('answers.questionId');
-
+        let attempt = await QuizAttempt.findOne({ studentId, quizId });
+        
         if (attempt) {
             return res.status(200).json({ success: true, data: attempt });
         }
 
-        const quiz = await Quiz.findById(quizId).populate('moduleId');
+        // If no attempt, initialize it
+        const quiz = await Quiz.findById(quizId);
         if (!quiz) return res.status(404).json({ message: "Quiz not found" });
 
         const questions = await Question.find({ quizId });
-        if (!questions.length) return res.status(400).json({ message: "No questions found for this quiz" });
-
-        const shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
-
-        const initialAnswers = shuffledQuestions.map(q => ({
+        const answers = questions.map(q => ({
             questionId: q._id,
-            selectedOption: null,
-            marksEarned: 0
+            selectedOption: null
         }));
 
-        const totalMarksPossible = questions.reduce((sum, q) => sum + (q.marks || 0), 0);
-
-        attempt = await QuizAttempt.create({
-            studentId,
-            quizId,
-            courseId: quiz.moduleId.courseId,
-            status: 'in-progress',
-            answers: initialAnswers,
-            totalMarksPossible,
-            totalQuestions: questions.length,
-            startedAt: Date.now()
+        let totalMarksPossible = 0;
+        questions.forEach(q => {
+            totalMarksPossible += (q.marks || 0);
         });
 
-        const populatedAttempt = await QuizAttempt.findById(attempt._id).populate('answers.questionId');
+        try {
+            attempt = await QuizAttempt.create({
+                studentId,
+                quizId,
+                courseId: req.query.courseId,
+                answers,
+                totalQuestions: questions.length,
+                totalMarksPossible,
+                status: 'in-progress'
+            });
+        } catch (error) {
+            if (error.code === 11000) {
+                attempt = await QuizAttempt.findOne({ studentId, quizId });
+            } else {
+                throw error;
+            }
+        }
 
-        res.status(201).json({ success: true, data: populatedAttempt });
+        res.status(200).json({ success: true, data: attempt });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
-const saveAnswerProgress = async (req, res) => {
+const autoSaveAnswer = async (req, res) => {
     try {
         const { quizId } = req.params;
         const { questionId, selectedOption } = req.body;
         const studentId = req.user._id;
 
-        const attempt = await QuizAttempt.findOne({ studentId, quizId, status: 'in-progress' });
-        if (!attempt) return res.status(404).json({ message: "In-progress attempt not found" });
+        const updatedAttempt = await QuizAttempt.findOneAndUpdate(
+            { studentId, quizId, "answers.questionId": questionId, status: 'in-progress' },
+            { $set: { "answers.$.selectedOption": selectedOption } },
+            { new: true }
+        );
 
-        const answerIndex = attempt.answers.findIndex(a => a.questionId.toString() === questionId);
-        if (answerIndex === -1) return res.status(400).json({ message: "Question not found in this attempt" });
+        if (!updatedAttempt) {
+            return res.status(404).json({ message: "Active quiz attempt not found or already submitted." });
+        }
 
-        attempt.answers[answerIndex].selectedOption = selectedOption;
-        await attempt.save();
-
-        res.status(200).json({ success: true, message: "Progress saved" });
+        res.status(200).json({ success: true, data: updatedAttempt });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -301,35 +222,49 @@ const submitFinalQuiz = async (req, res) => {
         const { quizId } = req.params;
         const studentId = req.user._id;
 
+        // 1. Find the in-progress attempt
         const attempt = await QuizAttempt.findOne({ studentId, quizId, status: 'in-progress' });
-        if (!attempt) return res.status(404).json({ message: "In-progress attempt not found" });
+        if (!attempt) {
+            return res.status(404).json({ message: "In-progress quiz attempt not found." });
+        }
+
+        const quiz = await Quiz.findById(quizId);
+        if (!quiz) return res.status(404).json({ message: "Quiz not found" });
 
         const questions = await Question.find({ quizId });
-        let totalScore = 0;
+        let score = 0;
 
-        attempt.answers.forEach(answer => {
+        // 2. Grade the answers
+        const updatedAnswers = attempt.answers.map(answer => {
             const question = questions.find(q => q._id.toString() === answer.questionId.toString());
-            if (question) {
-                const isCorrect = question.correctAnswer === answer.selectedOption;
-                answer.isCorrect = isCorrect;
-                answer.marksEarned = isCorrect ? (question.marks || 0) : 0;
-                totalScore += answer.marksEarned;
-            }
+            if (!question) return { ...answer, isCorrect: false, marksEarned: 0 };
+            
+            const isCorrect = question.correctAnswer === answer.selectedOption;
+            const marksEarned = isCorrect ? (question.marks || 0) : 0;
+            score += marksEarned;
+            
+            return {
+                ...answer.toObject(),
+                isCorrect,
+                marksEarned
+            };
         });
 
-        attempt.score = totalScore;
+        // 3. Update the document
+        attempt.answers = updatedAnswers;
+        attempt.score = score;
         attempt.status = 'completed';
         attempt.submittedAt = Date.now();
         await attempt.save();
 
-        const enrollment = await Enrollment.findOne({ studentId, courseId: attempt.courseId });
-        if (enrollment) {
-            await Enrollment.updateOne(
-                { _id: enrollment._id },
-                { $addToSet: { completedQuizzes: quizId } }
-            );
+        // 4. Sync with Enrollment
+        const updatedEnrollment = await Enrollment.findOneAndUpdate(
+            { studentId, courseId: attempt.courseId },
+            { $addToSet: { completedQuizzes: quizId } },
+            { new: true }
+        );
 
-            const updatedEnrollment = await Enrollment.findById(enrollment._id);
+        if (updatedEnrollment) {
             const course = await Course.findById(attempt.courseId).populate({
                 path: 'modules',
                 populate: ['lessons', 'quizzes', 'assignments']
@@ -350,8 +285,12 @@ const submitFinalQuiz = async (req, res) => {
             }
         }
 
-        const finalizedAttempt = await QuizAttempt.findById(attempt._id).populate('answers.questionId');
-        res.status(200).json({ success: true, data: finalizedAttempt });
+        res.status(200).json({ 
+            success: true, 
+            data: attempt,
+            progress: updatedEnrollment 
+        });
+
     } catch (err) {
         console.error("Submit Quiz Error:", err);
         res.status(500).json({ message: err.message });
@@ -362,9 +301,8 @@ module.exports = {
     createQuizWithQuestions,
     getQuizzesByModule,
     getQuizById,
-    submitQuiz,
-    startOrResumeQuiz,
-    saveAnswerProgress,
+    initializeOrResumeQuiz,
+    autoSaveAnswer,
     submitFinalQuiz
 };
 
