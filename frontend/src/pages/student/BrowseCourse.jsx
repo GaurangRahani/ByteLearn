@@ -5,28 +5,38 @@ import DashboardHeader from '../../components/layout/DashboardHeader';
 import BrowseCourseCard from '../../components/common/BrowseCourseCard';
 
 const BrowseCourse = () => {
-  const [courses, setCourses] = useState([]);
+  const [rawCourses, setRawCourses] = useState([]);
+  const [displayedCourses, setDisplayedCourses] = useState([]);
+  const [availableCategories, setAvailableCategories] = useState(['All Categories']);
+  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [category, setCategory] = useState('All Categories');
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('/api/courses?status=approved');
-        
+        // Step 3: Initialization - Exactly ONE request without query parameters
+        const response = await axios.get('/api/courses');
         const coursesData = response.data?.data || response.data || [];
+        
         if (Array.isArray(coursesData)) {
-           setCourses(coursesData);
+           setRawCourses(coursesData);
+           
+           // Step 3: Dynamic Category Extraction
+           const courseCategories = coursesData.map(course => course.category);
+           const validCategories = courseCategories.filter(cat => cat && typeof cat === 'string' && cat.trim() !== '');
+           const uniqueCategories = [...new Set(validCategories)];
+           
+           setAvailableCategories(['All Categories', ...uniqueCategories]);
         } else {
-           setCourses([]);
+           setRawCourses([]);
         }
         setError(null);
       } catch (err) {
-        console.error('Error fetching courses:', err);
-        setError(err.response?.data?.message || 'Failed to fetch courses. Please try again later.');
+        console.error('Error initialization phase failed:', err);
+        setError(err.response?.data?.message || 'Failed to initialize courses.');
       } finally {
         setLoading(false);
       }
@@ -35,14 +45,26 @@ const BrowseCourse = () => {
     fetchCourses();
   }, []);
 
-  const filteredCourses = courses.filter((course) => {
-    const searchMatch = course.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        course.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const categoryMatch = category === 'All Categories' || course.category === category;
-    
-    return searchMatch && categoryMatch;
-  });
+  // Step 4: Reactive Filter Engine
+  useEffect(() => {
+    let filtered = [...rawCourses];
+
+    // 1. Apply Selected Category Filter
+    if (selectedCategory !== 'All Categories') {
+        filtered = filtered.filter(course => course.category === selectedCategory);
+    }
+
+    // 2. Apply Search Query Filter (Case-Insensitive)
+    if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter(course => 
+            (course.title?.toLowerCase().includes(query) || 
+             course.description?.toLowerCase().includes(query))
+        );
+    }
+
+    setDisplayedCourses(filtered);
+  }, [rawCourses, selectedCategory, searchQuery]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans mb-12">
@@ -65,8 +87,8 @@ const BrowseCourse = () => {
             <input
               type="text"
               placeholder="Search courses..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-12 pl-11 pr-4 bg-white border border-slate-200/80 rounded-xl text-[14px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] transition-all"
             />
           </div>
@@ -77,15 +99,15 @@ const BrowseCourse = () => {
                 <Filter size={18} className="text-slate-500" />
              </div>
              <select
-               value={category}
-               onChange={(e) => setCategory(e.target.value)}
+               value={selectedCategory}
+               onChange={(e) => setSelectedCategory(e.target.value)}
                className="w-full h-12 pl-[42px] pr-10 bg-white border border-slate-200/80 rounded-xl text-[14px] font-medium text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] transition-all cursor-pointer"
              >
-               <option value="All Categories">All Categories</option>
-               <option value="Development">Development</option>
-               <option value="Design">Design</option>
-               <option value="Business">Business</option>
-               <option value="Data Science">Data Science</option>
+                {availableCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
              </select>
              <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
                 <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -125,7 +147,7 @@ const BrowseCourse = () => {
                Try Again
              </button>
            </div>
-        ) : filteredCourses.length === 0 ? (
+        ) : displayedCourses.length === 0 ? (
            <div className="bg-white p-12 py-20 rounded-2xl border border-slate-200 shadow-sm text-center flex flex-col items-center mt-8">
              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
                <Search size={28} className="text-slate-400" />
@@ -135,7 +157,7 @@ const BrowseCourse = () => {
            </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[26px]">
-            {filteredCourses.map((course) => (
+            {displayedCourses.map((course) => (
               <BrowseCourseCard key={course._id} course={course} />
             ))}
           </div>

@@ -18,6 +18,7 @@ import {
 import AssignmentViewer from '../../components/common/AssignmentViewer';
 import CustomVideoPlayer from '../../components/common/CustomVideoPlayer';
 import QuizViewer from '../../components/common/QuizViewer';
+import LessonViewer from '../../components/common/LessonViewer';
 
 
 const isImage = (url) => {
@@ -318,6 +319,28 @@ const ContinueLearning = () => {
     }
   };
 
+  const flattenedItems = course?.modules.reduce((acc, mod) => {
+    return [...acc, ...mod.items];
+  }, []) || [];
+
+  const currentIndex = flattenedItems.findIndex(it => it.id === activeItemId);
+
+  const handleNext = () => {
+    if (currentIndex < flattenedItems.length - 1) {
+      const nextItem = flattenedItems[currentIndex + 1];
+      if (nextItem.isUnlocked) {
+        setActiveItemId(nextItem.id);
+      }
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      const prevItem = flattenedItems[currentIndex - 1];
+      setActiveItemId(prevItem.id);
+    }
+  };
+
   if (isLoading || (!course && !error)) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -454,66 +477,18 @@ const ContinueLearning = () => {
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden min-h-[500px] flex flex-col">
 
               {(currentItem?.type === 'text' || currentItem?.type === 'video') && (
-                <>
-                  {currentItem.type === 'video' && (
-                    <CustomVideoPlayer videoUrl={currentItem.videoUrl} title={currentItem.title} />
-                  )}
-
-                  {/* Lesson Content details */}
-                  <div className="p-8 flex-grow flex flex-col">
-                    <h2 className="text-[32px] font-bold text-slate-800 mb-6 tracking-tight leading-tight">
-                      {currentItem.title}
-                    </h2>
-                    
-                    <div 
-                      className="text-slate-600 leading-relaxed text-[17px] space-y-4 prose prose-slate max-w-none"
-                      dangerouslySetInnerHTML={{ __html: currentItem.content }}
-                    />
-
-                    {currentItem.notesUrl && (
-                      <div className="mt-10 pt-8 border-t border-slate-100">
-                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-[0.1em] mb-4">
-                          {currentItem.type === 'video' ? 'Lecture Notes' : 'Lesson Visuals'}
-                        </h3>
-                        {isImage(currentItem.notesUrl) ? (
-                          <div className="flex justify-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                            <img 
-                              src={currentItem.notesUrl} 
-                              alt={currentItem.title} 
-                              className="max-w-full h-auto rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
-                            />
-                          </div>
-                        ) : (
-                          <button 
-                            onClick={() => handleDownloadPDF(currentItem.notesUrl, currentItem.title)}
-                            className="flex items-center gap-3 px-6 py-3.5 bg-slate-50 hover:bg-white hover:text-blue-600 hover:border-blue-200 border border-slate-200 text-slate-700 rounded-xl transition-all font-semibold shadow-sm group"
-                          >
-                            <Download size={20} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
-                            <span>Download {currentItem.type === 'video' ? 'Notes' : 'Resources'}</span>
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="mt-auto pt-10 flex border-t border-slate-100 items-center justify-between">
-                      <button className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors flex items-center gap-2 text-sm">
-                        <ChevronLeft size={16} /> Previous
-                      </button>
-                      <button
-                        onClick={() => toggleCompletion(currentItem.id)}
-                        className={`px-8 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${completions[currentItem.id]
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
-                          }`}
-                      >
-                        {completions[currentItem.id] ? <><CheckCircle size={18} /> Completed</> : 'Mark as Complete'}
-                      </button>
-                      <button className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors flex items-center gap-2 text-sm">
-                        Next <ChevronRight size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </>
+                <LessonViewer 
+                  currentItem={currentItem}
+                  handleNext={handleNext}
+                  handlePrev={handlePrev}
+                  toggleCompletion={toggleCompletion}
+                  isCompleted={completions[currentItem.id]}
+                  isDownloading={isDownloading}
+                  handleDownloadPDF={handleDownloadPDF}
+                  hasPrev={currentIndex > 0}
+                  hasNext={currentIndex < flattenedItems.length - 1}
+                  nextUnlocked={flattenedItems[currentIndex + 1]?.isUnlocked}
+                />
               )}
 
               {currentItem?.type === 'assignment' && (

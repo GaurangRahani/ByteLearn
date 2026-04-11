@@ -1,60 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import CourseCard from './CourseCard';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Book } from 'lucide-react';
 
-const ContinueLearningSection = () => {
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCourses = async () => {
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      const mockData = [
-        { id: 1, title: 'Introduction to Web Development', instructor: 'Dr. Sarah Smith', duration: '8', progress: 65 },
-        { id: 2, title: 'Advanced React Development', instructor: 'Dr. Sarah Smith', duration: '12', progress: 25 },
-      ];
-      
-      setCourses(mockData);
-      setLoading(false);
-    };
-
-    fetchCourses();
-  }, []);
-
-  if (loading) {
+const ContinueLearningSection = ({ courses = [] }) => {
+  if (courses.length === 0) {
     return (
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-slate-800">Continue Learning</h2>
+      <div className="mb-8 bg-white border border-slate-200 rounded-[32px] shadow-sm overflow-hidden p-12 text-center">
+        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Book className="text-slate-300" size={32} />
         </div>
-        <div className="space-y-4">
-          {[1, 2].map(i => (
-            <div key={i} className="h-32 bg-white border border-slate-100 rounded-xl animate-pulse"></div>
-          ))}
-        </div>
+        <h3 className="text-lg font-bold text-slate-800 mb-1">No active courses</h3>
+        <p className="text-slate-400 text-sm">Start a new course and begin your learning journey.</p>
       </div>
     );
   }
 
   return (
-    <div className="mb-8 bg-white border border-slate-200 rounded-[20px] shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between p-6 pb-4">
-        <h2 className="text-lg font-bold text-slate-800">Continue Learning</h2>
-        <button className="text-[13px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1">
-          View All <ArrowRight size={14} />
+    <div className="mb-8 bg-white border border-slate-200 rounded-[32px] shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between p-8 pb-4">
+        <h2 className="text-[19px] font-bold text-slate-900 tracking-tight">Continue Learning</h2>
+        <button className="text-[14px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-all hover:gap-2.5">
+          View All <ArrowRight size={16} />
         </button>
       </div>
       
-      <div className="px-6 pb-6 space-y-4">
+      <div className="px-8 pb-8 space-y-5">
         {courses.map(course => (
           <CourseCard 
-            key={course.id}
+            key={course._id || course.id}
+            id={course.id || course._id}
             title={course.title}
-            instructor={course.instructor}
-            duration={course.duration}
-            progress={course.progress}
+            instructor={course.educatorId?.name || "Educator"}
+            duration={course.totalDuration ? `${course.totalDuration}h` : "8h"}
+            progress={course.progressPercentage || 0}
           />
         ))}
       </div>
