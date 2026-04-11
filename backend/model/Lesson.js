@@ -6,7 +6,7 @@ const lessonSchema = new mongoose.Schema({
   lessonType: { type: String, enum: ['video', 'article'], default: 'video' },
   videoUrl: { type: String, default: null },
   content: { type: String, default: "" }, 
-  attachmentUrl: { type: String, default: null },
+  notesUrl: { type: String, default: null },
   duration: { type: Number, default: 0 },
   order: { type: Number, required: true },
 }, { timestamps: true });
