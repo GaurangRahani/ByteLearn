@@ -6,9 +6,12 @@ const {
     getQuizById, 
     initializeOrResumeQuiz,
     autoSaveAnswer,
-    submitFinalQuiz
+    submitFinalQuiz,
+    getMyQuizAttempts
 } = require('../controller/quizController');
 const { protect, approvedEducator } = require('../middleware/authMiddleware');
+
+router.get('/me', protect, getMyQuizAttempts);
 
 router.route('/')
     .post(protect, approvedEducator, createQuizWithQuestions)

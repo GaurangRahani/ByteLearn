@@ -297,12 +297,27 @@ const submitFinalQuiz = async (req, res) => {
     }
 };
 
+const getMyQuizAttempts = async (req, res) => {
+    try {
+        const studentId = req.user._id;
+        const attempts = await QuizAttempt.find({ studentId, status: 'completed' })
+            .populate('quizId', 'title')
+            .populate('courseId', 'title thumbnail')
+            .sort({ submittedAt: -1 });
+
+        res.status(200).json({ success: true, data: attempts });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     createQuizWithQuestions,
     getQuizzesByModule,
     getQuizById,
     initializeOrResumeQuiz,
     autoSaveAnswer,
-    submitFinalQuiz
+    submitFinalQuiz,
+    getMyQuizAttempts
 };
 
