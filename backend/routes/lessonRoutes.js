@@ -12,7 +12,7 @@ const upload = require('../middleware/uploadMiddleware');
 
 const lessonUpload = upload.fields([
     { name: 'video', maxCount: 1 },
-    { name: 'attachment', maxCount: 1 },
+    { name: 'notes', maxCount: 1 },
 ]);
 
 
