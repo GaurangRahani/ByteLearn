@@ -5,7 +5,7 @@ import {
   Plus, Trash2, GripVertical, ChevronDown, Save, ArrowLeft,
   Loader2, BookOpen, CheckCircle2, Video, FileText, Paperclip,
   X, UploadCloud, FileUp, Check, ClipboardList, HelpCircle,
-  AlertCircle, Layers, PlusCircle
+  AlertCircle, Layers, PlusCircle, Eye
 } from 'lucide-react';
 import EducatorHeader from '../../components/layout/EducatorHeader';
 import GradingConfiguration from './GradingConfiguration';
@@ -336,7 +336,7 @@ const CurriculumBuilder = () => {
   const [activeForm, setActiveForm] = useState(null);
 
   // Lesson form state
-  const [newLessonData, setNewLessonData] = useState({ title: '', lessonType: 'video', content: '', video: null, attachment: null });
+  const [newLessonData, setNewLessonData] = useState({ title: '', lessonType: 'video', content: '', video: null, notes: null });
   const [isSavingLesson, setIsSavingLesson] = useState(false);
 
   // Assignment form state
@@ -408,7 +408,7 @@ const CurriculumBuilder = () => {
   const closeForm = () => {
     setActiveForm(null);
     setActiveModuleId(null);
-    setNewLessonData({ title: '', lessonType: 'video', content: '', video: null, attachment: null });
+    setNewLessonData({ title: '', lessonType: 'video', content: '', video: null, notes: null });
     setNewAssignmentData({ title: '', instructions: '', questionPdf: null, totalMarks: '' });
   };
 
@@ -450,7 +450,7 @@ const CurriculumBuilder = () => {
       formData.append('lessonType', newLessonData.lessonType);
       formData.append('content', newLessonData.content.trim());
       if (newLessonData.lessonType === 'video' && newLessonData.video) formData.append('video', newLessonData.video);
-      if (newLessonData.lessonType === 'article' && newLessonData.attachment) formData.append('attachment', newLessonData.attachment);
+      if (newLessonData.notes) formData.append('notes', newLessonData.notes);
       const res = await axios.post(`/api/courses/${courseId}/modules/${activeModuleId}/lessons`, formData, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
@@ -531,13 +531,33 @@ const CurriculumBuilder = () => {
               <Layers size={14} className="text-indigo-500" />
               {modules.length} Modules · {totalItems} Contents
             </div>
+            
+            {/* Status Badge */}
+            <div className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border shadow-sm ${
+              course?.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+              course?.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+              'bg-slate-50 text-slate-600 border-slate-100'
+            }`}>
+              {course?.status || 'draft'}
+            </div>
+
             <button
-              onClick={handleSubmitReview}
-              className="px-5 py-2 bg-slate-900 text-white font-semibold text-sm rounded-lg hover:bg-slate-800 transition-all flex items-center gap-2 shadow-sm"
+              onClick={() => navigate(`/course/${courseId}`)}
+              className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-lg hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm"
             >
-              <CheckCircle2 size={16} />
-              Submit for Review
+              <Eye size={16} />
+              Preview
             </button>
+
+            {course?.status === 'draft' && (
+              <button
+                onClick={handleSubmitReview}
+                className="px-5 py-2 bg-slate-900 text-white font-semibold text-sm rounded-lg hover:bg-slate-800 transition-all flex items-center gap-2 shadow-sm"
+              >
+                <CheckCircle2 size={16} />
+                Submit for Review
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -662,7 +682,7 @@ const CurriculumBuilder = () => {
                             <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-6">
                               <button
                                 type="button"
-                                onClick={() => setNewLessonData({ ...newLessonData, lessonType: 'video', attachment: null })}
+                                onClick={() => setNewLessonData({ ...newLessonData, lessonType: 'video', notes: null })}
                                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${newLessonData.lessonType === 'video' ? 'bg-white text-blue-600 shadow-md shadow-blue-100' : 'text-slate-500 hover:text-slate-700'}`}
                               >
                                 <Video size={16} /> 📺 Video Lesson
@@ -706,6 +726,26 @@ const CurriculumBuilder = () => {
                                     <Label>Short Description (optional)</Label>
                                     <textarea rows="3" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm text-slate-700 placeholder:text-slate-400" placeholder="Brief summary of what this video covers..." value={newLessonData.content} onChange={e => setNewLessonData({ ...newLessonData, content: e.target.value })}></textarea>
                                   </div>
+
+                                  <div className="mt-6 pt-6 border-t border-slate-100">
+                                    <Label>Lecture Notes <span className="text-slate-400 font-normal">(optional PDF/Image)</span></Label>
+                                    <label className="flex items-center gap-4 p-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-indigo-50/50 hover:border-indigo-300 transition-all group">
+                                      <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform shadow-sm">
+                                        <FileUp size={20} />
+                                      </div>
+                                      <div className="flex-1 overflow-hidden">
+                                        {newLessonData.notes ? (
+                                          <p className="text-sm font-bold text-slate-700 truncate">{newLessonData.notes.name}</p>
+                                        ) : (
+                                          <p className="text-sm font-semibold text-slate-500">Upload notes for this video lesson...</p>
+                                        )}
+                                      </div>
+                                      {newLessonData.notes && (
+                                        <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, notes: null }); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><X size={16} /></button>
+                                      )}
+                                      <input type="file" className="hidden" accept=".pdf,image/*" onChange={e => setNewLessonData({ ...newLessonData, notes: e.target.files[0] })} />
+                                    </label>
+                                  </div>
                                 </div>
                               )}
 
@@ -719,20 +759,20 @@ const CurriculumBuilder = () => {
                                   <div>
                                     <Label>Visual Aid — Image <span className="text-slate-400 font-normal">(optional)</span></Label>
                                     <label className="flex flex-col items-center justify-center w-full min-h-[130px] bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-emerald-50/50 hover:border-emerald-300 transition-colors group">
-                                      {newLessonData.attachment ? (
+                                      {newLessonData.notes ? (
                                         <div className="text-center p-4">
                                           <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2"><Check size={20} strokeWidth={3} /></div>
-                                          <p className="text-sm font-semibold text-slate-700 truncate max-w-[220px]">{newLessonData.attachment.name}</p>
-                                          <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, attachment: null }); }} className="text-xs text-red-500 font-bold mt-1 hover:underline">Remove</button>
+                                          <p className="text-sm font-semibold text-slate-700 truncate max-w-[220px]">{newLessonData.notes.name}</p>
+                                          <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, notes: null }); }} className="text-xs text-red-500 font-bold mt-1 hover:underline">Remove</button>
                                         </div>
                                       ) : (
                                         <div className="flex flex-col items-center py-5">
                                           <FileUp className="w-8 h-8 mb-2 text-slate-400 group-hover:text-emerald-500 transition-colors" />
-                                          <p className="text-sm font-semibold text-slate-600">Upload diagram or image</p>
+                                          <p className="text-sm font-semibold text-slate-600">Upload visual aid image</p>
                                           <p className="text-xs text-slate-500 mt-1">JPG, PNG, WEBP</p>
                                         </div>
                                       )}
-                                      <input type="file" className="hidden" accept="image/*" onChange={e => setNewLessonData({ ...newLessonData, attachment: e.target.files[0] })} />
+                                      <input type="file" className="hidden" accept="image/*" onChange={e => setNewLessonData({ ...newLessonData, notes: e.target.files[0] })} />
                                     </label>
                                   </div>
                                 </div>

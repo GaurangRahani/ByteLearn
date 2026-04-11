@@ -8,6 +8,8 @@ import EducatorDashboard from './pages/educator/EducatorDashboard';
 import CreateCourse from './pages/educator/CreateCourse';
 import MyCourses from './pages/educator/MyCourses';
 import CurriculumBuilder from './pages/educator/CurriculumBuilder';
+import StudentManagement from './pages/educator/StudentManagement';
+import AssignmentReview from './pages/educator/AssignmentReview';
 import Login from './pages/auth/Login';
 import Header from './components/layout/Header';
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -67,6 +69,8 @@ const AppContent = () => {
           <Route path="/educator-status" element={<EducatorStatus />} />
           <Route path="/educator-dashboard" element={<EducatorDashboard />} />
           <Route path="/educator/courses" element={<MyCourses />} />
+          <Route path="/educator/student-management" element={<StudentManagement />} />
+          <Route path="/educator/review/:submissionId" element={<AssignmentReview />} />
           <Route path="/course/create" element={<CreateCourse />} />
           <Route path="/course/:id/curriculum" element={<CurriculumBuilder />} />
           <Route path="/course/:id" element={<CourseDetailsPage />} />

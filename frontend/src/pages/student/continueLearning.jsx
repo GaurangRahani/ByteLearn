@@ -470,26 +470,26 @@ const ContinueLearning = () => {
                       dangerouslySetInnerHTML={{ __html: currentItem.content }}
                     />
 
-                    {currentItem.attachmentUrl && (
+                    {currentItem.notesUrl && (
                       <div className="mt-10 pt-8 border-t border-slate-100">
                         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-[0.1em] mb-4">
-                          Lesson Attachment
+                          {currentItem.type === 'video' ? 'Lecture Notes' : 'Lesson Visuals'}
                         </h3>
-                        {isImage(currentItem.attachmentUrl) ? (
+                        {isImage(currentItem.notesUrl) ? (
                           <div className="flex justify-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
                             <img 
-                              src={currentItem.attachmentUrl} 
+                              src={currentItem.notesUrl} 
                               alt={currentItem.title} 
                               className="max-w-full h-auto rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
                             />
                           </div>
                         ) : (
                           <button 
-                            onClick={() => handleDownloadPDF(currentItem.attachmentUrl, currentItem.title)}
+                            onClick={() => handleDownloadPDF(currentItem.notesUrl, currentItem.title)}
                             className="flex items-center gap-3 px-6 py-3.5 bg-slate-50 hover:bg-white hover:text-blue-600 hover:border-blue-200 border border-slate-200 text-slate-700 rounded-xl transition-all font-semibold shadow-sm group"
                           >
                             <Download size={20} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
-                            <span>Download Resource Materials</span>
+                            <span>Download {currentItem.type === 'video' ? 'Notes' : 'Resources'}</span>
                           </button>
                         )}
                       </div>

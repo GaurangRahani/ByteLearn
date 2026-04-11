@@ -205,7 +205,7 @@ const MyCourses = () => {
                        </button>
                      ) : (
                         <button 
-                         onClick={() => navigate(`/course/${courseId}`)}
+                         onClick={() => navigate(`/course/${courseId}/curriculum`)}
                          className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all active:scale-95"
                        >
                          <Eye size={18} />

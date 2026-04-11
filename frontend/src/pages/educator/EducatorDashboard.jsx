@@ -124,7 +124,10 @@ const EducatorDashboard = () => {
                    </p>
                 </div>
                 
-                <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shadow-sm focus:ring-4 focus:ring-blue-100 shadow-blue-600/20 active:scale-95">
+                <button 
+                  onClick={() => navigate(`/course/${course._id || course.id}/curriculum`)}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shadow-sm focus:ring-4 focus:ring-blue-100 shadow-blue-600/20 active:scale-95"
+                >
                   Manage <ArrowRight size={16} />
                 </button>
               </div>
