@@ -10,58 +10,67 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-const QuizViewer = ({ quizId, onComplete }) => {
+const QuizViewer = ({ quizId, courseId, onComplete }) => {
+  const [quiz, setQuiz] = useState(null);
   const [attempt, setAttempt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState(null);
+  const [selections, setSelections] = useState({}); 
 
   useEffect(() => {
-    const fetchQuiz = async () => {
+    const initializeAndFetch = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        const res = await axios.post(`/api/quizzes/${quizId}/start`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setAttempt(res.data.data);
-        
-        // Find the first unanswered question to resume correctly if in-progress
-        if (res.data.data.status === 'in-progress') {
-            const firstUnanswered = res.data.data.answers.findIndex(a => a.selectedOption === null);
-            if (firstUnanswered !== -1) {
-                setCurrentIndex(firstUnanswered);
+        const headers = { Authorization: `Bearer ${token}` };
+
+        // 1. Initialize or Resume Attempt
+        const startRes = await axios.get(`/api/quizzes/${quizId}/start?courseId=${courseId}`, { headers });
+        const currentAttempt = startRes.data.data;
+        setAttempt(currentAttempt);
+
+        // 2. Fetch Quiz Questions/Structure
+        const quizRes = await axios.get(`/api/quizzes/${quizId}`, { headers });
+        setQuiz(quizRes.data.data);
+
+        // 3. Populate local state from existing answers
+        if (currentAttempt.status === 'in-progress' && currentAttempt.answers) {
+          const initialSelections = {};
+          currentAttempt.answers.forEach(ans => {
+            if (ans.selectedOption !== null) {
+              initialSelections[ans.questionId] = ans.selectedOption;
             }
+          });
+          setSelections(initialSelections);
         }
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to start quiz");
+        setError(err.response?.data?.message || "Failed to load quiz session");
       } finally {
         setLoading(false);
       }
     };
-    fetchQuiz();
-  }, [quizId]);
 
-  const handleOptionSelect = async (selectedOption) => {
-    if (attempt.status === 'completed') return;
+    initializeAndFetch();
+  }, [quizId, courseId]);
 
-    const questionId = attempt.answers[currentIndex].questionId._id;
-    
-    const updatedAnswers = [...attempt.answers];
-    updatedAnswers[currentIndex].selectedOption = selectedOption;
-    setAttempt({ ...attempt, answers: updatedAnswers });
+  const handleOptionSelect = async (questionId, optionIndex) => {
+    // 1. Update local React state immediately for UI speed
+    setSelections(prev => ({
+      ...prev,
+      [questionId]: optionIndex
+    }));
 
+    // 2. Fire background API call to autoSaveAnswer
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`/api/quizzes/${quizId}/save`, {
-        questionId,
-        selectedOption
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.patch(`/api/quizzes/${quizId}/save`, 
+        { questionId, selectedOption: optionIndex },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
     } catch (err) {
-      console.error("Failed to save progress", err);
+      console.error("Auto-save failed:", err);
     }
   };
 
@@ -69,11 +78,13 @@ const QuizViewer = ({ quizId, onComplete }) => {
     try {
       setSubmitting(true);
       const token = localStorage.getItem('token');
+      
       const res = await axios.post(`/api/quizzes/${quizId}/submit`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
       setAttempt(res.data.data);
-      if (onComplete) onComplete(quizId);
+      if (onComplete) onComplete(res.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to submit quiz");
     } finally {
@@ -85,7 +96,7 @@ const QuizViewer = ({ quizId, onComplete }) => {
     return (
       <div className="flex flex-col items-center justify-center p-12 min-h-[500px] w-full">
         <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-        <p className="text-slate-500 font-medium animate-pulse">Initializing your assessment...</p>
+        <p className="text-slate-500 font-medium animate-pulse">Initializing assessment...</p>
       </div>
     );
   }
@@ -108,8 +119,7 @@ const QuizViewer = ({ quizId, onComplete }) => {
     );
   }
 
-  // UI State 1 (Completed)
-  if (attempt.status === 'completed') {
+  if (attempt && attempt.status === 'completed') {
     return (
       <div className="flex flex-col items-center justify-center p-12 min-h-[600px] text-center bg-gradient-to-b from-white to-slate-50 w-full animate-in fade-in duration-700">
         <div className="h-28 w-28 bg-emerald-100 rounded-full flex items-center justify-center mb-8 relative">
@@ -119,7 +129,7 @@ const QuizViewer = ({ quizId, onComplete }) => {
           </div>
         </div>
         <h2 className="text-4xl font-black text-slate-900 mb-2 tracking-tight">Quiz Complete!</h2>
-        <p className="text-slate-500 mb-10 text-lg max-w-md">Your responses have been processed successfully.</p>
+        <p className="text-slate-500 mb-10 text-lg max-w-md">You have successfully submitted this assessment.</p>
         
         <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-2xl max-w-sm w-full transform hover:scale-[1.02] transition-transform">
           <span className="text-xs font-black text-emerald-500 uppercase tracking-[0.2em] mb-4 block">Final Results</span>
@@ -139,14 +149,17 @@ const QuizViewer = ({ quizId, onComplete }) => {
         </div>
         
         <p className="mt-12 text-slate-400 text-sm font-medium">
-          Note: You can view detailed results in your dashboard.
+          Note: Your progress has been synchronized with the course curriculum.
         </p>
       </div>
     );
   }
 
-  const currentAnswer = attempt.answers[currentIndex];
-  const currentQuestion = currentAnswer.questionId;
+  if (!quiz || !quiz.questions) return null;
+
+  const currentQuestion = quiz.questions[currentIndex];
+  const totalQuestions = quiz.questions.length;
+  const selectedOption = selections[currentQuestion._id];
 
   return (
     <div className="flex flex-col h-full bg-white w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -155,19 +168,19 @@ const QuizViewer = ({ quizId, onComplete }) => {
         <div className="flex flex-col">
           <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">Assessment Engine</span>
           <div className="text-2xl font-black text-slate-900">
-            Question {currentIndex + 1} <span className="text-slate-300 font-light mx-1">of</span> {attempt.totalQuestions}
+            Question {currentIndex + 1} <span className="text-slate-300 font-light mx-1">of</span> {totalQuestions}
           </div>
         </div>
 
         <div className="hidden md:flex gap-2">
-           {attempt.answers.map((ans, idx) => (
+           {quiz.questions.map((q, idx) => (
              <button 
                key={idx}
                onClick={() => setCurrentIndex(idx)}
                className={`h-2 w-8 rounded-full transition-all duration-300 ${
                  idx === currentIndex 
                    ? 'bg-blue-600 w-12 shadow-md shadow-blue-100' 
-                   : ans.selectedOption !== null 
+                   : selections[q._id] !== undefined 
                      ? 'bg-emerald-400' 
                      : 'bg-slate-200 hover:bg-slate-300'
                }`}
@@ -186,11 +199,11 @@ const QuizViewer = ({ quizId, onComplete }) => {
 
           <div className="space-y-4">
             {currentQuestion.options.map((option, idx) => {
-              const isSelected = currentAnswer.selectedOption === idx;
+              const isSelected = selectedOption === idx;
               return (
                 <button
                   key={idx}
-                  onClick={() => handleOptionSelect(idx)}
+                  onClick={() => handleOptionSelect(currentQuestion._id, idx)}
                   className={`
                     w-full flex items-center justify-between p-6 rounded-3xl border-2 text-left transition-all duration-300 group
                     ${isSelected 
@@ -235,19 +248,19 @@ const QuizViewer = ({ quizId, onComplete }) => {
         </button>
 
         <div className="flex items-center gap-4">
-          <p className="hidden sm:block text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Progress auto-saves instantly</p>
+          <p className="hidden sm:block text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Assessment Mode: Single Attempt</p>
           
-          {currentIndex === attempt.totalQuestions - 1 ? (
+          {currentIndex === totalQuestions - 1 ? (
             <button
               onClick={handleSubmit}
-              disabled={submitting}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-5 rounded-3xl font-black transition-all transform hover:scale-105 active:scale-95 shadow-2xl shadow-blue-200 uppercase tracking-[0.2em] text-sm flex items-center gap-3"
+              disabled={submitting || Object.keys(selections).length < totalQuestions}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-5 rounded-3xl font-black transition-all transform hover:scale-105 active:scale-95 shadow-2xl shadow-blue-200 uppercase tracking-[0.2em] text-sm flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Finish Assessment'}
             </button>
           ) : (
             <button
-              onClick={() => setCurrentIndex(prev => Math.min(attempt.totalQuestions - 1, prev + 1))}
+              onClick={() => setCurrentIndex(prev => Math.min(totalQuestions - 1, prev + 1))}
               className="group flex items-center gap-3 px-10 py-5 bg-slate-900 text-white rounded-3xl font-black hover:bg-black transition-all shadow-xl uppercase tracking-[0.2em] text-xs"
             >
               Next

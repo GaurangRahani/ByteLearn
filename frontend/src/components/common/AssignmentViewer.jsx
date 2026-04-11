@@ -2,24 +2,16 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Clock, Download, Upload, CheckCircle, Loader2 } from 'lucide-react';
 
-const AssignmentViewer = ({ assignment, courseId, onComplete }) => {
+const AssignmentViewer = ({ assignment, courseId, onComplete, existingSubmission }) => {
   const [file, setFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionStatus, setSubmissionStatus] = useState("idle");
+  const [submissionStatus, setSubmissionStatus] = useState(existingSubmission ? "success" : "idle");
 
-  const handleDownloadPDF = () => {
-    let url = assignment.questionPdfUrl;
+  const handleDownloadPDF = (url) => {
     if (!url) return;
-
-    if (url.includes('cloudinary.com') && url.includes('/image/upload/')) {
-       url = url.replace('/image/upload/', '/image/upload/fl_attachment/');
-    } else if (url.includes('cloudinary.com') && url.includes('/raw/upload/')) {
-       url = url.replace('/raw/upload/', '/raw/upload/fl_attachment/');
-    }
-
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `${assignment.title?.replace(/\s+/g, '_')}_Assignment.pdf`);
+    link.setAttribute('download', 'Assignment_File');
     link.target = '_blank';
     document.body.appendChild(link);
     link.click();
@@ -52,13 +44,13 @@ const AssignmentViewer = ({ assignment, courseId, onComplete }) => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post('/api/submissions', formData, {
+      const res = await axios.post('/api/submissions', formData, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
       setSubmissionStatus("success");
-      if (onComplete) onComplete();
+      if (onComplete) onComplete({ submission: res.data.data, progress: res.data.progress });
     } catch (error) {
       console.error("Error submitting assignment:", error);
       const errorMsg = error.response?.data?.message || error.message || "Failed to submit assignment. Please try again.";
@@ -85,20 +77,6 @@ const AssignmentViewer = ({ assignment, courseId, onComplete }) => {
         <div className="flex items-center gap-2 text-slate-500 text-sm font-medium">
            Marks: {assignment.totalMarks || 'N/A'}
         </div>
-
-        {assignment.status?.includes('Graded') ? (
-          <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">
-            {assignment.status}
-          </span>
-        ) : submissionStatus === "success" ? (
-          <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">
-            Submitted
-          </span>
-        ) : (
-           <span className="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1 rounded-full">
-             Not Submitted
-           </span>
-        )}
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-8 flex-shrink-0">
@@ -108,7 +86,7 @@ const AssignmentViewer = ({ assignment, courseId, onComplete }) => {
         </p>
         {assignment.questionPdfUrl && (
           <button 
-            onClick={handleDownloadPDF}
+            onClick={() => handleDownloadPDF(assignment.questionPdfUrl)}
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-2 font-semibold transition-all text-[15px] border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50">
             <Download size={18} />
             Download Assignment PDF
@@ -116,15 +94,48 @@ const AssignmentViewer = ({ assignment, courseId, onComplete }) => {
         )}
       </div>
 
-      {submissionStatus === "success" ? (
+      {(existingSubmission?.status === 'graded') ? (
         <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
           <div className="flex items-start gap-3">
-            <CheckCircle className="text-emerald-500 mt-0.5" size={24} />
+             <div className="h-10 w-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+               <span className="text-xl">🎉</span>
+             </div>
+             <div className="flex-grow">
+               <h3 className="font-bold text-emerald-900 text-lg">Graded!</h3>
+               <p className="text-emerald-700 font-semibold mb-2">
+                 Marks Obtained: {existingSubmission.marksObtained} / {assignment.totalMarks}
+               </p>
+               {existingSubmission.feedback && (
+                 <div className="bg-white/50 p-4 rounded-xl border border-emerald-100 mt-3 text-emerald-800 italic">
+                   " {existingSubmission.feedback} "
+                 </div>
+               )}
+               <button 
+                  onClick={() => handleDownloadPDF(existingSubmission.fileUrl)}
+                  className="mt-4 text-sm font-bold text-emerald-700 hover:underline flex items-center gap-1"
+                >
+                  <Download size={14} /> View My Submission
+                </button>
+             </div>
+          </div>
+        </div>
+      ) : (existingSubmission?.status === 'submitted' || submissionStatus === "success") ? (
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="text-blue-500 mt-0.5" size={24} />
             <div>
-              <h3 className="font-bold text-emerald-900 text-lg">Assignment Submitted successfully!</h3>
-              <p className="text-emerald-700 text-sm mt-1">
-                Your file has been uploaded. The educator will review it shortly.
+              <h3 className="font-bold text-blue-900 text-lg">✅ Assignment Submitted</h3>
+              <p className="text-blue-700 text-sm mt-1">
+                Pending evaluation by educator.
               </p>
+              { (existingSubmission?.fileUrl) && (
+                <button 
+                  onClick={() => handleDownloadPDF(existingSubmission.fileUrl)}
+                  className="mt-3 text-sm font-bold text-blue-600 hover:underline flex items-center gap-1"
+                >
+                  <Download size={14} /> View Your Uploaded File
+                </button>
+              )}
             </div>
           </div>
         </div>

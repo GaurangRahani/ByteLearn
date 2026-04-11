@@ -65,6 +65,8 @@ const ContinueLearning = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [quizHistory, setQuizHistory] = useState([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [submissions, setSubmissions] = useState([]);
+  const [quizAttempts, setQuizAttempts] = useState([]);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -82,6 +84,8 @@ const ContinueLearning = () => {
 
         const courseData = res.data.data.course;
         const progressData = res.data.data.progress;
+        const subData = res.data.data.submissions || [];
+        const quizAttemptData = res.data.data.quizAttempts || [];
 
         const formattedModules = (courseData.modules || []).map((mod) => {
           const items = [];
@@ -103,6 +107,8 @@ const ContinueLearning = () => {
         });
 
         courseData.modules = formattedModules;
+        setSubmissions(subData);
+        setQuizAttempts(quizAttemptData);
         setCourse(courseData);
 
         const newCompletions = {};
@@ -191,16 +197,15 @@ const ContinueLearning = () => {
 
   }, [completions, course]);
 
-  const toggleCompletion = async (itemId) => {
+  const toggleCompletion = async (itemId, extraData = null) => {
     try {
       const { currentItem } = getActiveItemDetails();
       if (!currentItem) return;
 
       const token = localStorage.getItem('token');
       
-      // If it's a lesson (text/video), we mark it complete on the backend
       if (currentItem.type === 'text' || currentItem.type === 'video') {
-        const res = await axios.patch(`/api/courses/learn/${id}/complete-lesson`, 
+         const res = await axios.patch(`/api/courses/learn/${id}/complete-lesson`, 
           { lessonId: itemId },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -219,14 +224,33 @@ const ContinueLearning = () => {
            }));
         }
       } else {
-        // For Quizzes and Assignments, the respective components handle backend sync
-        // and tell us to update our local state via onComplete
-        const newCompletions = { ...completions, [itemId]: true };
-        setCompletions(newCompletions);
-        setCourse(prev => ({
-          ...prev,
-          modules: enrichCourseWithLocks(prev.modules, newCompletions)
-        }));
+        if (extraData?.progress) {
+            const progressData = extraData.progress;
+            const newCompletions = {};
+            if (progressData.completedLessons) progressData.completedLessons.forEach(cId => newCompletions[cId] = true);
+            if (progressData.completedAssignments) progressData.completedAssignments.forEach(cId => newCompletions[cId] = true);
+            if (progressData.completedQuizzes) progressData.completedQuizzes.forEach(cId => newCompletions[cId] = true);
+            
+            setCompletions(newCompletions);
+            if (extraData.submission) {
+               setSubmissions(prev => [...prev, extraData.submission]);
+            }
+            if (extraData.quizAttempt) {
+               setQuizAttempts(prev => [...prev, extraData.quizAttempt]);
+            }
+            
+            setCourse(prev => ({
+                ...prev,
+                modules: enrichCourseWithLocks(prev.modules, newCompletions)
+            }));
+        } else {
+            const newCompletions = { ...completions, [itemId]: true };
+            setCompletions(newCompletions);
+            setCourse(prev => ({
+                ...prev,
+                modules: enrichCourseWithLocks(prev.modules, newCompletions)
+            }));
+        }
       }
     } catch (err) {
       console.error("Error updating completion status:", err);
@@ -496,14 +520,17 @@ const ContinueLearning = () => {
                 <AssignmentViewer
                   assignment={currentItem}
                   courseId={course._id}
-                  onComplete={() => toggleCompletion(currentItem.id)}
+                  existingSubmission={submissions.find(sub => sub.assignmentId === currentItem.id)}
+                  onComplete={(data) => toggleCompletion(currentItem.id, data)}
                 />
               )}
 
               {currentItem?.type === 'quiz' && (
                 <QuizViewer 
                   quizId={currentItem.id} 
-                  onComplete={() => toggleCompletion(currentItem.id)}
+                  courseId={course._id}
+                  existingAttempt={quizAttempts.find(att => att.quizId === currentItem.id)}
+                  onComplete={(data) => toggleCompletion(currentItem.id, { progress: data.progress, quizAttempt: data.data })}
                 />
               )}
 
