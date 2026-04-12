@@ -22,6 +22,7 @@ import ActiveQuiz from './pages/student/ActiveQuiz';
 import QuizResultPage from './pages/student/QuizResultPage';
 import Assignments from './pages/student/Assignments';
 import Quizzes from './pages/student/Quizzes';
+import CertificatesPage from './pages/student/CertificatesPage';
 
 
 
@@ -47,7 +48,8 @@ const AppContent = () => {
     location.pathname.startsWith('/quiz/') ||
     location.pathname.startsWith('/quiz-result') ||
     location.pathname.startsWith('/assignments') ||
-    location.pathname.startsWith('/quizzes');
+    location.pathname.startsWith('/quizzes') ||
+    location.pathname.startsWith('/certificates');
 
 
 
@@ -88,6 +90,7 @@ const AppContent = () => {
           <Route path="/quiz-result" element={<QuizResultPage />} />
           <Route path="/assignments" element={<Assignments />} />
           <Route path="/quizzes" element={<Quizzes />} />
+          <Route path="/certificates" element={<CertificatesPage />} />
 
 
           <Route path="/login" element={<Login />} />

@@ -13,12 +13,16 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  Lock
+  Lock,
+  Trophy,
+  Award,
+  PartyPopper
 } from 'lucide-react';
 import AssignmentViewer from '../../components/common/AssignmentViewer';
 import CustomVideoPlayer from '../../components/common/CustomVideoPlayer';
 import QuizViewer from '../../components/common/QuizViewer';
 import LessonViewer from '../../components/common/LessonViewer';
+import { AnimatePresence, motion } from 'framer-motion';
 
 
 const isImage = (url) => {
@@ -68,6 +72,8 @@ const ContinueLearning = () => {
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [submissions, setSubmissions] = useState([]);
   const [quizAttempts, setQuizAttempts] = useState([]);
+  const [certificate, setCertificate] = useState(null);
+  const [isFetchingCert, setIsFetchingCert] = useState(false);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -196,7 +202,26 @@ const ContinueLearning = () => {
     const calculatedProgress = totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100);
     setProgressPercentage(calculatedProgress);
 
-  }, [completions, course]);
+    // Fetch Certificate if 100% and enabled
+    if (calculatedProgress === 100 && course.gradingConfiguration?.isCertificationEnabled && !certificate && !isFetchingCert) {
+      const fetchCert = async () => {
+        try {
+          setIsFetchingCert(true);
+          const token = localStorage.getItem('token');
+          const res = await axios.get(`/api/certificates/course/${course._id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setCertificate(res.data.data);
+        } catch (err) {
+          console.error("Certificate not ready or not found:", err);
+        } finally {
+          setIsFetchingCert(false);
+        }
+      };
+      fetchCert();
+    }
+
+  }, [completions, course, certificate, isFetchingCert]);
 
   const toggleCompletion = async (itemId, extraData = null) => {
     try {
@@ -473,6 +498,71 @@ const ContinueLearning = () => {
           </div>
 
           <div className="lg:w-[68%] flex flex-col gap-6">
+            
+            {/* Celebration Banner */}
+            <AnimatePresence>
+              {progressPercentage === 100 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -50, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className="bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 rounded-3xl p-1 shadow-2xl overflow-hidden relative"
+                >
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <Trophy size={120} className="rotate-12" />
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm p-10 rounded-[22px] border border-white/20 flex flex-col items-center text-center">
+                    <motion.div 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.3, type: "spring" }}
+                      className="w-20 h-20 bg-amber-400 rounded-full flex items-center justify-center mb-6 shadow-lg rotate-12"
+                    >
+                      <PartyPopper size={40} className="text-white" />
+                    </motion.div>
+                    <h2 className="text-4xl font-black text-white mb-2 uppercase tracking-tighter">Course Completed!</h2>
+                    <p className="text-blue-50 max-w-md mb-8 font-medium">
+                      Incredible effort! You've mastered all the modules in this course. Your journey of excellence continues.
+                    </p>
+                    
+                    {course.gradingConfiguration?.isCertificationEnabled && (
+                      <div className="w-full max-w-md">
+                        {certificate ? (
+                          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <a 
+                              href={certificate.pdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-8 py-4 bg-white text-blue-700 font-black rounded-2xl flex items-center justify-center gap-3 hover:bg-blue-50 transition-all shadow-xl active:scale-95"
+                            >
+                              <Award size={20} />
+                              View Certificate
+                            </a>
+                            <a 
+                              href={certificate.pdfUrl}
+                              download={`Certificate-${certificate.certificateId}.pdf`}
+                              className="px-8 py-4 bg-blue-600 border-2 border-white/30 text-white font-black rounded-2xl flex items-center justify-center gap-3 hover:bg-blue-500/30 transition-all active:scale-95"
+                            >
+                              <Download size={20} />
+                              Download
+                            </a>
+                          </div>
+                        ) : submissions && submissions.some(sub => sub.status === 'submitted') ? (
+                          <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 text-blue-50">
+                             <Clock size={20} className="text-amber-400" />
+                             <span className="text-sm font-bold uppercase tracking-widest">Course Completed: Pending Final Grades</span>
+                          </div>
+                        ) : (
+                          <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 text-blue-50">
+                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                             <span className="text-sm font-bold uppercase tracking-widest">Generating Your Verified Credential...</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden min-h-[500px] flex flex-col">
 
