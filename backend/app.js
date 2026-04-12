@@ -29,6 +29,7 @@ const quizAttemptRoutes = require('./routes/quizAttemptRoutes');
 const quizRoutes = require('./routes/quizRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 
 
@@ -41,6 +42,7 @@ app.use('/api/quiz-attempts', quizAttemptRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/payment', paymentRoutes);
 
 
 
