@@ -39,29 +39,96 @@ const CourseDetails = () => {
     fetchCourseDetails();
   }, [id]);
 
-  const handleEnroll = async () => {
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleBuyCourse = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
     try {
       setEnrolling(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/login');
-        return;
-      }
 
-      await axios.post('/api/enrollments/enroll', { courseId: id }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      alert("Enrolled successfully!"); 
-      navigate('/my-courses');
+      if (course.isPaid) {
+        const res = await loadRazorpayScript();
+        if (!res) {
+          alert("Razorpay SDK failed to load. Are you online?");
+          return;
+        }
+
+        const orderResponse = await axios.post('/api/payment/checkout', { courseId: id }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const { order } = orderResponse.data;
+
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: order.amount,
+          currency: order.currency,
+          name: "ByteLearn LMS",
+          description: `Enrollment for ${course.title}`,
+          order_id: order.id,
+          handler: async (response) => {
+            try {
+              const verifyResponse = await axios.post('/api/payment/verify', {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              }, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+
+              if (verifyResponse.data.success) {
+                alert("Payment successful! You are now enrolled.");
+                navigate('/my-courses');
+              }
+            } catch (err) {
+              console.error("Verification failed:", err);
+              alert(err.response?.data?.message || "Payment verification failed. Please contact support.");
+            }
+          },
+          theme: {
+            color: "#2563EB",
+          },
+          modal: {
+            ondismiss: function() {
+              setEnrolling(false);
+            }
+          }
+        };
+
+        const rzp1 = new window.Razorpay(options);
+        rzp1.open();
+      } else {
+        await axios.post('/api/enrollments/enroll', { courseId: id }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        alert("Enrolled successfully!"); 
+        navigate('/my-courses');
+      }
     } catch (err) {
+      console.error('Enrollment error:', err);
       if (err.response?.status === 401) {
         navigate('/login');
       } else {
         alert(err.response?.data?.message || 'Failed to enroll');
       }
     } finally {
-      setEnrolling(false);
+      if (!course.isPaid) {
+        setEnrolling(false);
+      }
     }
   };
 
@@ -236,11 +303,11 @@ const CourseDetails = () => {
                   {/* Action Layout */}
                   <div className="px-2 pb-2 mt-2">
                      <button 
-                       onClick={handleEnroll}
+                       onClick={handleBuyCourse}
                        disabled={enrolling}
                        className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all mb-8 text-[15px]"
                      >
-                       {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                       {enrolling ? 'Processing...' : (course.isPaid ? 'Buy Now' : 'Enroll Now')}
                      </button>
                      
                      <div className="mb-2">
