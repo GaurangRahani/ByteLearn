@@ -16,13 +16,13 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedExtensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+  const allowedExtensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.mp4', '.webm', '.mov'];
   const ext = path.extname(file.originalname).toLowerCase();
   
   if (allowedExtensions.includes(ext)) {
     cb(null, true);
   } else {
-    cb(new Error(`File format ${ext} is not allowed. Only PDF, DOC, DOCX, JPG, and PNG are allowed.`), false);
+    cb(new Error(`File format ${ext} is not allowed. Only Documents, Images, and Video (.mp4, .webm, .mov) are allowed.`), false);
   }
 };
 
