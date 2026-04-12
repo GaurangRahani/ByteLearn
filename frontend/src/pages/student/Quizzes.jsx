@@ -177,7 +177,6 @@ const Quizzes = () => {
 
 const QuizCard = ({ quiz, variants }) => {
   const percentage = Math.round((quiz.score / quiz.totalMarksPossible) * 100) || 0;
-  const isPass = percentage >= (quiz.passingScoreSnap || 60);
 
   return (
     <motion.div
@@ -228,13 +227,11 @@ const QuizCard = ({ quiz, variants }) => {
         <div className="flex flex-col">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Final Result</p>
           <div className="flex items-center gap-2">
-            <span className={`text-2xl font-black ${isPass ? 'text-emerald-600' : 'text-rose-600'}`}>
+            <span className={`text-2xl font-black text-slate-800`}>
               {percentage}%
             </span>
-            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
-              isPass ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-            }`}>
-              {isPass ? 'Pass' : 'Fail'}
+            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-700`}>
+              Completed
             </span>
           </div>
         </div>

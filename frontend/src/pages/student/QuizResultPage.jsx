@@ -44,26 +44,18 @@ const QuizResultPage = () => {
             <div className="max-w-3xl mx-auto">
                 <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
                     {/* Header Section */}
-                    <div className={`p-10 text-center ${passed ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+                    <div className={`p-10 text-center bg-indigo-50`}>
                         <div className="flex justify-center mb-6">
-                            {passed ? (
-                                <div className="p-4 bg-emerald-100 rounded-full animate-bounce">
-                                    <Trophy size={64} className="text-emerald-600" />
-                                </div>
-                            ) : (
-                                <div className="p-4 bg-rose-100 rounded-full">
-                                    <XCircle size={64} className="text-rose-600" />
-                                </div>
-                            )}
+                            <div className="p-4 bg-indigo-100 rounded-full animate-bounce">
+                                <Trophy size={64} className="text-indigo-600" />
+                            </div>
                         </div>
                         
-                        <h1 className={`text-4xl font-extrabold mb-2 ${passed ? 'text-emerald-900' : 'text-rose-900'}`}>
-                            {passed ? 'Congratulations!' : 'Keep Practicing!'}
+                        <h1 className={`text-4xl font-extrabold mb-2 text-indigo-900`}>
+                            Quiz Completed!
                         </h1>
-                        <p className={`text-lg font-medium ${passed ? 'text-emerald-700/80' : 'text-rose-700/80'}`}>
-                            {passed 
-                                ? "You've successfully passed the quiz." 
-                                : "You didn't reach the passing score this time."}
+                        <p className={`text-lg font-medium text-indigo-700/80`}>
+                            You've successfully finished your assessment.
                         </p>
                     </div>
 
@@ -102,9 +94,9 @@ const QuizResultPage = () => {
                                 <span className="text-slate-900 font-bold">{score} / {totalMarksPossible}</span>
                             </div>
                             <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl">
-                                <span className="text-slate-600 font-medium">Completion Status</span>
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${passed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                                    {passed ? 'Passed' : 'Failed'}
+                                <span className="text-slate-600 font-medium">Attempt Status</span>
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700`}>
+                                    Submitted
                                 </span>
                             </div>
                         </div>
@@ -117,14 +109,12 @@ const QuizResultPage = () => {
                             >
                                 <ArrowLeft size={20} /> Back to Course
                             </button>
-                            {!passed && (
-                                <button
-                                    onClick={() => navigate(-1)}
-                                    className="px-8 py-4 bg-white border-2 border-slate-200 text-slate-600 font-bold rounded-2xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
-                                >
-                                    <RotateCcw size={20} /> Retake Quiz
-                                </button>
-                            )}
+                            <button
+                                onClick={() => navigate(-1)}
+                                className="px-8 py-4 bg-white border-2 border-slate-200 text-slate-600 font-bold rounded-2xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                            >
+                                <RotateCcw size={20} /> Retake Quiz
+                            </button>
                         </div>
                     </div>
                 </div>

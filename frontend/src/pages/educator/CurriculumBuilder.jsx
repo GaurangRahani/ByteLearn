@@ -28,7 +28,6 @@ const Input = ({ className = '', ...props }) => (
 // Quiz Builder Sub-Component
 const QuizBuilder = ({ moduleId, courseId, onSave, onCancel }) => {
   const [quizTitle, setQuizTitle] = useState('');
-  const [passingScore, setPassingScore] = useState('');
   const [duration, setDuration] = useState('');
   const [attemptsAllowed, setAttemptsAllowed] = useState(1);
   const [questions, setQuestions] = useState([
@@ -84,7 +83,6 @@ const QuizBuilder = ({ moduleId, courseId, onSave, onCancel }) => {
       const token = localStorage.getItem('token');
       const payload = {
         title: quizTitle.trim(),
-        passingScore: passingScore ? Number(passingScore) : totalMarks,
         duration: duration ? Number(duration) : undefined,
         attemptsAllowed: Number(attemptsAllowed) || 1,
         questions: questions.map(q => ({
@@ -124,7 +122,7 @@ const QuizBuilder = ({ moduleId, courseId, onSave, onCancel }) => {
           </div>
           <div>
             <h4 className="text-lg font-bold text-slate-800 tracking-tight">Create Quiz</h4>
-            <p className="text-xs text-slate-500 font-medium">Add questions, options, and set passing criteria</p>
+            <p className="text-xs text-slate-500 font-medium">Add questions, options, and set time limits</p>
           </div>
         </div>
         <button onClick={onCancel} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors"><X size={20} /></button>
@@ -144,14 +142,10 @@ const QuizBuilder = ({ moduleId, courseId, onSave, onCancel }) => {
             <Label>Quiz Title *</Label>
             <Input required placeholder="e.g. JavaScript Fundamentals Quiz" value={quizTitle} onChange={e => setQuizTitle(e.target.value)} />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <Label>Total Marks</Label>
               <div className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 font-bold text-indigo-600 text-center shadow-sm">{totalMarks}</div>
-            </div>
-            <div>
-              <Label>Passing Score</Label>
-              <Input type="number" min="0" placeholder={`max ${totalMarks}`} value={passingScore} onChange={e => setPassingScore(e.target.value)} />
             </div>
             <div>
               <Label>Duration (minutes)</Label>
@@ -336,7 +330,15 @@ const CurriculumBuilder = () => {
   const [activeForm, setActiveForm] = useState(null);
 
   // Lesson form state
-  const [newLessonData, setNewLessonData] = useState({ title: '', lessonType: 'video', content: '', video: null, notes: null });
+  const [newLessonData, setNewLessonData] = useState({ 
+    title: '', 
+    lessonType: 'video', 
+    videoDescription: '', 
+    articleBody: '', 
+    video: null, 
+    videoNotes: null,
+    articleImage: null 
+  });
   const [isSavingLesson, setIsSavingLesson] = useState(false);
 
   // Assignment form state
@@ -408,7 +410,15 @@ const CurriculumBuilder = () => {
   const closeForm = () => {
     setActiveForm(null);
     setActiveModuleId(null);
-    setNewLessonData({ title: '', lessonType: 'video', content: '', video: null, notes: null });
+    setNewLessonData({ 
+      title: '', 
+      lessonType: 'video', 
+      videoDescription: '', 
+      articleBody: '', 
+      video: null, 
+      videoNotes: null,
+      articleImage: null 
+    });
     setNewAssignmentData({ title: '', instructions: '', questionPdf: null, totalMarks: '' });
   };
 
@@ -448,9 +458,20 @@ const CurriculumBuilder = () => {
       const formData = new FormData();
       formData.append('title', newLessonData.title.trim());
       formData.append('lessonType', newLessonData.lessonType);
-      formData.append('content', newLessonData.content.trim());
-      if (newLessonData.lessonType === 'video' && newLessonData.video) formData.append('video', newLessonData.video);
-      if (newLessonData.notes) formData.append('notes', newLessonData.notes);
+      
+      // Map mode-specific content to the generic 'content' field for the backend
+      const content = newLessonData.lessonType === 'video' 
+        ? newLessonData.videoDescription 
+        : newLessonData.articleBody;
+      formData.append('content', content.trim());
+
+      if (newLessonData.lessonType === 'video') {
+        if (newLessonData.video) formData.append('video', newLessonData.video);
+        if (newLessonData.videoNotes) formData.append('notes', newLessonData.videoNotes);
+      } else {
+        if (newLessonData.articleImage) formData.append('notes', newLessonData.articleImage);
+      }
+
       const res = await axios.post(`/api/courses/${courseId}/modules/${activeModuleId}/lessons`, formData, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
@@ -724,7 +745,7 @@ const CurriculumBuilder = () => {
                                   </label>
                                   <div className="mt-4">
                                     <Label>Short Description (optional)</Label>
-                                    <textarea rows="3" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm text-slate-700 placeholder:text-slate-400" placeholder="Brief summary of what this video covers..." value={newLessonData.content} onChange={e => setNewLessonData({ ...newLessonData, content: e.target.value })}></textarea>
+                                    <textarea rows="3" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm text-slate-700 placeholder:text-slate-400" placeholder="Brief summary of what this video covers..." value={newLessonData.videoDescription} onChange={e => setNewLessonData({ ...newLessonData, videoDescription: e.target.value })}></textarea>
                                   </div>
 
                                   <div className="mt-6 pt-6 border-t border-slate-100">
@@ -734,16 +755,16 @@ const CurriculumBuilder = () => {
                                         <FileUp size={20} />
                                       </div>
                                       <div className="flex-1 overflow-hidden">
-                                        {newLessonData.notes ? (
-                                          <p className="text-sm font-bold text-slate-700 truncate">{newLessonData.notes.name}</p>
+                                        {newLessonData.videoNotes ? (
+                                          <p className="text-sm font-bold text-slate-700 truncate">{newLessonData.videoNotes.name}</p>
                                         ) : (
                                           <p className="text-sm font-semibold text-slate-500">Upload notes for this video lesson...</p>
                                         )}
                                       </div>
-                                      {newLessonData.notes && (
-                                        <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, notes: null }); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><X size={16} /></button>
+                                      {newLessonData.videoNotes && (
+                                        <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, videoNotes: null }); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><X size={16} /></button>
                                       )}
-                                      <input type="file" className="hidden" accept=".pdf,image/*" onChange={e => setNewLessonData({ ...newLessonData, notes: e.target.files[0] })} />
+                                      <input type="file" className="hidden" accept=".pdf,image/*" onChange={e => setNewLessonData({ ...newLessonData, videoNotes: e.target.files[0] })} />
                                     </label>
                                   </div>
                                 </div>
@@ -754,16 +775,16 @@ const CurriculumBuilder = () => {
                                 <div className="space-y-4">
                                   <div>
                                     <Label>Reading Content *</Label>
-                                    <textarea rows="8" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm text-slate-700 placeholder:text-slate-400 leading-relaxed" placeholder="Write the full reading material here. Explain concepts clearly for students..." value={newLessonData.content} onChange={e => setNewLessonData({ ...newLessonData, content: e.target.value })}></textarea>
+                                    <textarea rows="8" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm text-slate-700 placeholder:text-slate-400 leading-relaxed" placeholder="Write the full reading material here. Explain concepts clearly for students..." value={newLessonData.articleBody} onChange={e => setNewLessonData({ ...newLessonData, articleBody: e.target.value })}></textarea>
                                   </div>
                                   <div>
                                     <Label>Visual Aid — Image <span className="text-slate-400 font-normal">(optional)</span></Label>
                                     <label className="flex flex-col items-center justify-center w-full min-h-[130px] bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-emerald-50/50 hover:border-emerald-300 transition-colors group">
-                                      {newLessonData.notes ? (
+                                      {newLessonData.articleImage ? (
                                         <div className="text-center p-4">
                                           <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2"><Check size={20} strokeWidth={3} /></div>
-                                          <p className="text-sm font-semibold text-slate-700 truncate max-w-[220px]">{newLessonData.notes.name}</p>
-                                          <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, notes: null }); }} className="text-xs text-red-500 font-bold mt-1 hover:underline">Remove</button>
+                                          <p className="text-sm font-semibold text-slate-700 truncate max-w-[220px]">{newLessonData.articleImage.name}</p>
+                                          <button type="button" onClick={e => { e.preventDefault(); setNewLessonData({ ...newLessonData, articleImage: null }); }} className="text-xs text-red-500 font-bold mt-1 hover:underline">Remove</button>
                                         </div>
                                       ) : (
                                         <div className="flex flex-col items-center py-5">
@@ -772,7 +793,7 @@ const CurriculumBuilder = () => {
                                           <p className="text-xs text-slate-500 mt-1">JPG, PNG, WEBP</p>
                                         </div>
                                       )}
-                                      <input type="file" className="hidden" accept="image/*" onChange={e => setNewLessonData({ ...newLessonData, notes: e.target.files[0] })} />
+                                      <input type="file" className="hidden" accept="image/*" onChange={e => setNewLessonData({ ...newLessonData, articleImage: e.target.files[0] })} />
                                     </label>
                                   </div>
                                 </div>
