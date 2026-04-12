@@ -1,5 +1,7 @@
 const Submission = require('../model/Submission');
 const Enrollment = require('../model/Enrollment');
+const Course = require('../model/Course');
+const { evaluateCourseCompletion } = require('../services/evaluationService');
 const { uploadOnCloudinary } = require('../utils/cloudinary');
 const fs = require('fs');
 
@@ -36,10 +38,36 @@ const submitAssignment = async (req, res) => {
         });
 
         const updatedEnrollment = await Enrollment.findOneAndUpdate(
-            { studentId: req.user._id, courseId: req.body.courseId },
-            { $addToSet: { completedAssignments: req.body.assignmentId } },
+            { studentId, courseId },
+            { $addToSet: { completedAssignments: assignmentId } },
             { new: true }
         );
+
+        if (updatedEnrollment) {
+            const course = await Course.findById(courseId).populate({
+                path: 'modules',
+                populate: ['lessons', 'quizzes', 'assignments']
+            });
+
+            if (course) {
+                let totalItems = 0;
+                course.modules.forEach(m => {
+                    totalItems += (m.lessons?.length || 0) + (m.quizzes?.length || 0) + (m.assignments?.length || 0);
+                });
+
+                const completedCount = updatedEnrollment.completedLessons.length + 
+                                       updatedEnrollment.completedQuizzes.length + 
+                                       updatedEnrollment.completedAssignments.length;
+                
+                updatedEnrollment.progressPercentage = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
+                await updatedEnrollment.save();
+
+                // Trigger Evaluation Engine if progress is 100%
+                if (updatedEnrollment.progressPercentage === 100) {
+                    evaluateCourseCompletion(studentId, courseId).catch(err => console.error("Evaluation Trigger Error:", err));
+                }
+            }
+        }
 
         res.status(201).json({ success: true, data: submission, progress: updatedEnrollment });
 
@@ -61,7 +89,6 @@ const getEducatorSubmissions = async (req, res) => {
         const educatorId = req.user._id;
 
         // Find all courses by this educator
-        const Course = require('../model/Course');
         const educatorCourses = await Course.find({ educatorId }).select('_id');
         const courseIds = educatorCourses.map(c => c._id);
 
@@ -185,6 +212,12 @@ const gradeSubmission = async (req, res) => {
         }
 
         res.status(200).json({ success: true, data: submission });
+        
+        // Trigger Evaluation Engine in background (Educator Trigger)
+        // Passes studentId from submission to isolate context (Step 2)
+        // The service layer handles Step 3 (Dual-Verification) and Step 4 (Storage)
+        evaluateCourseCompletion(submission.studentId._id, submission.courseId._id)
+            .catch(err => console.error("[EvaluationEngine] Background Trigger Error:", err));
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

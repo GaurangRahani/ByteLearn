@@ -6,6 +6,7 @@ const Assignment = require('../model/Assignment');
 const QuizAttempt = require('../model/QuizAttempt');
 const Enrollment = require('../model/Enrollment');
 const Course = require('../model/Course');
+const { evaluateCourseCompletion } = require('../services/evaluationService');
 const mongoose = require('mongoose');
 
 const verifyModuleOwnership = async (moduleId, userId) => {
@@ -282,6 +283,11 @@ const submitFinalQuiz = async (req, res) => {
                 
                 updatedEnrollment.progressPercentage = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
                 await updatedEnrollment.save();
+
+                // Trigger Evaluation Engine if progress is 100%
+                if (updatedEnrollment.progressPercentage === 100) {
+                    evaluateCourseCompletion(studentId, attempt.courseId).catch(err => console.error("Evaluation Trigger Error:", err));
+                }
             }
         }
 

@@ -4,6 +4,7 @@ const Lesson = require('../model/Lesson');
 const Enrollment = require('../model/Enrollment');
 const Submission = require('../model/Submission');
 const QuizAttempt = require('../model/QuizAttempt');
+const { evaluateCourseCompletion } = require('../services/evaluationService');
 const { uploadOnCloudinary } = require('../utils/cloudinary');
 const fs = require('fs');
 
@@ -467,6 +468,11 @@ const markLessonComplete = async (req, res) => {
             
             updatedEnrollment.progressPercentage = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
             await updatedEnrollment.save();
+
+            // Trigger Evaluation Engine if progress is 100%
+            if (updatedEnrollment.progressPercentage === 100) {
+                evaluateCourseCompletion(studentId, courseId).catch(err => console.error("Evaluation Trigger Error:", err));
+            }
         }
 
         res.status(200).json({ success: true, progress: updatedEnrollment });
