@@ -30,6 +30,8 @@ const quizRoutes = require('./routes/quizRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const feedbackRoutes = require('./routes/feedbackRoutes');
+
 
 
 
@@ -43,6 +45,8 @@ app.use('/api/quizzes', quizRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/feedback', feedbackRoutes);
+
 
 
 
