@@ -27,13 +27,11 @@ const adminRoutes = require('./routes/adminRoutes');
 const submissionRoutes = require('./routes/submissionRoutes');
 const quizAttemptRoutes = require('./routes/quizAttemptRoutes');
 const quizRoutes = require('./routes/quizRoutes');
+const queryRoutes = require('./routes/queryRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
-
-
-
 
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
@@ -42,13 +40,11 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/quiz-attempts', quizAttemptRoutes);
 app.use('/api/quizzes', quizRoutes);
+app.use('/api/queries', queryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/feedback', feedbackRoutes);
-
-
-
 
 app.use((err, req, res, next) => {
     console.error(err.stack);

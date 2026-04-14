@@ -1,0 +1,168 @@
+const Query = require('../model/Query');
+const Course = require('../model/Course');
+const Lesson = require('../model/Lesson');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+
+const createQuery = async (req, res) => {
+  try {
+    const { courseId, lessonId, question } = req.body;
+    const studentId = req.user._id;
+
+    if (!courseId || !question) {
+      return res.status(400).json({ success: false, message: "Course ID and Question are required" });
+    }
+
+    const query = await Query.create({
+      studentId,
+      courseId,
+      lessonId,
+      question
+    });
+
+    res.status(201).json({ success: true, data: query });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+const getStudentQueries = async (req, res) => {
+  try {
+    const { courseId } = req.query;
+    const filter = { studentId: req.user._id };
+
+    if (courseId) filter.courseId = courseId;
+
+    const queries = await Query.find(filter)
+      .populate('courseId', 'title')
+      .populate('lessonId', 'title')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, data: queries });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getEducatorQueries = async (req, res) => {
+  try {
+    const { status, courseId } = req.query;
+    const educatorId = req.user._id;
+
+    // First find courses owned by this educator
+    const educatorCourses = await Course.find({ educatorId }, '_id');
+    const courseIds = educatorCourses.map(c => c._id);
+
+    const filter = { courseId: { $in: courseIds } };
+    if (status) filter.status = status;
+    if (courseId) filter.courseId = courseId;
+
+    const queries = await Query.find(filter)
+      .populate('studentId', 'name email')
+      .populate('courseId', 'title')
+      .populate('lessonId', 'title')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, data: queries });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+const generateAIDrafts = async (req, res) => {
+  try {
+    const queryId = req.params.id || req.params.queryId;
+    const query = await Query.findById(queryId)
+      .populate('studentId', 'name')
+      .populate('courseId', 'title educatorId');
+
+    if (!query) {
+      return res.status(404).json({ success: false, message: "Query not found" });
+    }
+
+    // Security check
+    if (query.courseId.educatorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: "Not authorized" });
+    }
+
+    // Initialize Gemini
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+      }
+    });
+
+    const studentFirstName = query.studentId.name.split(' ')[0];
+    const systemPrompt = `You are an expert teaching assistant helping an educator reply to a student. Output exactly 3 response options formatted as a JSON array of strings: ["Option 1", "Option 2", "Option 3"]. Keep each option to a maximum of 4 sentences. Option 1 must be direct, Option 2 must use an analogy, Option 3 must be highly encouraging. Never state that you are an AI. Address the student by their first name (${studentFirstName}).`;
+
+    const userPrompt = `Course: ${query.courseId.title}, Question: ${query.question}`;
+    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
+
+    console.log(`[Gemini] Generating drafts for query: ${queryId}`);
+    const result = await model.generateContent(fullPrompt);
+    const response = await result.response;
+    const text = response.text();
+    console.log(`[Gemini] Raw Response:`, text);
+
+    // Parse JSON
+    try {
+      // Clean potential markdown or whitespace
+      const cleanedJson = text.trim();
+      const drafts = JSON.parse(cleanedJson);
+
+      if (!Array.isArray(drafts)) {
+        throw new Error("Response is not a JSON array");
+      }
+
+      res.status(200).json({ success: true, data: drafts.slice(0, 3) });
+    } catch (e) {
+      console.error("Gemini JSON Parse Error:", e.message, "Text:", text);
+      res.status(500).json({ success: false, message: "AI response format error. Please try again." });
+    }
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const resolveQuery = async (req, res) => {
+  try {
+    const { answer } = req.body;
+    const queryId = req.params.id || req.params.queryId;
+
+    if (!answer) {
+      return res.status(400).json({ success: false, message: "Answer is required" });
+    }
+
+    const query = await Query.findById(queryId).populate('courseId');
+
+    if (!query) {
+      return res.status(404).json({ success: false, message: "Query not found" });
+    }
+
+    // Check if the user is the educator of this course
+    if (query.courseId.educatorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: "Not authorized to resolve this query" });
+    }
+
+    query.answer = answer;
+    query.status = 'resolved';
+    await query.save();
+
+    res.status(200).json({ success: true, data: query });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = {
+  createQuery,
+  getStudentQueries,
+  getEducatorQueries,
+  generateAIDrafts,
+  resolveQuery
+};
