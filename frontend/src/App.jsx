@@ -10,6 +10,7 @@ import MyCourses from './pages/educator/MyCourses';
 import CurriculumBuilder from './pages/educator/CurriculumBuilder';
 import StudentManagement from './pages/educator/StudentManagement';
 import AssignmentReview from './pages/educator/AssignmentReview';
+import EducatorQueries from './pages/educator/EducatorQueries';
 import Login from './pages/auth/Login';
 import Header from './components/layout/Header';
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -23,6 +24,7 @@ import QuizResultPage from './pages/student/QuizResultPage';
 import Assignments from './pages/student/Assignments';
 import Quizzes from './pages/student/Quizzes';
 import CertificatesPage from './pages/student/CertificatesPage';
+import StudentQueries from './pages/student/StudentQueries';
 
 
 
@@ -49,6 +51,7 @@ const AppContent = () => {
     location.pathname.startsWith('/quiz-result') ||
     location.pathname.startsWith('/assignments') ||
     location.pathname.startsWith('/quizzes') ||
+    location.pathname.startsWith('/student/queries') ||
     location.pathname.startsWith('/certificates');
 
 
@@ -77,6 +80,7 @@ const AppContent = () => {
           <Route path="/educator/courses" element={<MyCourses />} />
           <Route path="/educator/student-management" element={<StudentManagement />} />
           <Route path="/educator/review/:submissionId" element={<AssignmentReview />} />
+          <Route path="/educator/queries" element={<EducatorQueries />} />
           <Route path="/course/create" element={<CreateCourse />} />
           <Route path="/course/:id/curriculum" element={<CurriculumBuilder />} />
           <Route path="/course/:id" element={<CourseDetailsPage />} />
@@ -91,6 +95,7 @@ const AppContent = () => {
           <Route path="/assignments" element={<Assignments />} />
           <Route path="/quizzes" element={<Quizzes />} />
           <Route path="/certificates" element={<CertificatesPage />} />
+          <Route path="/student/queries" element={<StudentQueries />} />
 
 
           <Route path="/login" element={<Login />} />

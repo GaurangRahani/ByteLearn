@@ -68,7 +68,7 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
     { name: 'My Courses', path: '/my-courses', icon: GraduationCap },
     { name: 'Assignments', path: '/assignments', icon: FileText },
     { name: 'Quizzes', path: '/quizzes', icon: HelpCircle },
-    { name: 'Queries', path: '/queries', icon: MessageSquare }, // Leaving MessageSquare for Queries based on context
+    { name: 'Queries', path: '/student/queries', icon: MessageSquare }, // Leaving MessageSquare for Queries based on context
     { name: 'Progress', path: '/progress', icon: TrendingUp },
     { name: 'Certificates', path: '/certificates', icon: Award },
   ];

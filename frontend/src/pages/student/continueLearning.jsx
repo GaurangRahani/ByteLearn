@@ -24,6 +24,7 @@ import QuizViewer from '../../components/common/QuizViewer';
 import LessonViewer from '../../components/common/LessonViewer';
 import { AnimatePresence, motion } from 'framer-motion';
 import CourseFeedbackForm from '../../components/CourseFeedbackForm';
+import SupportQuery from '../../components/common/SupportQuery';
 
 
 const isImage = (url) => {
@@ -75,6 +76,7 @@ const ContinueLearning = () => {
   const [quizAttempts, setQuizAttempts] = useState([]);
   const [certificate, setCertificate] = useState(null);
   const [isFetchingCert, setIsFetchingCert] = useState(false);
+  const [activeBottomTab, setActiveBottomTab] = useState('overview'); // 'overview' or 'qa'
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -603,11 +605,41 @@ const ContinueLearning = () => {
                   onComplete={(data) => toggleCompletion(currentItem.id, { progress: data.progress, quizAttempt: data.data })}
                 />
               )}
+            </div>
 
+            {/* Bottom Tabs Selection */}
+            <div className="flex gap-8 border-b border-slate-200 mt-4 mb-2">
+              <button 
+                onClick={() => setActiveBottomTab('overview')}
+                className={`pb-3 text-sm font-bold transition-all relative ${activeBottomTab === 'overview' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                Lesson Overview
+                {activeBottomTab === 'overview' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full shadow-sm" />}
+              </button>
+              <button 
+                onClick={() => setActiveBottomTab('qa')}
+                className={`pb-3 text-sm font-bold transition-all relative ${activeBottomTab === 'qa' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                Questions & Answers
+                {activeBottomTab === 'qa' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full shadow-sm" />}
+              </button>
+            </div>
 
+            <div className="mt-2">
+              {activeBottomTab === 'overview' ? (
+                <div className="bg-white border text-base border-slate-200 rounded-2xl p-8 shadow-sm">
+                  <h3 className="text-xl font-bold text-slate-800 mb-4">About this lesson</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                    {currentItem?.content || "This lesson covers fundamental concepts for the current module. Review the video or reading material above to proceed."}
+                  </p>
+                </div>
+              ) : (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <SupportQuery courseId={course._id} lessonId={currentItem?.id} />
+                </div>
+              )}
             </div>
           </div>
-
         </div>
       </main>
     </div>
