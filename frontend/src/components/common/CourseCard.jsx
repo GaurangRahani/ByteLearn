@@ -1,9 +1,9 @@
 import React from 'react';
-import { ArrowRight, Clock } from 'lucide-react';
+import { ArrowRight, Clock, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-const CourseCard = ({ id, title, instructor, duration, progress }) => {
+const CourseCard = ({ id, title, instructor, duration, progress, rating, totalRatings }) => {
   const navigate = useNavigate();
 
   return (
@@ -14,14 +14,27 @@ const CourseCard = ({ id, title, instructor, duration, progress }) => {
     >
       <div className="flex-grow">
         <h3 className="font-bold text-slate-800 text-[16px] mb-2 group-hover:text-blue-600 transition-colors">{title}</h3>
-        <p className="text-[13px] font-semibold text-slate-500 mb-6 flex items-center gap-4">
-          <span className="flex items-center gap-1.5">
-            {instructor}
-          </span>
-          <span className="flex items-center gap-1.5 text-slate-400">
-            <Clock size={15} /> {duration}
-          </span>
-        </p>
+        <div className="flex flex-col gap-1 mb-6">
+          <p className="text-[13px] font-semibold text-slate-500 flex items-center gap-4">
+            <span className="flex items-center gap-1.5">
+              {instructor}
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-400">
+              <Clock size={15} /> {duration}
+            </span>
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100">
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <span className="text-[12px] font-bold text-amber-700">
+                {(rating || 0).toFixed(1)}
+              </span>
+            </div>
+            <span className="text-[11px] font-medium text-slate-400">
+              ({totalRatings || 0} {totalRatings === 1 ? 'rating' : 'ratings'})
+            </span>
+          </div>
+        </div>
         
         <div className="flex items-center gap-4 pr-0 md:pr-12">
           <div className="flex-grow">

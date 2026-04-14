@@ -42,13 +42,11 @@ const MyCourse = () => {
       <DashboardHeader />
       
       <main className="flex-1 w-full max-w-[1400px] mx-auto px-6 py-8">
-        {/* Header Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-800 mb-2">My Courses</h1>
           <p className="text-slate-500">Continue your learning journey with your enrolled courses</p>
         </div>
 
-        {/* Content Section */}
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -83,7 +81,9 @@ const MyCourse = () => {
                 isFree: !course.isPaid,
                 educatorName: course.educatorId?.name || 'Unknown Educator',
                 studentCount: course.studentCount || 0,
-                duration: course.duration || 'N/A'
+                duration: course.duration || 'N/A',
+                rating: course.rating,
+                totalRatings: course.totalRatings
               };
 
               return (

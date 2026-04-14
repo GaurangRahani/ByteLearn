@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Clock } from 'lucide-react';
+import { Users, Clock, Star } from 'lucide-react';
 
 const EnrolledCourseCard = ({ enrollment, progress }) => {
   const {
@@ -11,7 +11,9 @@ const EnrolledCourseCard = ({ enrollment, progress }) => {
     isFree,
     educatorName,
     studentCount,
-    duration
+    duration,
+    rating,
+    totalRatings
   } = enrollment;
 
   return (
@@ -55,10 +57,14 @@ const EnrolledCourseCard = ({ enrollment, progress }) => {
             <Users size={14} />
             <span>{studentCount}</span>
           </div>
-          <span className="mx-2 text-slate-300">•</span>
           <div className="flex items-center gap-1">
             <Clock size={14} />
             <span>{duration}</span>
+          </div>
+          <span className="mx-2 text-slate-300">•</span>
+          <div className="flex items-center gap-1.5 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <span className="text-[11px] font-bold text-amber-700">{(rating || 0).toFixed(1)}</span>
           </div>
         </div>
 

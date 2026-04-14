@@ -33,6 +33,8 @@ const ContinueLearningSection = ({ courses = [] }) => {
             instructor={course.educatorId?.name || "Educator"}
             duration={course.totalDuration ? `${course.totalDuration}h` : "8h"}
             progress={course.progressPercentage || 0}
+            rating={course.rating}
+            totalRatings={course.totalRatings}
           />
         ))}
       </div>

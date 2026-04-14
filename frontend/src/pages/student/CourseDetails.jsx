@@ -12,6 +12,7 @@ import {
   BookOpen 
 } from 'lucide-react';
 import DashboardHeader from '../../components/layout/DashboardHeader';
+import CourseReviews from '../../components/CourseReviews';
 
 const CourseDetails = () => {
   const { id } = useParams();
@@ -202,7 +203,12 @@ const CourseDetails = () => {
                 </div>
                 <div className="flex items-center gap-1.5 font-medium text-slate-700">
                   <Star size={18} className="text-amber-400 fill-amber-400" />
-                  <span>{course.rating || '4.8'}</span>
+                  <span>{(course.rating || 0).toFixed(1)}</span>
+                  <span className="text-slate-400 text-sm font-normal">
+                    {course.totalRatings > 0 
+                      ? `(${course.totalRatings} ${course.totalRatings === 1 ? 'review' : 'reviews'})` 
+                      : '(No reviews)'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -343,6 +349,8 @@ const CourseDetails = () => {
           </div>
           
         </div>
+
+        <CourseReviews courseId={course._id} />
       </main>
     </div>
   );

@@ -101,9 +101,12 @@ const AppContent = () => {
   );
 };
 
+import { Toaster } from 'react-hot-toast';
+
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-center" reverseOrder={false} />
       <AppContent />
     </BrowserRouter>
   );

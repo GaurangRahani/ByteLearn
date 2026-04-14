@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Clock } from 'lucide-react';
+import { Users, Clock, Star } from 'lucide-react';
 
 const BrowseCourseCard = ({ course }) => {
   const navigate = useNavigate();
@@ -44,7 +44,18 @@ const BrowseCourseCard = ({ course }) => {
 
       {/* Card Body */}
       <div className="p-5 flex flex-col flex-grow">
-        <h3 className="font-bold text-slate-800 text-[16px] leading-[1.4] mb-2 line-clamp-1">{title}</h3>
+        <h3 className="font-bold text-slate-800 text-[16px] leading-[1.4] mb-1 line-clamp-1">{title}</h3>
+        
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-1">
+            <Star size={14} className="fill-amber-400 text-amber-400" />
+            <span className="text-[13px] font-bold text-slate-700">
+              {(course?.rating || 0).toFixed(1)}
+            </span>
+          </div>
+          <span className="text-[12px] text-slate-400">({course?.totalRatings || 0})</span>
+        </div>
+
         <p className="text-slate-500 text-[14px] leading-relaxed mb-5 line-clamp-2 min-h-[40px] tracking-tight">{description}</p>
         
         {/* Meta Info Row */}
