@@ -9,7 +9,7 @@ exports.getStudentDashboardData = async (req, res) => {
     const [enrollments, recentQuizzes, recentAssignments] = await Promise.all([
       Enrollment.find({ studentId }).populate({
         path: 'courseId',
-        select: 'title thumbnail educatorId totalDuration gradingConfiguration',
+        select: 'title thumbnail educatorId totalDuration gradingConfiguration rating totalRatings',
         populate: {
           path: 'educatorId',
           select: 'name'
