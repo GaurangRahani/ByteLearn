@@ -24,6 +24,8 @@ const StudentManagement = () => {
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   
   // States for Course Roster
+  const [courses, setCourses] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState(''); // Empty means none selected
   const [roster, setRoster] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -44,8 +46,11 @@ const StudentManagement = () => {
             
             const rosterRes = await axios.get('/api/enrollments/educator/roster', config);
             setRoster(rosterRes.data.data);
+
+            const coursesRes = await axios.get('/api/courses/my-courses', config);
+            setCourses(coursesRes.data.data);
         } catch (e) {
-            console.error("Error fetching submissions or roster:", e);
+            console.error("Error fetching submissions, roster or courses:", e);
         }
         
       } catch (err) {
@@ -59,9 +64,16 @@ const StudentManagement = () => {
 
   const filteredRoster = roster.filter(enrollment => {
     const studentName = enrollment.studentId?.name || '';
+    const studentIdStr = enrollment.studentId?._id || '';
+    const courseIdStr = enrollment.courseId?._id || '';
     const courseTitle = enrollment.courseId?.title || '';
-    return studentName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           courseTitle.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesSearch = studentName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         studentIdStr.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCourse = selectedCourse === '' || courseIdStr === selectedCourse;
+    
+    return matchesSearch && matchesCourse;
   });
 
   return (
@@ -76,36 +88,58 @@ const StudentManagement = () => {
           <p className="text-slate-500">The central control center for tracking progress and grading student work.</p>
         </div>
 
-        {/* Tab Switcher - High-end control center style */}
-        <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 flex gap-2 mb-8 w-fit">
-          <button
-            onClick={() => setActiveTab('grading')}
-            className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
-              activeTab === 'grading' 
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
-              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-            }`}
-          >
-            <ClipboardCheck size={18} />
-            Grading Queue
-            <span className={`ml-1 text-[10px] px-2 py-0.5 rounded-full ${activeTab === 'grading' ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
-              {pendingSubmissions.length}
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab('roster')}
-            className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
-              activeTab === 'roster' 
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
-              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-            }`}
-          >
-            <Users size={18} />
-            Course Roster
-            <span className={`ml-1 text-[10px] px-2 py-0.5 rounded-full ${activeTab === 'roster' ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
-              {roster.length}
-            </span>
-          </button>
+        {/* Tab Switcher & Global Filter - High-end control center style */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
+          <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 flex gap-2 w-fit">
+            <button
+              onClick={() => setActiveTab('grading')}
+              className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
+                activeTab === 'grading' 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              <ClipboardCheck size={18} />
+              Grading Queue
+              <span className={`ml-1 text-[10px] px-2 py-0.5 rounded-full ${activeTab === 'grading' ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                {pendingSubmissions.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('roster')}
+              className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
+                activeTab === 'roster' 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              <Users size={18} />
+              Course Roster
+              <span className={`ml-1 text-[10px] px-2 py-0.5 rounded-full ${activeTab === 'roster' ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                {roster.length}
+              </span>
+            </button>
+          </div>
+
+          {/* Global Course Filter */}
+          <div className="flex items-center gap-4 bg-white p-2 pl-5 rounded-2xl shadow-sm border border-slate-100 min-w-[320px]">
+             <div className="flex items-center gap-2 text-blue-600">
+                <Filter size={18} className="opacity-70" />
+                <span className="text-[11px] font-black uppercase tracking-widest">Filter by</span>
+             </div>
+             <div className="h-8 w-px bg-slate-100 mx-2" />
+             <select 
+                value={selectedCourse}
+                onChange={(e) => setSelectedCourse(e.target.value)}
+                className="flex-grow bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 cursor-pointer appearance-none pr-8"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right center', backgroundSize: '1.5em' }}
+             >
+                <option value="">All Active Courses</option>
+                {courses.map(course => (
+                  <option key={course._id} value={course._id}>{course.title}</option>
+                ))}
+             </select>
+          </div>
         </div>
 
         {/* Dynamic View Area */}
@@ -116,11 +150,14 @@ const StudentManagement = () => {
                 <p className="text-slate-500 font-medium">Syncing data...</p>
              </div>
           ) : activeTab === 'grading' ? (
-            <GradingQueueView submissions={pendingSubmissions} />
+            <GradingQueueView submissions={pendingSubmissions.filter(s => !selectedCourse || s.courseId?._id === selectedCourse)} />
           ) : (
             <CourseRosterView 
               roster={filteredRoster} 
-              totalCount={roster.length}
+              courses={courses}
+              selectedCourse={selectedCourse}
+              setSelectedCourse={setSelectedCourse}
+              totalCount={filteredRoster.length}
               searchTerm={searchTerm} 
               setSearchTerm={setSearchTerm} 
             />
@@ -209,36 +246,67 @@ const GradingQueueView = ({ submissions }) => {
 };
 
 /* --- Sub-View: Course Roster --- */
-const CourseRosterView = ({ roster, totalCount, searchTerm, setSearchTerm }) => {
+const CourseRosterView = ({ roster, courses, selectedCourse, setSelectedCourse, totalCount, searchTerm, setSearchTerm }) => {
   return (
     <div className="space-y-6">
       {/* Search & Filters */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4">
-        <div className="relative flex-grow">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
-            type="text"
-            placeholder="Search students by name or course..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-transparent rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/30 transition-all text-sm font-medium"
-          />
+      <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 items-center">
+        {/* Search Bar */}
+        <div className="relative flex-grow w-full">
+          <label className="text-[10px] uppercase font-bold text-slate-400 mb-1.5 ml-1 block tracking-widest">Search Student</label>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input 
+              type="text"
+              placeholder="Search by name or student ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/30 transition-all text-sm font-medium"
+            />
+          </div>
         </div>
-        <button className="flex items-center gap-2 px-5 py-3 bg-slate-50 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all border border-slate-100">
-          <Filter size={18} />
-          Filter
-        </button>
+
+        <div className="md:mt-5">
+           <button className="flex items-center gap-2 px-6 py-3 bg-white text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all border border-slate-100 h-[50px]">
+            <Users size={18} />
+            Export List
+          </button>
+        </div>
       </div>
 
-      {/* Roster Table */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-        {roster.length === 0 ? (
+      {/* Roster Table Content */}
+      {!selectedCourse ? (
+         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-20 text-center">
+            <div className="w-24 h-24 bg-blue-50 text-blue-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm shadow-blue-100/50">
+               <BookOpen size={40} />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-800 mb-2">Select a Course to View Roster</h3>
+            <p className="text-slate-500 max-w-md mx-auto mb-8 font-medium">Please choose one of your courses from the menu above to manage students, track progress, and view performance metrics.</p>
+            
+            <div className="flex flex-wrap justify-center gap-3">
+               {courses.slice(0, 3).map(course => (
+                  <button 
+                    key={course._id}
+                    onClick={() => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        setSelectedCourse(course._id);
+                    }}
+                    className="px-4 py-2 bg-slate-50 hover:bg-blue-50 hover:text-blue-600 text-slate-600 rounded-xl text-xs font-bold transition-all border border-slate-100 hover:border-blue-100"
+                  >
+                     {course.title}
+                  </button>
+               ))}
+            </div>
+         </div>
+      ) : (
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[400px]">
+          {roster.length === 0 ? (
            <div className="p-20 text-center">
               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
                  <Users className="text-slate-300" size={24} />
               </div>
               <p className="text-slate-500 font-bold">No students found</p>
-              <p className="text-slate-400 text-sm">Either no students are enrolled or your filter is too strict.</p>
+              <p className="text-slate-400 text-sm">Either no students are enrolled in this course or your search is too specific.</p>
            </div>
         ) : (
           <table className="w-full text-left border-collapse">
@@ -305,7 +373,8 @@ const CourseRosterView = ({ roster, totalCount, searchTerm, setSearchTerm }) => 
               Total Enrolled Students: {totalCount}
             </p>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 };
