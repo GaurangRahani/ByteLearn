@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Clock, Star } from 'lucide-react';
+import { Clock, Star } from 'lucide-react';
 
 const BrowseCourseCard = ({ course }) => {
   const navigate = useNavigate();
@@ -12,11 +12,6 @@ const BrowseCourseCard = ({ course }) => {
   const price = course?.price;
   const isFree = course?.isFree || price === 0 || price === '0' || !price;
   
-  const educatorName = typeof course?.educatorName === 'string' 
-    ? course.educatorName 
-    : (course?.educator?.user?.name || course?.educator?.name || course?.educatorName || 'Unknown Educator');
-    
-  const studentCount = course?.studentCount || (course?.enrolledStudents?.length) || 0;
   const duration = course?.duration || '0h';
 
   return (
@@ -44,32 +39,33 @@ const BrowseCourseCard = ({ course }) => {
 
       {/* Card Body */}
       <div className="p-5 flex flex-col flex-grow">
-        <h3 className="font-bold text-slate-800 text-[16px] leading-[1.4] mb-1 line-clamp-1">{title}</h3>
+        <h3 className="font-bold text-slate-800 text-[16px] leading-[1.4] mb-0.5 line-clamp-1">{title}</h3>
         
-        <div className="flex items-center gap-2 mb-3">
+        {/* Educator Name - Positioned right below title */}
+        <p className="text-[13px] text-slate-500 font-medium mb-3">
+          By {course?.educatorId?.name || 'Unknown Educator'}
+        </p>
+
+        <div className="flex items-center gap-2 mb-4">
           <div className="flex items-center gap-1">
             <Star size={14} className="fill-amber-400 text-amber-400" />
             <span className="text-[13px] font-bold text-slate-700">
               {(course?.rating || 0).toFixed(1)}
             </span>
           </div>
-          <span className="text-[12px] text-slate-400">({course?.totalRatings || 0})</span>
+          <span className="text-[12px] text-slate-400">({course?.totalRatings || 0} reviews)</span>
         </div>
 
-        <p className="text-slate-500 text-[14px] leading-relaxed mb-5 line-clamp-2 min-h-[40px] tracking-tight">{description}</p>
+        <p className="text-slate-500 text-[14px] leading-relaxed mb-6 line-clamp-2 min-h-[40px] tracking-tight">{description}</p>
         
-        {/* Meta Info Row */}
-        <div className="mt-auto mb-5 flex items-center text-[13px] text-slate-500 font-medium">
-          <span className="truncate max-w-[130px]">{educatorName}</span>
-          <span className="mx-2.5 text-slate-300 text-[10px]">•</span>
+        {/* Meta Info Row - enrollment count removed */}
+        <div className="mt-auto mb-6 flex items-center text-[13px] text-slate-500 font-medium border-t border-slate-50 pt-4">
           <div className="flex items-center gap-1.5 whitespace-nowrap">
-            <Users size={14} className="text-slate-400" />
-            <span>{studentCount}</span>
-          </div>
-          <span className="mx-2.5 text-slate-300 text-[10px]">•</span>
-          <div className="flex items-center gap-1.5 whitespace-nowrap lg:ml-auto">
             <Clock size={14} className="text-slate-400" />
-            <span>{duration}</span>
+            <span>{duration} Total Duration</span>
+          </div>
+          <div className="ml-auto px-2 py-0.5 bg-slate-100 rounded text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            {course.level || 'Beginner'}
           </div>
         </div>
 

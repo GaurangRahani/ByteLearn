@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import DashboardHeader from '../../components/layout/DashboardHeader';
 import {
@@ -63,6 +63,7 @@ const ContinueLearning = () => {
 
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [course, setCourse] = useState(null);
   const [completions, setCompletions] = useState({});
   const [activeItemId, setActiveItemId] = useState(null);
@@ -160,7 +161,7 @@ const ContinueLearning = () => {
     if (id) {
        fetchCourseData();
     }
-  }, [id, navigate]);
+  }, [id, navigate, location.state]);
 
   useEffect(() => {
     const fetchQuizHistory = async () => {
@@ -598,12 +599,74 @@ const ContinueLearning = () => {
               )}
 
               {currentItem?.type === 'quiz' && (
-                <QuizViewer 
-                  quizId={currentItem.id} 
-                  courseId={course._id}
-                  existingAttempt={quizAttempts.find(att => att.quizId === currentItem.id)}
-                  onComplete={(data) => toggleCompletion(currentItem.id, { progress: data.progress, quizAttempt: data.data })}
-                />
+                <div className="flex-grow flex flex-col items-center justify-center p-12 text-center bg-slate-50/30">
+                  <div className="w-20 h-20 bg-purple-100 rounded-3xl flex items-center justify-center text-purple-600 mb-8 shadow-sm">
+                    <HelpCircle size={40} />
+                  </div>
+                  
+                  <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">{currentItem.title}</h2>
+                  <p className="text-slate-500 font-medium mb-10 max-w-md">
+                    Test your knowledge and earn your progress. Ensure you have a stable connection before starting.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-12">
+                    <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center">
+                      <Clock size={20} className="text-slate-400 mb-2" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Duration</p>
+                      <p className="text-lg font-bold text-slate-800">{currentItem.duration || 15} Mins</p>
+                    </div>
+                    <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center">
+                      <Trophy size={20} className="text-slate-400 mb-2" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Passing Score</p>
+                      <p className="text-lg font-bold text-slate-800">{(currentItem.passingMarks || 50)}%</p>
+                    </div>
+                  </div>
+
+                  {quizAttempts.find(att => att.quizId === currentItem.id) ? (
+                    <div className="w-full max-w-md bg-white border-2 border-emerald-100 rounded-3xl p-8 shadow-xl shadow-emerald-500/5 relative overflow-hidden group">
+                       {quizAttempts.find(att => att.quizId === currentItem.id).status === 'completed' ? (
+                         <>
+                           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
+                              <CheckCircle size={80} className="text-emerald-600" />
+                           </div>
+                           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-4">Quiz Completed</p>
+                           <div className="flex flex-col items-center gap-2">
+                              <p className="text-5xl font-black text-slate-900">
+                                 {Math.round((quizAttempts.find(att => att.quizId === currentItem.id).score / quizAttempts.find(att => att.quizId === currentItem.id).totalMarksPossible) * 100)}%
+                              </p>
+                              <p className="text-sm font-bold text-slate-400">Your Final Score</p>
+                           </div>
+                           <div className="mt-8 py-3 px-6 bg-slate-50 rounded-xl text-slate-500 font-bold text-xs uppercase tracking-widest border border-slate-100">
+                              Single Attempt Finalized
+                           </div>
+                         </>
+                       ) : (
+                         <>
+                           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600 mb-4">Attempt In Progress</p>
+                           <div className="flex flex-col items-center gap-4">
+                              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                                <Clock size={32} />
+                              </div>
+                              <p className="text-slate-600 font-medium">You have an unfinished attempt.</p>
+                           </div>
+                           <button 
+                             onClick={() => navigate(`/quiz/${currentItem.id}/attempt`, { state: { courseId: course._id } })}
+                             className="mt-8 w-full py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all uppercase tracking-widest text-xs"
+                           >
+                             Resume Quiz
+                           </button>
+                         </>
+                       )}
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => navigate(`/quiz/${currentItem.id}/attempt`, { state: { courseId: course._id } })}
+                      className="px-12 py-5 bg-purple-600 text-white font-black rounded-2xl shadow-2xl shadow-purple-500/30 hover:bg-purple-700 transition-all flex items-center gap-3 active:scale-95 uppercase tracking-widest text-sm"
+                    >
+                      Start Quiz <ChevronRight size={20} />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 

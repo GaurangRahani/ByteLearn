@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, 
@@ -51,6 +51,7 @@ const Assignments = () => {
     fetchSubmissions();
   }, []);
 
+  const navigate = useNavigate();
   const inReview = submissions.filter(sub => sub.status === 'submitted');
   const graded = submissions.filter(sub => sub.status === 'graded');
   const displayedSubmissions = activeTab === 'In Review' ? inReview : graded;
@@ -191,24 +192,13 @@ const AssignmentCard = ({ sub, activeTab, variants }) => {
       className="group bg-white rounded-[32px] overflow-hidden border border-slate-200 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.1)] transition-all duration-300"
     >
       <div className="p-8">
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shadow-sm flex-shrink-0">
-              <img 
-                src={sub.courseId?.thumbnail || 'https://via.placeholder.com/150'} 
-                alt={sub.courseId?.title} 
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1 leading-none">
-                {sub.courseId?.title}
-              </p>
-              <h3 className="text-lg font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
-                {sub.assignmentId?.title}
-              </h3>
-            </div>
-          </div>
+        <div className="mb-8">
+          <p className="text-[11px] font-black uppercase tracking-widest text-blue-600 mb-2 leading-none">
+            {sub.courseId?.title}
+          </p>
+          <h3 className="text-2xl font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
+            {sub.assignmentId?.title}
+          </h3>
         </div>
 
         <div className="space-y-4 mb-8">
@@ -291,7 +281,10 @@ const EmptyState = ({ tab }) => {
           ? "You've caught up on all your submissions! Great job staying ahead of your studies." 
           : "Once your instructors grade your submissions, you'll see your scores and detailed feedback here."}
       </p>
-      <button className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-colors flex items-center gap-2">
+      <button 
+        onClick={() => navigate('/browse')}
+        className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-colors flex items-center gap-2"
+      >
         Browse New Courses <ArrowUpRight size={18} />
       </button>
     </motion.div>

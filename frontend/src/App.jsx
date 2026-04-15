@@ -90,7 +90,7 @@ const AppContent = () => {
           <Route path="/my-courses" element={<MyCourse />} />
           <Route path="/course/:id/learn" element={<ContinueLearning />} />
           <Route path="/learn/:id" element={<ContinueLearning />} />
-          <Route path="/quiz/:id" element={<ActiveQuiz />} />
+          <Route path="/quiz/:id/attempt" element={<ActiveQuiz />} />
           <Route path="/quiz-result" element={<QuizResultPage />} />
           <Route path="/assignments" element={<Assignments />} />
           <Route path="/quizzes" element={<Quizzes />} />

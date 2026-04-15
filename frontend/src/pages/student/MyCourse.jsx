@@ -79,11 +79,11 @@ const MyCourse = () => {
                 thumbnail: course.thumbnail,
                 price: course.price,
                 isFree: !course.isPaid,
-                educatorName: course.educatorId?.name || 'Unknown Educator',
-                studentCount: course.studentCount || 0,
+                instructorName: course.instructor?.name || 'Prof. Unknown',
+                enrollmentCount: course.enrollmentCount || 0,
                 duration: course.duration || 'N/A',
-                rating: course.rating,
-                totalRatings: course.totalRatings
+                rating: course.rating || 0,
+                totalRatings: course.totalRatings || 0
               };
 
               return (

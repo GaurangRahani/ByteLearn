@@ -66,10 +66,6 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
     { name: 'Dashboard', path: '/student-dashboard', icon: LayoutDashboard },
     { name: 'Browse', path: '/browse', icon: BookOpen },
     { name: 'My Courses', path: '/my-courses', icon: GraduationCap },
-    { name: 'Assignments', path: '/assignments', icon: FileText },
-    { name: 'Quizzes', path: '/quizzes', icon: HelpCircle },
-    { name: 'Queries', path: '/student/queries', icon: MessageSquare }, // Leaving MessageSquare for Queries based on context
-    { name: 'Progress', path: '/progress', icon: TrendingUp },
     { name: 'Certificates', path: '/certificates', icon: Award },
   ];
 
@@ -86,7 +82,7 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
         </div>
 
         {/* Navigation */}
-        <nav className="hidden xl:flex items-center gap-1.5 text-[13px] font-medium flex-grow">
+        <nav className="hidden xl:flex items-center justify-center gap-8 text-[13px] font-medium flex-grow">
           {navItems.map((item) => (
             <NavLink
               key={item.name}

@@ -9,71 +9,42 @@ const EnrolledCourseCard = ({ enrollment, progress }) => {
     thumbnail,
     price,
     isFree,
-    educatorName,
-    studentCount,
+    instructorName,
+    enrollmentCount,
     duration,
     rating,
     totalRatings
   } = enrollment;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col group cursor-pointer hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl border border-slate-100 overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group cursor-pointer">
       {/* Thumbnail Container */}
-      <div className="relative h-48 w-full">
+      <div className="relative h-48 w-full overflow-hidden">
         <img 
           src={thumbnail || "/api/placeholder/400/250"} 
           alt={title} 
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        {/* Price Badge */}
-        <div className="absolute top-3 right-3">
-          {isFree ? (
-            <span className="px-2.5 py-1 text-xs font-semibold rounded-md bg-teal-100 text-teal-800">
-              Free
-            </span>
-          ) : (
-            <span className="px-2.5 py-1 text-xs font-semibold rounded-md bg-blue-600 text-white">
-              ${price}
-            </span>
-          )}
-        </div>
       </div>
 
       {/* Body Section */}
-      <div className="p-5 flex flex-col flex-1">
-        <h3 className="font-semibold text-slate-800 text-lg leading-tight mb-2 group-hover:text-blue-600 transition-colors">
-          {title}
-        </h3>
-        
-        <p className="text-slate-500 text-sm leading-relaxed mb-4 line-clamp-2">
-          {description}
-        </p>
-
-        {/* Meta info row */}
-        <div className="flex items-center text-xs text-slate-500 mb-6 flex-wrap gap-y-2">
-          <span>{educatorName}</span>
-          <span className="mx-2 text-slate-300">•</span>
-          <div className="flex items-center gap-1">
-            <Users size={14} />
-            <span>{studentCount}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Clock size={14} />
-            <span>{duration}</span>
-          </div>
-          <span className="mx-2 text-slate-300">•</span>
-          <div className="flex items-center gap-1.5 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <span className="text-[11px] font-bold text-amber-700">{(rating || 0).toFixed(1)}</span>
-          </div>
+      <div className="p-5 flex flex-col flex-grow">
+        {/* Text content wrapped in a container that grows */}
+        <div className="flex-grow">
+          <h3 className="font-bold text-slate-800 text-lg leading-tight mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+            {title}
+          </h3>
+          <p className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-2">
+            {description}
+          </p>
         </div>
 
-        <div className="mt-auto">
+        {/* Action & Progress area - always at bottom */}
+        <div className="mt-auto space-y-5">
           {/* Progress Section */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between text-xs mb-1.5 font-medium">
-              <span className="text-slate-500">Course Progress</span>
-              <span className="text-slate-700">{progress}%</span>
+          <div>
+            <div className="flex justify-end mb-1.5">
+              <span className="text-sm font-semibold text-slate-600">{progress}%</span>
             </div>
             <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
               <div 
@@ -84,7 +55,10 @@ const EnrolledCourseCard = ({ enrollment, progress }) => {
           </div>
 
           {/* Continue Learning Button */}
-          <Link to={`/learn/${enrollment._id}`} className="block w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition-colors text-center">
+          <Link 
+            to={`/learn/${enrollment._id}`} 
+            className="block w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-all text-center shadow-lg shadow-blue-100 active:scale-[0.98]"
+          >
             Continue Learning
           </Link>
         </div>

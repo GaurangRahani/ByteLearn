@@ -182,65 +182,51 @@ const QuizCard = ({ quiz, variants }) => {
     <motion.div
       variants={variants}
       whileHover={{ y: -8, shadow: "0 25px 50px -12px rgba(0, 0, 0, 0.08)" }}
-      className="group bg-white rounded-[32px] overflow-hidden border border-slate-200 transition-all duration-300 flex flex-col"
+      className="group bg-white rounded-[40px] overflow-hidden border border-slate-200 transition-all duration-300 flex flex-col h-full"
     >
-      <div className="p-8 flex-grow">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 shadow-sm flex-shrink-0">
-            <img 
-               src={quiz.courseId?.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=400&fit=crop'} 
-               alt={quiz.courseId?.title} 
-               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-0.5 truncate">
-              {quiz.courseId?.title}
-            </p>
-            <h3 className="text-lg font-bold text-slate-900 leading-snug group-hover:text-indigo-600 transition-colors truncate">
-              {quiz.quizId?.title}
-            </h3>
-          </div>
-        </div>
-
-        <div className="space-y-3.5 mb-8">
-          <div className="flex items-center gap-3 text-slate-500">
-            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0">
-              <Calendar size={14} className="text-slate-400" />
-            </div>
-            <span className="text-[13px] font-semibold text-slate-600">
-              {new Date(quiz.submittedAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 text-slate-500">
-            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0">
-              <Clock size={14} className="text-slate-400" />
-            </div>
-            <span className="text-[13px] font-semibold text-slate-600">
-              Attempt #{quiz.attemptNumber}
-            </span>
-          </div>
-        </div>
+      {/* Header with tint */}
+      <div className="p-10 bg-indigo-50/50 border-b border-indigo-100/30">
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 mb-3 leading-none">
+          {quiz.courseId?.title}
+        </p>
+        <h3 className="text-2xl font-extrabold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">
+          {quiz.quizId?.title}
+        </h3>
       </div>
 
-      <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-        <div className="flex flex-col">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Final Result</p>
-          <div className="flex items-center gap-2">
-            <span className={`text-2xl font-black text-slate-800`}>
-              {percentage}%
-            </span>
-            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-700`}>
-              Completed
+      <div className="p-10 flex-grow flex flex-col justify-between">
+        {/* Body: Attempt and Date in a clean row */}
+        <div className="flex items-center justify-between gap-4 mb-12">
+          <div className="flex items-center gap-2.5 text-slate-500">
+            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
+              <Clock size={14} className="text-slate-400" />
+            </div>
+            <span className="text-[13px] font-bold text-slate-600">Attempt #{quiz.attemptNumber}</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-slate-500">
+            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
+              <Calendar size={14} className="text-slate-400" />
+            </div>
+            <span className="text-[13px] font-bold text-slate-600">
+              {new Date(quiz.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           </div>
         </div>
-        
-        <div className="text-right">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Score</p>
-          <p className="text-lg font-black text-slate-700">
-             {quiz.score} <span className="text-xs text-slate-400 font-bold">/ {quiz.totalMarksPossible}</span>
-          </p>
+
+        {/* Footer/Metrics Area: Large centralized block */}
+        <div className="flex flex-col items-center">
+          <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.25em] mb-6">Final Score</p>
+          
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-6xl font-black text-slate-900 tracking-tighter">
+              {quiz.score}
+              <span className="text-2xl text-slate-300 font-bold ml-2">/ {quiz.totalMarksPossible}</span>
+            </p>
+            
+            <div className={`mt-4 px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-xl ${percentage >= 50 ? 'bg-emerald-500 shadow-emerald-200' : 'bg-indigo-600 shadow-indigo-200'}`}>
+              {percentage >= 50 ? 'PASSED' : 'COMPLETED'}
+            </div>
+          </div>
         </div>
       </div>
     </motion.div>
