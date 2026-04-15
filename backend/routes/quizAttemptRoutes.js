@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { startAttempt, submitAttempt, getStudentQuizHistory } = require('../controller/quizAttemptController');
+const { startOrResumeAttempt, submitAttempt, saveProgress, getStudentQuizHistory } = require('../controller/quizAttemptController');
 const { protect } = require('../middleware/authMiddleware');
 
 
-router.post('/start', protect, startAttempt);
+router.post('/start', protect, startOrResumeAttempt);
+router.patch('/save-progress', protect, saveProgress);
 router.post('/submit', protect, submitAttempt);
 router.get('/history/:quizId', protect, getStudentQuizHistory);
 
