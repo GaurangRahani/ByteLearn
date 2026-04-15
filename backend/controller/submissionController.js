@@ -62,10 +62,8 @@ const submitAssignment = async (req, res) => {
                 updatedEnrollment.progressPercentage = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
                 await updatedEnrollment.save();
 
-                // Trigger Evaluation Engine if progress is 100%
-                if (updatedEnrollment.progressPercentage === 100) {
-                    evaluateCourseCompletion(studentId, courseId).catch(err => console.error("Evaluation Trigger Error:", err));
-                }
+                updatedEnrollment.progressPercentage = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
+                await updatedEnrollment.save();
             }
         }
 
@@ -216,8 +214,24 @@ const gradeSubmission = async (req, res) => {
         // Trigger Evaluation Engine in background (Educator Trigger)
         // Passes studentId from submission to isolate context (Step 2)
         // The service layer handles Step 3 (Dual-Verification) and Step 4 (Storage)
-        evaluateCourseCompletion(submission.studentId._id, submission.courseId._id)
-            .catch(err => console.error("[EvaluationEngine] Background Trigger Error:", err));
+        
+        const enrollment = await Enrollment.findOne({ 
+            studentId: submission.studentId._id, 
+            courseId: submission.courseId._id 
+        });
+
+        if (enrollment && enrollment.progressPercentage === 100) {
+            const stillPending = await Submission.exists({
+                studentId: submission.studentId._id,
+                courseId: submission.courseId._id,
+                status: 'submitted'
+            });
+
+            if (!stillPending) {
+                evaluateCourseCompletion(submission.studentId._id, submission.courseId._id)
+                    .catch(err => console.error("[EvaluationEngine] Background Trigger Error:", err));
+            }
+        }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

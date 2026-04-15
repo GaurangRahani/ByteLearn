@@ -286,7 +286,15 @@ const submitFinalQuiz = async (req, res) => {
 
                 // Trigger Evaluation Engine if progress is 100%
                 if (updatedEnrollment.progressPercentage === 100) {
-                    evaluateCourseCompletion(studentId, attempt.courseId).catch(err => console.error("Evaluation Trigger Error:", err));
+                    const pendingWork = await Submission.exists({
+                        studentId,
+                        courseId: attempt.courseId,
+                        status: 'submitted'
+                    });
+
+                    if (!pendingWork) {
+                        evaluateCourseCompletion(studentId, attempt.courseId).catch(err => console.error("Evaluation Trigger Error:", err));
+                    }
                 }
             }
         }

@@ -22,6 +22,13 @@ const evaluateCourseCompletion = async (studentId, courseId) => {
             return false;
         }
 
+        // 2. Gate 0: Immediate Duplicate Check (Prevents Race Conditions)
+        const existingCert = await Certificate.findOne({ studentId, courseId });
+        if (existingCert) {
+            console.log(`[EvaluationEngine] Certificate already exists for this student and course.`);
+            return existingCert;
+        }
+
         // 2. Gate 2: Pending Assignments Check
         const pendingSubmissions = await Submission.countDocuments({ 
             studentId, 
@@ -97,12 +104,6 @@ const evaluateCourseCompletion = async (studentId, courseId) => {
             }
         }
 
-        // 8. Prevent duplicate certificates
-        const existingCert = await Certificate.findOne({ studentId, courseId });
-        if (existingCert) {
-            console.log(`[EvaluationEngine] Certificate already exists for this student and course.`);
-            return existingCert;
-        }
 
         // 9. Fetch Student details for certificate
         const student = await User.findById(studentId);

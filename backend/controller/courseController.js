@@ -471,7 +471,15 @@ const markLessonComplete = async (req, res) => {
 
             // Trigger Evaluation Engine if progress is 100%
             if (updatedEnrollment.progressPercentage === 100) {
-                evaluateCourseCompletion(studentId, courseId).catch(err => console.error("Evaluation Trigger Error:", err));
+                const pendingWork = await Submission.exists({ 
+                    studentId, 
+                    courseId, 
+                    status: 'submitted' 
+                });
+
+                if (!pendingWork) {
+                    evaluateCourseCompletion(studentId, courseId).catch(err => console.error("Evaluation Trigger Error:", err));
+                }
             }
         }
 

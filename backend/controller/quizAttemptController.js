@@ -59,15 +59,24 @@ const startOrResumeAttempt = async (req, res) => {
         const questions = await Question.find({ quizId });
         const totalMarksPossible = questions.reduce((acc, q) => acc + (q.marks || 0), 0);
 
-        attempt = await QuizAttempt.create({
-            studentId,
-            quizId,
-            courseId,
-            status: 'in-progress',
-            totalQuestions: questions.length,
-            totalMarksPossible,
-            answers: []
-        });
+        try {
+            attempt = await QuizAttempt.create({
+                studentId,
+                quizId,
+                courseId,
+                status: 'in-progress',
+                totalQuestions: questions.length,
+                totalMarksPossible,
+                answers: []
+            });
+        } catch (error) {
+            // Handle Race Condition: If another request created the attempt between our findOne and create
+            if (error.code === 11000) {
+                attempt = await QuizAttempt.findOne({ studentId, quizId });
+            } else {
+                throw error;
+            }
+        }
 
         res.status(201).json({
             quiz,
@@ -204,8 +213,17 @@ const submitAttempt = async (req, res) => {
                     if (enrollment.progressPercentage === 100) {
                         enrollment.status = 'completed';
                         enrollment.completedAt = new Date();
-                        // Trigger evaluation engine
-                        evaluateCourseCompletion(studentId, attempt.courseId).catch(err => console.error("Evaluation Error:", err));
+                        
+                        // Optimized Trigger: Only fire if no assignments are pending review
+                        const pendingWork = await Submission.exists({
+                            studentId,
+                            courseId: attempt.courseId,
+                            status: 'submitted'
+                        });
+
+                        if (!pendingWork) {
+                            evaluateCourseCompletion(studentId, attempt.courseId).catch(err => console.error("Evaluation Error:", err));
+                        }
                     }
                 }
                 await enrollment.save();
