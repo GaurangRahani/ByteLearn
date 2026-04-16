@@ -1,6 +1,7 @@
 const Course = require('../model/Course');
 const Module = require('../model/Module');
 const User = require('../model/User');
+const Transaction = require('../model/Transaction');
 const sendEmail = require('../utils/sendEmail');
 
 // Course Management 
@@ -143,10 +144,63 @@ const getAdminStats = async (req, res) => {
     }
 };
 
+// Payout Management
+const getAllPayoutRequests = async (req, res) => {
+    try {
+        const payouts = await Transaction.find({ type: 'debit', status: 'pending' })
+            .populate('educatorId', 'name email profilePicture walletBalance')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({ success: true, total: payouts.length, payouts });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const reviewPayoutRequest = async (req, res) => {
+    try {
+        const { status } = req.body;
+        const { transactionId } = req.params;
+
+        if (!['completed', 'failed'].includes(status)) {
+            return res.status(400).json({ success: false, message: 'Invalid status. Use "completed" or "failed".' });
+        }
+
+        const transaction = await Transaction.findById(transactionId);
+        if (!transaction) {
+            return res.status(404).json({ success: false, message: 'Transaction not found' });
+        }
+
+        if (transaction.status !== 'pending') {
+            return res.status(400).json({ success: false, message: 'Transaction already processed' });
+        }
+
+        if (status === 'failed') {
+            // Refund the amount back to educator's walletBalance
+            await User.findByIdAndUpdate(transaction.educatorId, {
+                $inc: { walletBalance: transaction.amount }
+            });
+        }
+
+        transaction.status = status;
+        await transaction.save();
+
+        res.status(200).json({ 
+            success: true, 
+            message: `Payout request ${status === 'completed' ? 'approved' : 'rejected'} successfully`,
+            transaction 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     getAllPendingCourses,
     reviewCourse,
     getAllEducators,
     reviewEducator,
-    getAdminStats
+    getAdminStats,
+    getAllPayoutRequests,
+    reviewPayoutRequest
 };

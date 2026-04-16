@@ -6,7 +6,9 @@ const {
     reviewCourse,
     getAllEducators,
     reviewEducator,
-    getAdminStats
+    getAdminStats,
+    getAllPayoutRequests,
+    reviewPayoutRequest
 } = require('../controller/adminController');
 
 // Admin Stats
@@ -19,5 +21,9 @@ router.put('/courses/:courseId/review', protect, admin, reviewCourse);
 // Educator Management
 router.get('/educators', protect, admin, getAllEducators);
 router.put('/educators/:educatorId/review', protect, admin, reviewEducator);
+
+// Payout Managementt
+router.get('/payouts', protect, admin, getAllPayoutRequests);
+router.put('/payouts/:transactionId/review', protect, admin, reviewPayoutRequest);
 
 module.exports = router;
