@@ -3,9 +3,7 @@ const mongoose = require('mongoose');
 const User = require('../model/User');
 const Transaction = require('../model/Transaction');
 
-// @desc    Get earnings dashboard data
-// @route   GET /api/educator/earnings
-// @access  Private (Educator)
+
 const getEarningsDashboard = asyncHandler(async (req, res) => {
     const educatorId = req.user._id;
 
@@ -23,8 +21,6 @@ const getEarningsDashboard = asyncHandler(async (req, res) => {
         .sort({ createdAt: -1 })
         .limit(50); // recent 50
 
-    // 4. Get chart data (simple mock aggregation or generated from transactions)
-    // For this demonstration, we'll aggregate real daily earnings over the last 30 days
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -81,7 +77,7 @@ const requestWithdrawal = asyncHandler(async (req, res) => {
     try {
         // Find educator WITH lock/session
         const user = await User.findById(educatorId).session(session);
-        
+
         if (!user) {
             await session.abortTransaction();
             return res.status(404).json({ success: false, message: 'User not found' });

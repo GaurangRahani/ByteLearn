@@ -6,12 +6,12 @@ const transactionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true, // Optimized for frequent read queries by the educator
+      index: true,
     },
     paymentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Payment",
-      // Optional, as it might not be relevant for withdrawals (debits)
+
     },
     amount: {
       type: Number,

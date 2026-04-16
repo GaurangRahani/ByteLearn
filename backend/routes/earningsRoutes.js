@@ -5,6 +5,8 @@ const { getEarningsDashboard, requestWithdrawal } = require('../controller/earni
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.get('/', protect, authorize('educator'), getEarningsDashboard);
+
+//for withdraw
 router.post('/withdraw', protect, authorize('educator'), requestWithdrawal);
 
 module.exports = router;
