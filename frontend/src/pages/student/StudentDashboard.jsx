@@ -112,56 +112,108 @@ const StudentDashboard = () => {
         >
           {/* Card 1: Enrolled */}
           <motion.div 
-            whileHover={{ scale: 1.02 }}
-            transition={{ duration: 0.2 }}
-            className="relative overflow-hidden bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] rounded-[24px] p-8 text-white shadow-xl shadow-blue-500/20"
+            whileHover={{ y: -8 }}
+            className="flex-1 h-44 bg-white rounded-2xl border border-gray-100 shadow-lg p-8 flex items-center justify-between transition-all duration-300 hover:shadow-2xl overflow-hidden relative group"
           >
-            <div className="relative z-10 flex flex-col justify-between h-full">
-              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-12 shadow-inner">
-                <Book size={28} className="text-white" />
-              </div>
-              <div>
-                <p className="text-blue-100 text-[11px] font-bold uppercase tracking-[0.2em] mb-1 opacity-80">Enrolled Courses</p>
-                <h2 className="text-4xl font-black tracking-tight">{metrics?.totalEnrolled || 0}</h2>
+            {/* Geometric Background Pattern */}
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover:opacity-[0.05] transition-opacity">
+              <svg width="100%" height="100%"><pattern id="pattern-1" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 40L40 0M0 0l40 40" fill="none" stroke="currentColor" strokeWidth="1"/></pattern><rect width="100%" height="100%" fill="url(#pattern-1)"/></svg>
+            </div>
+
+            <div className="flex flex-col z-10 relative">
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.2em] mb-2">Enrolled Courses</p>
+              <h3 className="text-5xl font-black text-gray-900 tracking-tighter">{metrics?.totalEnrolled || 0}</h3>
+            </div>
+
+            {/* Dimensional Illustration: Blue */}
+            <div className="absolute -right-6 top-1/2 -translate-y-1/2 w-48 h-48 pointer-events-none">
+              <div className="absolute inset-0 bg-blue-500/10 rounded-full blur-3xl scale-150 group-hover:scale-[2] transition-transform duration-700"></div>
+              <div className="relative w-full h-full flex items-center justify-center opacity-90 scale-125">
+                <div className="absolute text-blue-100 rotate-12 -translate-x-8 -translate-y-4">
+                  <Book size={80} strokeWidth={0.5} />
+                </div>
+                <div className="absolute text-blue-200 -rotate-6 translate-x-4 translate-y-2">
+                  <Book size={64} strokeWidth={0.5} />
+                </div>
+                <div className="relative text-blue-600 drop-shadow-2xl animate-pulse">
+                  <svg viewBox="0 0 24 24" fill="none" className="w-24 h-24" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12Z"/>
+                  </svg>
+                </div>
+                {/* Glowing particles */}
+                <div className="absolute top-4 left-10 w-1 h-1 bg-blue-400 rounded-full shadow-[0_0_8px_white]"></div>
+                <div className="absolute bottom-10 right-10 w-1.5 h-1.5 bg-cyan-300 rounded-full shadow-[0_0_10px_white]"></div>
               </div>
             </div>
-            <div className="absolute -right-8 -top-8 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
           </motion.div>
 
           {/* Card 2: Completed */}
           <motion.div 
-            whileHover={{ scale: 1.02 }}
-            transition={{ duration: 0.2 }}
-            className="relative overflow-hidden bg-gradient-to-br from-[#10B981] to-[#059669] rounded-[24px] p-8 text-white shadow-xl shadow-emerald-500/20"
+            whileHover={{ y: -8 }}
+            className="flex-1 h-44 bg-white rounded-2xl border border-gray-100 shadow-lg p-8 flex items-center justify-between transition-all duration-300 hover:shadow-2xl overflow-hidden relative group"
           >
-            <div className="relative z-10 flex flex-col justify-between h-full">
-              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-12 shadow-inner">
-                <CheckCircle size={28} className="text-white" />
-              </div>
-              <div>
-                <p className="text-emerald-100 text-[11px] font-bold uppercase tracking-[0.2em] mb-1 opacity-80">Completed Courses</p>
-                <h2 className="text-4xl font-black tracking-tight">{metrics?.completedCourses || 0}</h2>
+             <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover:opacity-[0.05] transition-opacity">
+              <svg width="100%" height="100%"><pattern id="pattern-2" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="currentColor"/></pattern><rect width="100%" height="100%" fill="url(#pattern-2)"/></svg>
+            </div>
+
+            <div className="flex flex-col z-10 relative">
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.2em] mb-2">Completed Courses</p>
+              <h3 className="text-5xl font-black text-gray-900 tracking-tighter">{metrics?.completedCourses || 0}</h3>
+            </div>
+
+             {/* Dimensional Illustration: Emerald */}
+             <div className="absolute -right-6 top-1/2 -translate-y-1/2 w-48 h-48 pointer-events-none">
+              <div className="absolute inset-0 bg-emerald-500/10 rounded-full blur-3xl scale-150 group-hover:scale-[2] transition-transform duration-700"></div>
+              <div className="relative w-full h-full flex items-center justify-center opacity-90 scale-125">
+                <div className="absolute text-emerald-100 -rotate-12 -translate-x-12">
+                   <svg viewBox="0 0 24 24" fill="none" className="w-32 h-32" stroke="currentColor" strokeWidth="0.5">
+                    <path d="M12 2c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2s-2-.9-2-2V4c0-1.1.9-2 2-2zM4.93 4.93c.78-.78 2.05-.78 2.83 0 .78.78.78 2.05 0 2.83-.78.78-2.05.78-2.83 0-.78-.78-.78-2.05 0-2.83zm14.14 0c-.78-.78-2.05-.78-2.83 0-.78.78-.78 2.05 0 2.83.78.78 2.05.78 2.83 0 .78-.78.78-2.05 0-2.83z"/>
+                  </svg>
+                </div>
+                <div className="relative text-emerald-600 drop-shadow-2xl">
+                  <CheckCircle size={80} strokeWidth={1} />
+                </div>
+                {/* Finish Line Banner (Stylized) */}
+                <div className="absolute bottom-6 bg-emerald-600 text-[8px] text-white font-black px-3 py-1 rounded-sm rotate-3 shadow-lg uppercase tracking-[0.2em]">
+                  Finish Line
+                </div>
+                {/* Confetti */}
+                <div className="absolute top-8 left-4 w-2 h-1 bg-yellow-400 rotate-45 rounded-sm"></div>
+                <div className="absolute top-12 right-12 w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
               </div>
             </div>
-            <div className="absolute -right-8 -top-8 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
           </motion.div>
 
           {/* Card 3: Certificates */}
           <motion.div 
-            whileHover={{ scale: 1.02 }}
-            transition={{ duration: 0.2 }}
-            className="relative overflow-hidden bg-gradient-to-br from-[#F59E0B] to-[#D97706] rounded-[24px] p-8 text-white shadow-xl shadow-amber-500/20"
+            whileHover={{ y: -8 }}
+            className="flex-1 h-44 bg-white rounded-2xl border border-gray-100 shadow-lg p-8 flex items-center justify-between transition-all duration-300 hover:shadow-2xl overflow-hidden relative group"
           >
-            <div className="relative z-10 flex flex-col justify-between h-full">
-              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-12 shadow-inner">
-                <Award size={28} className="text-white" />
-              </div>
-              <div>
-                <p className="text-amber-100 text-[11px] font-bold uppercase tracking-[0.2em] mb-1 opacity-80">Certificates Earned</p>
-                <h2 className="text-4xl font-black tracking-tight">{metrics?.certificatesEarned || 0}</h2>
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover:opacity-[0.05] transition-opacity">
+              <svg width="100%" height="100%"><pattern id="pattern-3" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M0 0h30v30H0z" fill="none"/><path d="M0 15h30" stroke="currentColor" strokeWidth="0.5"/></pattern><rect width="100%" height="100%" fill="url(#pattern-3)"/></svg>
+            </div>
+
+            <div className="flex flex-col z-10 relative">
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.2em] mb-2">Certificates Earned</p>
+              <h3 className="text-5xl font-black text-gray-900 tracking-tighter">{metrics?.certificatesEarned || 0}</h3>
+            </div>
+
+            {/* Dimensional Illustration: Orange */}
+            <div className="absolute -right-6 top-1/2 -translate-y-1/2 w-48 h-48 pointer-events-none">
+              <div className="absolute inset-0 bg-orange-500/10 rounded-full blur-3xl scale-150 group-hover:scale-[2] transition-transform duration-700"></div>
+              <div className="relative w-full h-full flex items-center justify-center opacity-90 scale-125">
+                <div className="absolute text-orange-100 rotate-45 translate-x-4">
+                   <FileText size={100} strokeWidth={0.3} />
+                </div>
+                <div className="relative text-orange-600 drop-shadow-2xl">
+                  <Award size={86} strokeWidth={1} />
+                </div>
+                {/* Wax Seal (Stylized) */}
+                <div className="absolute bottom-8 right-10 w-8 h-8 bg-red-600 rounded-full border-2 border-orange-200 shadow-inner flex items-center justify-center">
+                  <div className="w-4 h-4 rounded-full border border-white/30"></div>
+                </div>
               </div>
             </div>
-            <div className="absolute -right-8 -top-8 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
           </motion.div>
         </motion.div>
 

@@ -103,13 +103,13 @@ const CertificatesPage = () => {
                                 <ShieldCheck size={18} />
                                 Verified Achievements
                             </div>
-                            <h1 className="text-5xl font-black tracking-tight text-slate-900 flex items-center gap-4">
+                            <h1 className="text-4xl font-black tracking-tight text-slate-900 flex items-center gap-4">
                                 My Certificates
-                                <span className="text-2xl font-black bg-blue-100 text-blue-600 px-4 py-1 rounded-2xl">
+                                <span className="text-xl font-black bg-blue-100 text-blue-600 px-3 py-0.5 rounded-xl">
                                     {certificates.length}
                                 </span>
                             </h1>
-                            <p className="text-slate-500 font-medium text-lg max-w-xl">
+                            <p className="text-slate-500 font-medium text-base max-w-xl">
                                 Your hard work translated into official credentials. View, download, or share your earned certifications.
                             </p>
                         </motion.div>
@@ -119,14 +119,14 @@ const CertificatesPage = () => {
                             animate={{ opacity: 1, scale: 1 }}
                             className="relative group hidden lg:block"
                         >
-                            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[40px] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-                            <div className="relative bg-white p-8 rounded-[40px] border border-slate-200 shadow-xl flex items-center gap-6">
-                                <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center">
-                                    <Star className="text-blue-600 fill-blue-600" size={32} />
+                            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                            <div className="relative bg-white p-6 rounded-3xl border border-slate-200 shadow-xl flex items-center gap-5">
+                                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                                    <Star className="text-blue-600 fill-blue-600" size={24} />
                                 </div>
                                 <div>
-                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Elite Status</p>
-                                    <p className="text-xl font-black text-slate-900 leading-none">Certified Learner</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Elite Status</p>
+                                    <p className="text-lg font-black text-slate-900 leading-none">Certified Learner</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -140,7 +140,7 @@ const CertificatesPage = () => {
                             variants={containerVariants}
                             initial="hidden"
                             animate="visible"
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                         >
                             {certificates.map((cert) => (
                                 <CertificateCard key={cert._id} cert={cert} variants={itemVariants} />
@@ -157,8 +157,8 @@ const CertificatesPage = () => {
 };
 
 const CertificateCard = ({ cert, variants }) => {
-    const formattedDate = new Date(cert.issuedAt).toLocaleDateString(undefined, {
-        month: 'long',
+    const formatDate = (date) => new Date(date).toLocaleDateString(undefined, {
+        month: 'short',
         day: 'numeric',
         year: 'numeric'
     });
@@ -166,78 +166,67 @@ const CertificateCard = ({ cert, variants }) => {
     return (
         <motion.div
             variants={variants}
-            whileHover={{ y: -10 }}
-            className="group bg-white rounded-[40px] overflow-hidden border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_30px_60px_rgba(0,0,0,0.1)] transition-all duration-500 flex flex-col h-full"
+            className="flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm p-6 transition-all hover:shadow-xl border-t-4 border-t-blue-600 h-full"
         >
-            {/* Top Preview Section */}
-            <div className="h-48 relative overflow-hidden">
-                <div className="absolute inset-0 bg-slate-900/40 group-hover:bg-slate-900/20 transition-colors z-10"></div>
-                <img 
-                    src={cert.courseId?.thumbnail || 'https://via.placeholder.com/800x400'} 
-                    alt={cert.courseId?.title} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                />
-                <div className="absolute top-6 left-6 z-20">
-                    <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 text-white text-[10px] font-black uppercase tracking-widest">
-                        {cert.courseId?.category || 'Professional'}
-                    </div>
-                </div>
-                <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-600 border-2 border-white flex items-center justify-center shadow-lg">
-                        <Award size={18} className="text-white" />
-                    </div>
-                    <span className="text-white font-bold text-sm drop-shadow-md">Verified Achievement</span>
-                </div>
-            </div>
-
-            {/* Content Section */}
-            <div className="p-8 flex-grow flex flex-col">
-                <div className="mb-6">
-                    <h3 className="text-2xl font-black text-slate-900 leading-tight mb-2 group-hover:text-blue-600 transition-colors">
-                        {cert.courseId?.title}
-                    </h3>
-                    <p className="text-slate-400 text-sm font-medium">Instructor: {cert.educatorId?.name || "ByLearn Academy"}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                    <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Grade</p>
-                        <p className="text-lg font-black text-slate-800">
-                            {cert.gradeLabel} <span className="text-blue-600">({cert.finalPercentage}%)</span>
+            <div className="flex-grow flex flex-col">
+                {/* Header: Eyebrow & Title */}
+                <div className="mb-6 flex justify-between items-start">
+                    <div className="flex-1">
+                        <p className="text-[10px] font-bold tracking-widest text-blue-600 uppercase mb-2">
+                            Certificate of Completion
+                        </p>
+                        <h3 className="text-lg font-bold text-slate-900 leading-snug">
+                            {cert.courseId?.title}
+                        </h3>
+                        <p className="text-xs font-semibold text-slate-400 mt-1">
+                            Instructor: {cert.educatorId?.name || "ByteLearn Academy"}
                         </p>
                     </div>
-                    <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Issued On</p>
-                        <p className="text-sm font-bold text-slate-800">{formattedDate}</p>
+                    <div className="bg-blue-50 p-2 rounded-lg">
+                        <Award className="w-6 h-6 text-blue-500 opacity-80" />
                     </div>
                 </div>
 
-                <div className="mt-auto flex flex-col gap-3">
+                {/* Metrics Section: Structured Box */}
+                <div className="flex items-center justify-between p-4 my-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Grade</span>
+                        <span className="text-base font-bold text-slate-900">
+                            {cert.gradeLabel} <span className="text-sm font-semibold text-blue-600">({cert.finalPercentage}%)</span>
+                        </span>
+                    </div>
+                    <div className="flex flex-col text-right">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Issued On</span>
+                        <span className="text-sm font-bold text-slate-900">
+                            {formatDate(cert.issuedAt)}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Footer: Credential ID (Seamless) */}
+                <div className="flex justify-between items-center py-2 px-3 bg-slate-50 rounded-md mb-6 border border-dashed border-slate-200">
+                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Credential ID</span>
+                    <span className="text-[10px] font-mono font-medium text-slate-400 uppercase">{cert.certificateId}</span>
+                </div>
+
+                {/* Actions: Primary & Secondary Buttons */}
+                <div className="flex gap-3 mt-auto">
+                    <a 
+                        href={cert.pdfUrl} 
+                        download={`Certificate-${cert.certificateId}.pdf`}
+                        className="flex-1 bg-blue-600 text-white hover:bg-blue-700 py-3 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-500/10 text-center uppercase tracking-widest active:scale-95"
+                    >
+                        Download PDF
+                    </a>
                     <a 
                         href={cert.pdfUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="w-full py-4 bg-slate-900 text-white font-black rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-800 transition-colors shadow-lg active:scale-95"
+                        className="flex-1 border-2 border-slate-100 text-slate-600 hover:border-slate-200 hover:bg-slate-50 py-3 rounded-xl text-xs font-bold transition-all text-center uppercase tracking-widest active:scale-95"
                     >
-                        <ExternalLink size={20} />
-                        View Full Size
-                    </a>
-                    <a 
-                        href={cert.pdfUrl} 
-                        download={`Certificate-${cert.certificateId}.pdf`}
-                        className="w-full py-4 bg-white text-slate-900 border-2 border-slate-900 font-extrabold rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-50 transition-colors active:scale-95"
-                    >
-                        <Download size={20} />
-                        Download PDF
+                        View Full
                     </a>
                 </div>
-            </div>
-            
-            {/* Serial ID Footer */}
-            <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 text-center">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Credential ID: {cert.certificateId}
-                </p>
             </div>
         </motion.div>
     );

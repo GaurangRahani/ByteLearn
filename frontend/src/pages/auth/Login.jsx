@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GraduationCap, LogIn, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -11,50 +12,51 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const handleLoginResponse = (data, email) => {
+    const userData = data?.data || data;
+    const token = userData.token || data.token;
+
+    if (token) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      console.log("Token and User metadata saved to session");
+    }
+
+    const { role, isVerified, educatorApplication } = userData;
+    console.log("Session Role Index:", role);
+
+    if (isVerified === false) {
+      navigate('/verify-otp', { state: { email } });
+      return;
+    }
+
+    if (role === 'student') {
+      navigate('/student-dashboard');
+    } else if (role === 'admin') {
+      navigate('/admin-dashboard');
+    } else if (role === 'educator') {
+      const status = educatorApplication?.status;
+      console.log("Educator Status found:", status);
+      if (status === 'pending') {
+        navigate('/educator-status');
+      } else if (status === 'approved') {
+        navigate('/educator-dashboard');
+      } else if (status === 'rejected') {
+        navigate('/educator-rejected');
+      } else {
+        navigate('/educator-status');
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
       const res = await axios.post('/api/auth/login', { email, password });
-
       console.log("Login Response Data:", res.data);
-
-      const userData = res.data?.data || res.data;
-      const token = userData.token || res.data.token;
-
-      if (token) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        console.log("Token and User metadata saved to session");
-      }
-
-      const { role, isVerified, educatorApplication } = userData;
-      console.log("Session Role Index:", role);
-
-      if (isVerified === false) {
-        navigate('/verify-otp', { state: { email } });
-        return;
-      }
-
-      if (role === 'student') {
-        navigate('/student-dashboard');
-      } else if (role === 'admin') {
-        navigate('/admin-dashboard');
-      } else if (role === 'educator') {
-        const status = educatorApplication?.status;
-        console.log("Educator Status found:", status);
-        if (status === 'pending') {
-          navigate('/educator-status');
-        } else if (status === 'approved') {
-          navigate('/educator-dashboard');
-        } else if (status === 'rejected') {
-          navigate('/educator-rejected');
-        } else {
-          navigate('/educator-status');
-        }
-      }
-
+      handleLoginResponse(res.data, email);
     } catch (err) {
       const errorMessage = err.response?.data?.message || '';
       console.error("Login catch block error:", err.response || err);
@@ -67,6 +69,27 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post('/api/auth/google', { 
+        token: credentialResponse.credential 
+      });
+      console.log("Google Login Response Data:", res.data);
+      handleLoginResponse(res.data, res.data.email);
+    } catch (err) {
+      console.error("Google Login error:", err.response || err);
+      setError(err.response?.data?.message || 'Google login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Google Sign-In failed. Please try again.');
   };
 
   return (
@@ -135,6 +158,26 @@ const Login = () => {
             </button>
           </div>
         </form>
+
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-slate-200"></span>
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-slate-500 font-medium">Or continue with</span>
+          </div>
+        </div>
+
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            useOneTap
+            width="100%"
+            theme="outline"
+            shape="rectangular"
+          />
+        </div>
 
         <div className="mt-8 text-center pt-6 border-t border-slate-100">
           <p className="text-sm font-medium text-slate-600 mb-4">
