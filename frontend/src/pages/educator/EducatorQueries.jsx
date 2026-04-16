@@ -15,6 +15,7 @@ import {
   Brain
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import EducatorHeader from '../../components/layout/EducatorHeader';
 
 const EducatorQueries = () => {
   const [queries, setQueries] = useState([]);
@@ -25,6 +26,7 @@ const EducatorQueries = () => {
   const [isGeneratingDrafts, setIsGeneratingDrafts] = useState(false);
   const [aiDrafts, setAiDrafts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [educatorName, setEducatorName] = useState('Educator');
 
   useEffect(() => {
     fetchQueries();
@@ -38,6 +40,12 @@ const EducatorQueries = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setQueries(res.data.data);
+
+      // Fetch Profile for name
+      const profileRes = await axios.get('/api/auth/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEducatorName(profileRes.data.name);
     } catch (err) {
       console.error('Error fetching educator queries:', err);
       toast.error('Failed to load queries');
@@ -105,7 +113,8 @@ const EducatorQueries = () => {
   );
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] bg-slate-50 font-sans">
+    <div className="flex flex-col h-screen bg-slate-50 font-sans">
+      <EducatorHeader educatorName={educatorName} activePage="/educator/queries" />
       
       {/* Header */}
       <div className="bg-white border-b border-slate-200 px-8 py-6 flex items-center justify-between shadow-sm">

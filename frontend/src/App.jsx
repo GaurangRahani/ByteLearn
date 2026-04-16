@@ -11,6 +11,8 @@ import CurriculumBuilder from './pages/educator/CurriculumBuilder';
 import StudentManagement from './pages/educator/StudentManagement';
 import AssignmentReview from './pages/educator/AssignmentReview';
 import EducatorQueries from './pages/educator/EducatorQueries';
+import EducatorEarnings from './pages/educator/EducatorEarnings';
+import EducatorProfile from './pages/educator/EducatorProfile';
 import Login from './pages/auth/Login';
 import Header from './components/layout/Header';
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -33,12 +35,14 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import EducatorApprovals from './pages/admin/EducatorApprovals';
 import CourseApprovals from './pages/admin/CourseApprovals';
 import UserManagement from './pages/admin/UserManagement';
+import PayoutRequests from './pages/admin/PayoutRequests';
 import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
 
 const AppContent = () => {
   const location = useLocation();
   const hideGlobalHeader =
     location.pathname.startsWith('/educator') ||
+    location.pathname.startsWith('/educator-dashboard') ||
     location.pathname.startsWith('/student-dashboard') ||
     location.pathname.startsWith('/browse') ||
     location.pathname.startsWith('/my-courses') ||
@@ -70,6 +74,7 @@ const AppContent = () => {
              <Route path="/admin/educators" element={<EducatorApprovals />} />
              <Route path="/admin/courses" element={<CourseApprovals />} />
              <Route path="/admin/users" element={<UserManagement />} />
+             <Route path="/admin/payouts" element={<PayoutRequests />} />
           </Route>
 
           <Route path="/register-student" element={<StudentRegister />} />
@@ -81,6 +86,8 @@ const AppContent = () => {
           <Route path="/educator/student-management" element={<StudentManagement />} />
           <Route path="/educator/review/:submissionId" element={<AssignmentReview />} />
           <Route path="/educator/queries" element={<EducatorQueries />} />
+          <Route path="/educator/earnings" element={<EducatorEarnings />} />
+          <Route path="/educator/profile" element={<EducatorProfile />} />
           <Route path="/course/create" element={<CreateCourse />} />
           <Route path="/course/:id/curriculum" element={<CurriculumBuilder />} />
           <Route path="/course/:id" element={<CourseDetailsPage />} />
