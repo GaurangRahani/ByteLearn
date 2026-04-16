@@ -6,6 +6,7 @@ const Assignment = require('../model/Assignment');
 const QuizAttempt = require('../model/QuizAttempt');
 const Enrollment = require('../model/Enrollment');
 const Course = require('../model/Course');
+const Submission = require('../model/Submission');
 const { evaluateCourseCompletion } = require('../services/evaluationService');
 const mongoose = require('mongoose');
 

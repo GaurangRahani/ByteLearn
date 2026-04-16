@@ -4,6 +4,7 @@ const Question = require('../model/Question');
 const Module = require('../model/Module');
 const Course = require('../model/Course');
 const Enrollment = require('../model/Enrollment');
+const Submission = require('../model/Submission');
 const { evaluateCourseCompletion } = require('../services/evaluationService');
 
 
@@ -35,7 +36,6 @@ const startOrResumeAttempt = async (req, res) => {
             courseId = quiz.moduleId.courseId;
         }
 
-        // Search for an existing attempt
         let attempt = await QuizAttempt.findOne({ studentId, quizId });
 
         if (attempt) {
@@ -45,7 +45,6 @@ const startOrResumeAttempt = async (req, res) => {
                     attempt 
                 });
             }
-            // If in-progress, return existing attempt for resumption
             const questions = await Question.find({ quizId });
             return res.status(200).json({
                 quiz,
@@ -55,7 +54,6 @@ const startOrResumeAttempt = async (req, res) => {
             });
         }
 
-        // If NOT found: Create exactly ONE new attempt
         const questions = await Question.find({ quizId });
         const totalMarksPossible = questions.reduce((acc, q) => acc + (q.marks || 0), 0);
 
@@ -70,7 +68,6 @@ const startOrResumeAttempt = async (req, res) => {
                 answers: []
             });
         } catch (error) {
-            // Handle Race Condition: If another request created the attempt between our findOne and create
             if (error.code === 11000) {
                 attempt = await QuizAttempt.findOne({ studentId, quizId });
             } else {
@@ -112,7 +109,6 @@ const saveProgress = async (req, res) => {
             return res.status(403).json({ message: 'Cannot save progress for a completed quiz' });
         }
 
-        // Update the answers array. We don't grade here.
         attempt.answers = answers;
         await attempt.save();
 
@@ -171,7 +167,6 @@ const submitAttempt = async (req, res) => {
             };
         });
 
-        // Update document to completed
         attempt.status = 'completed';
         attempt.answers = gradedAnswers;
         attempt.score = finalScore;
@@ -180,18 +175,13 @@ const submitAttempt = async (req, res) => {
         
         await attempt.save();
 
-        // ---------------------------------------------------------
-        // Sync progress with Enrollment
-        // ---------------------------------------------------------
         try {
             const enrollment = await Enrollment.findOne({ studentId, courseId: attempt.courseId });
             if (enrollment) {
-                // Add quiz to completedQuizzes
                 if (!enrollment.completedQuizzes.includes(attempt.quizId)) {
                     enrollment.completedQuizzes.push(attempt.quizId);
                 }
 
-                // Recalculate progressPercentage
                 const course = await Course.findById(attempt.courseId).populate({
                     path: 'modules',
                     populate: ['lessons', 'quizzes', 'assignments']
@@ -213,24 +203,27 @@ const submitAttempt = async (req, res) => {
                     if (enrollment.progressPercentage === 100) {
                         enrollment.status = 'completed';
                         enrollment.completedAt = new Date();
-                        
-                        // Optimized Trigger: Only fire if no assignments are pending review
-                        const pendingWork = await Submission.exists({
-                            studentId,
-                            courseId: attempt.courseId,
-                            status: 'submitted'
-                        });
-
-                        if (!pendingWork) {
-                            evaluateCourseCompletion(studentId, attempt.courseId).catch(err => console.error("Evaluation Error:", err));
-                        }
                     }
                 }
                 await enrollment.save();
+
+                // ---------------------------------------------------------
+                // Trigger Evaluation Engine if progress is 100%
+                // ---------------------------------------------------------
+                if (enrollment.progressPercentage === 100) {
+                    const pendingWork = await Submission.exists({
+                        studentId,
+                        courseId: attempt.courseId,
+                        status: 'submitted'
+                    });
+
+                    if (!pendingWork) {
+                        evaluateCourseCompletion(studentId, attempt.courseId).catch(err => console.error("Evaluation Error:", err));
+                    }
+                }
             }
         } catch (progressErr) {
             console.error("Progress Sync Error after quiz submission:", progressErr);
-            // We don't fail the quiz submission if progress sync fails
         }
 
         res.status(200).json(attempt);

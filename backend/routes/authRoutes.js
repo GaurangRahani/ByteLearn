@@ -10,7 +10,8 @@ const {
     getAllEducators,
     updateEducatorStatus,
     verifyOtp,
-    resendOtp
+    resendOtp,
+    googleLogin
 } = require("../controller/authController");
 const { protect, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -23,6 +24,7 @@ router.post("/register-educator", upload.fields([
 router.post("/login", loginUser);
 router.post("/verify-otp", verifyOtp);
 router.post("/resend-otp", resendOtp);
+router.post("/google", googleLogin);
 
 router.route("/profile").get(protect, getUserProfile).put(protect, updateUserProfile);
 router.put("/change-password", protect, changePassword);

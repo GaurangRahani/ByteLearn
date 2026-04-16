@@ -467,6 +467,11 @@ const markLessonComplete = async (req, res) => {
                                    updatedEnrollment.completedAssignments.length;
             
             updatedEnrollment.progressPercentage = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
+            
+            if (updatedEnrollment.progressPercentage === 100) {
+                updatedEnrollment.status = 'completed';
+                updatedEnrollment.completedAt = new Date();
+            }
             await updatedEnrollment.save();
 
             // Trigger Evaluation Engine if progress is 100%

@@ -2,6 +2,9 @@ const User = require('../model/User');
 const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
 const { uploadOnCloudinary } = require('../utils/cloudinary');
+const { OAuth2Client } = require('google-auth-library');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -437,6 +440,58 @@ const resendOtp = async (req, res) => {
     }
 };
 
+const googleLogin = async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) {
+            return res.status(400).json({ message: 'No Google ID token provided' });
+        }
+
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+        const { email, name, picture } = payload;
+
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            // Create new student user if they don't exist
+            const tempPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+            user = await User.create({
+                name,
+                email,
+                password: tempPassword,
+                role: 'student',
+                isVerified: true, // Google accounts are verified
+                profilePicture: picture || "default-profile.jpg",
+                lastLogin: Date.now()
+            });
+        } else {
+            if (user.isBlocked) {
+                return res.status(403).json({ message: 'Your account has been suspended. Contact support.' });
+            }
+            user.lastLogin = Date.now();
+            await user.save();
+        }
+
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            isVerified: user.isVerified,
+            educatorApplication: user.educatorApplication,
+            token: generateToken(user._id),
+        });
+    } catch (error) {
+        console.error('Google login error:', error);
+        res.status(500).json({ message: 'Google login verification failed' });
+    }
+};
+
 module.exports = {
     registerStudent,
     registerEducator,
@@ -447,5 +502,6 @@ module.exports = {
     getAllEducators,
     updateEducatorStatus,
     verifyOtp,
-    resendOtp
+    resendOtp,
+    googleLogin
 };

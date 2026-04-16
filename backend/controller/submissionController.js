@@ -59,13 +59,15 @@ const submitAssignment = async (req, res) => {
                                        updatedEnrollment.completedQuizzes.length + 
                                        updatedEnrollment.completedAssignments.length;
                 
-                updatedEnrollment.progressPercentage = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
-                await updatedEnrollment.save();
-
-                updatedEnrollment.progressPercentage = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
-                await updatedEnrollment.save();
+                    updatedEnrollment.progressPercentage = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
+                    
+                    if (updatedEnrollment.progressPercentage === 100) {
+                        updatedEnrollment.status = 'completed';
+                        updatedEnrollment.completedAt = new Date();
+                    }
+                    await updatedEnrollment.save();
+                }
             }
-        }
 
         res.status(201).json({ success: true, data: submission, progress: updatedEnrollment });
 
@@ -86,7 +88,6 @@ const getEducatorSubmissions = async (req, res) => {
     try {
         const educatorId = req.user._id;
 
-        // Find all courses by this educator
         const educatorCourses = await Course.find({ educatorId }).select('_id');
         const courseIds = educatorCourses.map(c => c._id);
 
@@ -101,7 +102,7 @@ const getEducatorSubmissions = async (req, res) => {
         .populate('studentId', 'name email')
         .populate('courseId', 'title')
         .populate('assignmentId', 'title totalMarks')
-        .sort({ submittedAt: 1 }) // Oldest first (FIFO queue)
+        .sort({ submittedAt: 1 }) 
         .lean();
 
         res.status(200).json(submissions);
@@ -124,7 +125,6 @@ const gradeSubmission = async (req, res) => {
             return res.status(404).json({ message: 'Submission not found' });
         }
 
-        // Verify ownership
         if (submission.courseId.educatorId.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized to grade this submission' });
         }
@@ -134,7 +134,6 @@ const gradeSubmission = async (req, res) => {
         submission.status = 'graded';
         await submission.save();
 
-        // Send Email Notification to Student
         try {
             const sendEmail = require('../utils/sendEmail');
             const mailMessage = `Your assignment "${submission.assignmentId.title}" in "${submission.courseId.title}" has been graded. Score: ${marksObtained}/${submission.assignmentId.totalMarks}. Feedback: ${feedback}`;
@@ -220,16 +219,25 @@ const gradeSubmission = async (req, res) => {
             courseId: submission.courseId._id 
         });
 
-        if (enrollment && enrollment.progressPercentage === 100) {
-            const stillPending = await Submission.exists({
-                studentId: submission.studentId._id,
-                courseId: submission.courseId._id,
-                status: 'submitted'
-            });
+        if (enrollment) {
+            // Update enrollment status if progress is 100% (Safety check)
+            if (enrollment.progressPercentage === 100 && enrollment.status !== 'completed') {
+                enrollment.status = 'completed';
+                enrollment.completedAt = new Date();
+                await enrollment.save();
+            }
 
-            if (!stillPending) {
-                evaluateCourseCompletion(submission.studentId._id, submission.courseId._id)
-                    .catch(err => console.error("[EvaluationEngine] Background Trigger Error:", err));
+            if (enrollment.progressPercentage === 100) {
+                const stillPending = await Submission.exists({
+                    studentId: submission.studentId._id,
+                    courseId: submission.courseId._id,
+                    status: 'submitted'
+                });
+
+                if (!stillPending) {
+                    evaluateCourseCompletion(submission.studentId._id, submission.courseId._id)
+                        .catch(err => console.error("[EvaluationEngine] Background Trigger Error:", err));
+                }
             }
         }
     } catch (error) {
