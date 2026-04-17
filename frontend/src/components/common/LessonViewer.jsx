@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, Download, PlayCircle } from 'lucide-react';
 import CustomVideoPlayer from './CustomVideoPlayer';
 
 const LessonViewer = ({ 
@@ -14,7 +14,11 @@ const LessonViewer = ({
   hasNext,
   nextUnlocked
 }) => {
-  if (!currentItem) return null;
+  if (!currentItem) return (
+    <div className="flex flex-col items-center justify-center p-12 text-center h-full">
+      <p className="text-slate-500">Lesson data is unavailable.</p>
+    </div>
+  );
 
   const isImage = (url) => {
     if (!url) return false;
@@ -24,18 +28,32 @@ const LessonViewer = ({
   return (
     <div className="flex flex-col h-full">
       {currentItem.type === 'video' && (
-        <CustomVideoPlayer videoUrl={currentItem.videoUrl} title={currentItem.title} />
+        currentItem.videoUrl ? (
+          <CustomVideoPlayer videoUrl={currentItem.videoUrl} title={currentItem.title} />
+        ) : (
+          <div className="bg-slate-900 aspect-video flex flex-col items-center justify-center text-slate-400 p-8 text-center border-b border-slate-800">
+            <PlayCircle size={48} className="mb-4 opacity-20" />
+            <p className="font-semibold text-slate-300">Video content is currently unavailable.</p>
+            <p className="text-sm max-w-xs mt-2">The educator hasn't uploaded a video for this lesson yet.</p>
+          </div>
+        )
       )}
 
       <div className="p-8 flex-grow flex flex-col">
         <h2 className="text-[32px] font-bold text-slate-800 mb-6 tracking-tight leading-tight">
-          {currentItem.title}
+          {currentItem.title || "Untitled Lesson"}
         </h2>
         
-        <div 
-          className="text-slate-600 leading-relaxed text-[17px] space-y-4 prose prose-slate max-w-none"
-          dangerouslySetInnerHTML={{ __html: currentItem.content }}
-        />
+        {currentItem.content ? (
+          <div 
+            className="text-slate-600 leading-relaxed text-[17px] space-y-4 prose prose-slate max-w-none"
+            dangerouslySetInnerHTML={{ __html: currentItem.content }}
+          />
+        ) : (
+          <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 text-slate-500 italic">
+            No text content provided for this lesson.
+          </div>
+        )}
 
         {currentItem.notesUrl && (
           <div className="mt-10 pt-8 border-t border-slate-100">

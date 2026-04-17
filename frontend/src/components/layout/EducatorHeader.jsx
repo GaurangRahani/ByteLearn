@@ -80,9 +80,9 @@ const EducatorHeader = ({ educatorName, activePage }) => {
 
           {/* Profile Dropdown */}
           <div className="flex items-center relative" ref={profileRef}>
-             <button 
+             <div 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-3 hover:bg-slate-50 p-2 rounded-xl transition-all"
+                className="flex items-center gap-3 hover:bg-slate-50 p-2 rounded-xl transition-all cursor-pointer relative"
              >
                <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-200 shadow-sm">
                  {displayName?.charAt(0) || <User size={16} />}
@@ -92,27 +92,28 @@ const EducatorHeader = ({ educatorName, activePage }) => {
                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Educator</p>
                </div>
                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''}`} />
-             </button>
+             </div>
 
+             {/* Dropdown Menu */}
              {isProfileOpen && (
-               <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl border border-slate-100 shadow-xl py-1.5 z-[100] animate-in fade-in zoom-in-95 duration-200 origin-top-right">
-                  <Link 
-                    to="/educator/profile" 
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all mx-1 rounded-lg"
+               <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                  <button 
+                    onClick={() => { 
+                      setIsProfileOpen(false); 
+                      navigate('/educator/profile'); 
+                    }} 
+                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
-                    <Settings size={14} />
-                    Account Settings
-                  </Link>
-
-                  <div className="h-[1px] bg-slate-50 my-1 mx-2" />
+                    <User className="w-4 h-4" />
+                    Edit Profile
+                  </button>
 
                   <button 
                     onClick={handleLogout}
-                    className="w-[calc(100%-8px)] flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-all mx-1 rounded-lg"
+                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                   >
-                    <LogOut size={14} />
-                    Sign Out
+                    <LogOut className="w-4 h-4" />
+                    Logout
                   </button>
                </div>
              )}

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-body {
-  font-family: "Inter", "Roboto", sans-serif;
-  background-color: #f8fafc;
+@layer base {
+  body {
+    @apply font-sans text-slate-900 antialiased bg-slate-50;
+  }
 }
