@@ -118,6 +118,7 @@ const getAdminStats = async (req, res) => {
         const totalCourses = await Course.countDocuments();
         const pendingCoursesCount = await Course.countDocuments({ status: 'pending' });
         const pendingEducatorsCount = await User.countDocuments({ role: 'educator', 'educatorApplication.status': 'pending' });
+        const pendingPayoutsCount = await Transaction.countDocuments({ type: 'debit', status: 'pending' });
 
         const pendingEducators = await User.find({ role: 'educator', 'educatorApplication.status': 'pending' })
             .select('name email createdAt')
@@ -128,6 +129,11 @@ const getAdminStats = async (req, res) => {
             .populate('educatorId', 'name')
             .limit(5);
 
+        const pendingPayouts = await Transaction.find({ type: 'debit', status: 'pending' })
+            .select('amount educatorId createdAt')
+            .populate('educatorId', 'name')
+            .limit(5);
+
         res.status(200).json({
             success: true,
             data: {
@@ -135,8 +141,10 @@ const getAdminStats = async (req, res) => {
                 totalEducators,
                 totalCourses,
                 pendingApprovals: pendingCoursesCount + pendingEducatorsCount,
+                pendingPayoutsCount,
                 pendingEducators,
-                pendingCourses
+                pendingCourses,
+                pendingPayouts
             }
         });
     } catch (error) {
@@ -148,7 +156,7 @@ const getAdminStats = async (req, res) => {
 const getAllPayoutRequests = async (req, res) => {
     try {
         const payouts = await Transaction.find({ type: 'debit', status: 'pending' })
-            .populate('educatorId', 'name email profilePicture walletBalance')
+            .populate('educatorId', 'name email profilePicture walletBalance bankDetails')
             .sort({ createdAt: -1 });
 
         res.status(200).json({ success: true, total: payouts.length, payouts });
