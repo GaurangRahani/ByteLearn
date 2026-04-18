@@ -83,6 +83,12 @@ const requestWithdrawal = asyncHandler(async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
+        // Validate bank details exist
+        if (!user.bankDetails || !user.bankDetails.accountNumber || !user.bankDetails.bankName) {
+            await session.abortTransaction();
+            return res.status(400).json({ success: false, message: 'Please configure your Bank Details in Profile Settings first.' });
+        }
+
         // Validate wallet balance
         if (amount > user.walletBalance) {
             await session.abortTransaction();
