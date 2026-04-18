@@ -1,37 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  MessageSquare, 
-  Clock, 
-  CheckCircle2, 
-  Search, 
-  Filter, 
-  ChevronRight,
-  Loader2,
-  Calendar,
-  BookOpen,
-  ArrowRight
-} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import DashboardHeader from '../../components/layout/DashboardHeader';
+import { MessageSquare, Clock, CheckCircle2, ChevronRight, PlayCircle, BookOpen } from 'lucide-react';
 
 const StudentQueries = () => {
   const [queries, setQueries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // 'all', 'pending', 'resolved'
-  const [courseFilter, setCourseFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeQueryId, setActiveQueryId] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchQueries = async () => {
       try {
-        setLoading(true);
         const token = localStorage.getItem('token');
         const res = await axios.get('/api/queries', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setQueries(res.data.data);
+        const data = res.data.data || [];
+        setQueries(data);
+        if (data.length > 0) {
+          setActiveQueryId(data[0]._id);
+        }
       } catch (err) {
-        console.error('Error fetching queries:', err);
+        console.error('Failed to fetch queries:', err);
       } finally {
         setLoading(false);
       }
@@ -39,162 +31,165 @@ const StudentQueries = () => {
     fetchQueries();
   }, []);
 
-  const uniqueCourses = [...new Set(queries.map(q => q.courseId?.title))].filter(Boolean);
+  useEffect(() => {
+    // Mark as read when active query changes and is unread
+    const markAsRead = async () => {
+      const activeQuery = queries.find(q => q._id === activeQueryId);
+      if (activeQuery && activeQuery.status === 'resolved' && !activeQuery.studentRead) {
+        try {
+          const token = localStorage.getItem('token');
+          await axios.patch(`/api/queries/${activeQueryId}/read`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setQueries(prev => prev.map(q => q._id === activeQueryId ? { ...q, studentRead: true } : q));
+        } catch (err) {
+          console.error("Failed to mark as read", err);
+        }
+      }
+    };
+    if (activeQueryId) {
+      markAsRead();
+    }
+  }, [activeQueryId, queries]);
 
-  const filteredQueries = queries.filter(q => {
-    const matchesStatus = filter === 'all' || q.status === filter;
-    const matchesCourse = courseFilter === 'all' || q.courseId?.title === courseFilter;
-    const matchesSearch = q.question.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (q.courseId?.title || '').toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesCourse && matchesSearch;
-  });
+  const activeQuery = queries.find(q => q._id === activeQueryId);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans mb-20">
-      <DashboardHeader activePage="/student/queries" />
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans mb-12">
+      <DashboardHeader />
+      
+      <main className="flex-grow max-w-[1400px] w-full mx-auto px-6 py-8 flex flex-col h-[85vh]">
+        <div className="mb-6 flex-shrink-0">
+          <h1 className="text-[28px] font-bold text-slate-800 tracking-tight">My Queries</h1>
+          <p className="text-slate-500">View and manage your private 1-on-1 discussions with educators.</p>
+        </div>
 
-      <main className="flex-grow max-w-6xl w-full mx-auto px-6 py-10">
-        
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800 tracking-tight mb-2">My Questions</h1>
-            <p className="text-slate-500 font-medium">Track all your doubts and instructor responses in one place.</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="bg-white border border-slate-200 rounded-2xl flex items-center px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 transition-all w-full md:w-80">
-              <Search size={18} className="text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="Search your questions..." 
-                className="bg-transparent border-none outline-none px-3 py-1.5 text-sm w-full font-medium text-slate-700"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+        <div className="flex bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-grow min-h-[500px]">
+          
+          {/* Left Sidebar List */}
+          <div className="w-[380px] border-r border-slate-200 flex flex-col bg-slate-50/50 flex-shrink-0">
+            <div className="p-4 border-b border-slate-200 bg-white">
+               <h2 className="font-bold text-slate-800 text-[15px]">All Questions ({queries.length})</h2>
             </div>
-          </div>
-        </div>
-
-        {/* Filters Row */}
-        <div className="flex flex-wrap items-center gap-4 mb-8">
-          <div className="flex items-center gap-2">
-            <Filter size={16} className="text-slate-400" />
-            <span className="text-sm font-bold text-slate-500 uppercase tracking-widest px-1">Filter By:</span>
-          </div>
-
-          <div className="flex p-1 bg-slate-200/50 rounded-xl">
-             {['all', 'pending', 'resolved'].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setFilter(s)}
-                  className={`px-5 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${filter === s ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  {s}
-                </button>
-             ))}
-          </div>
-
-          <select 
-            className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-600 shadow-sm outline-none focus:ring-2 focus:ring-blue-500/10"
-            value={courseFilter}
-            onChange={(e) => setCourseFilter(e.target.value)}
-          >
-             <option value="all">All Courses</option>
-             {uniqueCourses.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-24">
-            <Loader2 size={40} className="animate-spin text-blue-600 mb-4" />
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Syncing your discussions...</p>
-          </div>
-        ) : filteredQueries.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6">
-            {filteredQueries.map((query) => (
-              <div key={query._id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group hover:border-blue-200 transition-all">
-                <div className="p-6">
-                  <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-3">
-                       <div className={`p-2 rounded-xl ${query.status === 'resolved' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
-                          {query.status === 'resolved' ? <CheckCircle2 size={20} /> : <Clock size={20} />}
-                       </div>
-                       <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5">Context</p>
-                          <div className="flex items-center gap-2">
-                             <span className="text-sm font-bold text-slate-800">{query.courseId?.title || 'Unknown Course'}</span>
-                             {query.lessonId && (
-                                <>
-                                  <ArrowRight size={14} className="text-slate-300" />
-                                  <span className="text-sm font-medium text-slate-500">{query.lessonId.title}</span>
-                                </>
-                             )}
-                          </div>
-                       </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                       <span className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border ${query.status === 'resolved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
-                          {query.status}
-                       </span>
-                    </div>
-                  </div>
-
-                  <div className="pl-12">
-                     <p className="text-slate-800 font-bold text-lg mb-4 leading-relaxed tracking-tight italic">
-                        "{query.question}"
-                     </p>
-                     
-                     <div className="flex items-center gap-4 text-xs font-bold text-slate-400 mb-6">
-                        <div className="flex items-center gap-1.5">
-                           <Calendar size={14} />
-                           {new Date(query.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </div>
-                     </div>
-
-                     {query.answer ? (
-                       <div className="bg-blue-50/50 rounded-2xl p-6 border border-blue-100 relative">
-                          <div className="absolute top-4 left-[-8px] w-4 h-4 bg-blue-50 border-l border-t border-blue-100 rotate-[-45deg] hidden md:block"></div>
-                          <p className="text-[11px] font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-                             <MessageSquare size={14} /> Instructor's Response
-                          </p>
-                          <p className="text-slate-700 font-medium leading-relaxed">{query.answer}</p>
-                          <div className="mt-4 flex items-center gap-2 text-[11px] font-bold text-slate-400 italic">
-                             <Clock size={12} /> Response provided on {new Date(query.updatedAt).toLocaleDateString()}
-                          </div>
-                       </div>
-                     ) : (
-                       <div className="bg-slate-50 rounded-2xl p-6 border border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
-                          <Loader2 size={24} className="text-slate-300 animate-spin mb-3" />
-                          <p className="text-slate-500 font-bold text-sm tracking-tight">Hang tight! The instructor will reply soon.</p>
-                       </div>
-                     )}
-                  </div>
+            
+            <div className="overflow-y-auto flex-grow p-3 space-y-2">
+              {loading ? (
+                <div className="flex justify-center p-8"><span className="text-slate-400">Loading...</span></div>
+              ) : queries.length === 0 ? (
+                <div className="text-center p-8 text-slate-400">
+                  <MessageSquare className="mx-auto h-8 w-8 mb-2 opacity-30" />
+                  <p className="text-sm">No queries yet</p>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-[32px] border border-dashed border-slate-300 py-24 px-6 text-center">
-            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-               <MessageSquare size={44} className="text-slate-200" />
+              ) : (
+                queries.map(q => (
+                  <button
+                    key={q._id}
+                    onClick={() => setActiveQueryId(q._id)}
+                    className={`w-full text-left p-4 rounded-xl transition-all relative border block ${
+                      activeQueryId === q._id 
+                        ? 'bg-blue-50 border-blue-200 shadow-sm' 
+                        : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-sm'
+                    }`}
+                  >
+                    {!q.studentRead && q.status === 'resolved' && (
+                       <span className="absolute top-4 right-4 w-2.5 h-2.5 bg-red-500 rounded-full shadow-sm" />
+                    )}
+                    <div className="flex gap-2 items-center mb-2 pr-6">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                        q.status === 'resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {q.status}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-medium">
+                        {new Date(q.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    
+                    <h3 className={`font-bold text-[14px] line-clamp-2 leading-snug ${activeQueryId === q._id ? 'text-blue-900' : 'text-slate-800'}`}>
+                      {q.question}
+                    </h3>
+                    
+                    {q.courseId && (
+                      <p className="text-[12px] text-slate-500 mt-2 truncate font-medium flex items-center gap-1.5">
+                        <BookOpen size={13} className="text-slate-400" /> {q.courseId.title}
+                      </p>
+                    )}
+                  </button>
+                ))
+              )}
             </div>
-            <h3 className="text-2xl font-bold text-slate-800 mb-2">No conversations found</h3>
-            <p className="text-slate-500 font-medium max-w-sm mx-auto mb-8">
-               {queries.length === 0 
-                ? "You haven't asked any questions yet. Start a discussion from your course player!" 
-                : "No questions match your current filters."}
-            </p>
-            {queries.length > 0 && (
-              <button 
-                onClick={() => {setFilter('all'); setCourseFilter('all'); setSearchQuery('');}}
-                className="text-blue-600 font-bold hover:underline"
-              >
-                Clear all filters
-              </button>
+          </div>
+
+          {/* Right Side Chat History */}
+          <div className="flex-grow flex flex-col bg-white overflow-hidden relative min-h-0">
+            {activeQuery ? (
+              <>
+                 <div className="p-6 border-b border-slate-100 bg-white shadow-sm z-10 flex justify-between items-start flex-shrink-0">
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-800 mb-2 leading-tight">{activeQuery.question}</h2>
+                      <div className="flex items-center gap-4 text-sm text-slate-500">
+                        <span className="flex items-center gap-1.5 font-medium"><Clock size={15}/> Asked on {new Date(activeQuery.createdAt).toLocaleDateString()}</span>
+                        {activeQuery.status === 'resolved' && (
+                           <span className="flex items-center gap-1.5 text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded"><CheckCircle2 size={15}/> Resolved</span>
+                        )}
+                      </div>
+                    </div>
+                 </div>
+
+                 <div className="flex-grow overflow-y-auto p-8 bg-slate-50/50 flex flex-col gap-6">
+                    
+                    {/* Student Question Bubble */}
+                    <div className="max-w-[85%] self-end flex gap-4 flex-row-reverse">
+                       <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold flex-shrink-0 border border-slate-300">
+                         You
+                       </div>
+                       <div className="flex flex-col items-end">
+                         <p className="text-xs font-bold text-slate-500 mb-1 mr-1"><span className="font-normal mr-2">{new Date(activeQuery.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span> You</p>
+                         <div className="bg-white border border-slate-200 p-5 rounded-2xl rounded-tr-sm shadow-sm text-slate-800 text-[15px] leading-relaxed whitespace-pre-wrap">
+                           {activeQuery.question}
+                         </div>
+                       </div>
+                    </div>
+
+                    {/* Context Link */}
+                    {activeQuery.lessonId && activeQuery.courseId && (
+                       <div className="self-center my-4 group">
+                          <button 
+                            onClick={() => navigate(`/learn/${activeQuery.courseId._id}`)}
+                            className="bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-full px-5 py-2.5 text-blue-700 text-[13px] font-semibold flex items-center gap-2.5 transition-all shadow-sm"
+                          >
+                             <PlayCircle size={18} className="text-blue-600 group-hover:scale-110 transition-transform" />
+                             Asked in Lesson: {activeQuery.lessonId.title || 'Course Material'}
+                             <ChevronRight size={16} className="opacity-60 ml-1" />
+                          </button>
+                       </div>
+                    )}
+
+                    {/* Educator Answer Bubble */}
+                    {activeQuery.answer && (
+                      <div className="max-w-[85%] self-start flex gap-4 mb-6">
+                         <div className="w-10 h-10 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-bold flex-shrink-0 shadow-md">
+                           In
+                         </div>
+                         <div className="flex flex-col items-start">
+                           <p className="text-xs font-bold text-slate-500 mb-1 ml-1">Instructor <span className="font-normal ml-2">{new Date(activeQuery.updatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></p>
+                           <div className="bg-[#2563EB] p-5 rounded-2xl rounded-tl-sm shadow-md text-white text-[15px] leading-relaxed whitespace-pre-wrap border border-blue-700">
+                             {activeQuery.answer}
+                           </div>
+                         </div>
+                      </div>
+                    )}
+
+                 </div>
+              </>
+            ) : (
+              <div className="flex-grow flex flex-col items-center justify-center text-slate-400 p-8">
+                 <MessageSquare className="w-16 h-16 opacity-20 mb-4" />
+                 <p className="text-lg font-medium text-slate-500">Select a query to view history</p>
+              </div>
             )}
           </div>
-        )}
-
+        </div>
       </main>
     </div>
   );

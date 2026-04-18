@@ -70,12 +70,21 @@ const BrowseCourseCard = ({ course }) => {
         </div>
 
         {/* Action Button */}
-        <button 
-          onClick={() => navigate(`/course/${_id}`)}
-          className="w-full bg-[#2563EB] hover:bg-blue-700 text-white font-medium py-[11px] px-4 rounded-[10px] transition-colors shadow-[0_2px_10px_rgba(37,99,235,0.2)] text-[14px]"
-        >
-          View Details
-        </button>
+        {course.isEnrolled ? (
+          <button 
+            onClick={() => navigate(`/learn/${_id}`)}
+            className="w-full bg-white border-2 border-[#2563EB] text-[#2563EB] hover:bg-blue-50 font-bold py-[9px] px-4 rounded-[10px] transition-colors text-[14px]"
+          >
+            Continue Learning
+          </button>
+        ) : (
+          <button 
+            onClick={() => navigate(`/course/${_id}`)}
+            className="w-full bg-[#2563EB] hover:bg-blue-700 text-white font-medium py-[11px] px-4 rounded-[10px] transition-colors shadow-[0_2px_10px_rgba(37,99,235,0.2)] text-[14px]"
+          >
+            View Details
+          </button>
+        )}
       </div>
     </div>
   );

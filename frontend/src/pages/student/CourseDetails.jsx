@@ -13,8 +13,7 @@ import {
 } from 'lucide-react';
 import DashboardHeader from '../../components/layout/DashboardHeader';
 import CourseReviews from '../../components/CourseReviews';
-import SupportQuery from '../../components/common/SupportQuery';
-import { Send, MessageSquare, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
+import { CheckCircle2, ArrowRight } from 'lucide-react';
 
 const CourseDetails = () => {
   const { id } = useParams();
@@ -23,16 +22,33 @@ const CourseDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [enrolling, setEnrolling] = useState(false);
-  const [activeTab, setActiveTab] = useState('syllabus'); // 'syllabus', 'qa', 'reviews'
-  const [courseQueries, setCourseQueries] = useState([]);
-  const [isLoadingQueries, setIsLoadingQueries] = useState(false);
+  const [activeTab, setActiveTab] = useState('syllabus'); // 'syllabus', 'reviews'
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
       try {
         setLoading(true);
         const response = await axios.get(`/api/courses/${id}`);
-        setCourse(response.data.data);
+        let courseData = response.data.data;
+
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const enrollmentRes = await axios.get('/api/enrollments/my-courses', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const enrollments = enrollmentRes.data?.data || [];
+                const isEnrolled = enrollments.some(e => {
+                    const eCourseId = e.courseId?._id || e.courseId;
+                    return eCourseId === courseData._id;
+                });
+                courseData.isEnrolled = isEnrolled;
+            } catch (err) {
+                console.error('Failed to fetch enrollments status', err);
+            }
+        }
+
+        setCourse(courseData);
         setError(null);
       } catch (err) {
         console.error('Error fetching course details:', err);
@@ -45,28 +61,7 @@ const CourseDetails = () => {
     fetchCourseDetails();
   }, [id]);
 
-  useEffect(() => {
-    const fetchCourseQueries = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) return;
 
-      try {
-        setIsLoadingQueries(true);
-        const res = await axios.get(`/api/queries?courseId=${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setCourseQueries(res.data.data);
-      } catch (err) {
-        console.error('Error fetching course queries:', err);
-      } finally {
-        setIsLoadingQueries(false);
-      }
-    };
-
-    if (activeTab === 'qa') {
-      fetchCourseQueries();
-    }
-  }, [id, activeTab]);
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
@@ -258,13 +253,7 @@ const CourseDetails = () => {
                 Course Syllabus
                 {activeTab === 'syllabus' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full shadow-sm" />}
               </button>
-              <button 
-                onClick={() => setActiveTab('qa')}
-                className={`pb-4 text-[15px] font-bold transition-all relative ${activeTab === 'qa' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
-              >
-                Q&A Support
-                {activeTab === 'qa' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full shadow-sm" />}
-              </button>
+
               <button 
                 onClick={() => setActiveTab('reviews')}
                 className={`pb-4 text-[15px] font-bold transition-all relative ${activeTab === 'reviews' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
@@ -339,56 +328,7 @@ const CourseDetails = () => {
                 </div>
               )}
 
-              {activeTab === 'qa' && (
-                <div className="flex flex-col gap-8">
-                  <SupportQuery 
-                    courseId={course._id} 
-                    onQuerySubmitted={() => {
-                        // Refresh queries
-                        setActiveTab('syllabus');
-                        setTimeout(() => setActiveTab('qa'), 10);
-                    }} 
-                  />
-                  
-                  <div className="space-y-6">
-                    <h3 className="text-lg font-bold text-slate-800 px-2 tracking-tight">Your Previous Questions</h3>
-                    
-                    {isLoadingQueries ? (
-                      <div className="flex justify-center py-12"><Loader2 className="animate-spin text-blue-600" /></div>
-                    ) : courseQueries.length > 0 ? (
-                      <div className="flex flex-col gap-4">
-                        {courseQueries.map((q) => (
-                          <div key={q._id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                            <div className="flex items-center justify-between mb-4">
-                              <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest ${q.status === 'resolved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
-                                {q.status}
-                              </span>
-                              <span className="text-xs text-slate-400 font-medium">
-                                {new Date(q.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <p className="text-slate-800 font-bold text-sm mb-4 leading-relaxed">{q.question}</p>
-                            {q.answer && (
-                              <div className="mt-4 p-5 bg-slate-50 rounded-xl border border-slate-100">
-                                <p className="text-[11px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                  <MessageSquare size={12} /> Instructor Response
-                                </p>
-                                <p className="text-slate-600 text-sm leading-relaxed font-medium">{q.answer}</p>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300">
-                        <MessageSquare className="mx-auto h-12 w-12 text-slate-300 mb-4" />
-                        <h4 className="text-slate-500 font-bold mb-1">No questions yet</h4>
-                        <p className="text-slate-400 text-sm">Ask your first question to get started.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+
 
               {activeTab === 'reviews' && (
                 <CourseReviews courseId={course._id} />
@@ -416,13 +356,22 @@ const CourseDetails = () => {
                   
                   {/* Action Layout */}
                   <div className="px-2 pb-2 mt-2">
-                     <button 
-                       onClick={handleBuyCourse}
-                       disabled={enrolling}
-                       className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all mb-8 text-[15px]"
-                     >
-                       {enrolling ? 'Processing...' : (course.isPaid ? 'Buy Now' : 'Enroll Now')}
-                     </button>
+                     {course.isEnrolled ? (
+                       <Link 
+                         to={`/learn/${course._id}`}
+                         className="flex items-center justify-center w-full bg-white border-2 border-[#2563EB] text-[#2563EB] hover:bg-blue-50 font-bold py-3 rounded-xl transition-all mb-8 shadow-sm text-[15px]"
+                       >
+                         Continue Learning <ArrowRight size={18} className="ml-2" />
+                       </Link>
+                     ) : (
+                       <button 
+                         onClick={handleBuyCourse}
+                         disabled={enrolling}
+                         className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all mb-8 text-[15px]"
+                       >
+                         {enrolling ? 'Processing...' : (course.isPaid ? 'Buy Now' : 'Enroll Now')}
+                       </button>
+                     )}
                      
                      <div className="mb-2">
                         <h4 className="font-bold text-slate-800 text-[15px] mb-4">This course includes:</h4>

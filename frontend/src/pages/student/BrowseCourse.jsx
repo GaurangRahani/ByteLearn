@@ -22,10 +22,36 @@ const BrowseCourse = () => {
         const coursesData = response.data?.data || response.data || [];
         
         if (Array.isArray(coursesData)) {
-           setRawCourses(coursesData);
+           // Step 3.5: Fetch enrollments to filter out already enrolled courses
+           const token = localStorage.getItem('token');
+           let enrolledCourseIds = new Set();
+           if (token) {
+               try {
+                   const enrollmentRes = await axios.get('/api/enrollments/my-courses', {
+                       headers: { Authorization: `Bearer ${token}` }
+                   });
+                   const enrollments = enrollmentRes.data?.data || [];
+                   enrollments.forEach(enroll => {
+                       if (enroll.courseId && enroll.courseId._id) {
+                           enrolledCourseIds.add(enroll.courseId._id);
+                       } else if (enroll.courseId) {
+                           enrolledCourseIds.add(enroll.courseId);
+                       }
+                   });
+               } catch (enrollErr) {
+                   console.error("Failed to fetch enrollments for filtering:", enrollErr);
+               }
+           }
+
+           const enrichedCourses = coursesData.map(c => ({
+               ...c,
+               isEnrolled: enrolledCourseIds.has(c._id)
+           }));
+
+           setRawCourses(enrichedCourses);
            
            // Step 3: Dynamic Category Extraction
-           const courseCategories = coursesData.map(course => course.category);
+           const courseCategories = enrichedCourses.map(course => course.category);
            const validCategories = courseCategories.filter(cat => cat && typeof cat === 'string' && cat.trim() !== '');
            const uniqueCategories = [...new Set(validCategories)];
            

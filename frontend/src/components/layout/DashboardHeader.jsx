@@ -19,6 +19,7 @@ import {
 const DashboardHeader = ({ studentName = 'Student' }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profileName, setProfileName] = useState(studentName);
+  const [hasUnreadQueries, setHasUnreadQueries] = useState(false);
   const profileRef = useRef(null);
   const navigate = useNavigate();
 
@@ -41,6 +42,23 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
       }
     };
     fetchProfileName();
+
+    const checkUnreadQueries = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await axios.get('/api/queries', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data && res.data.data) {
+           const hasUnread = res.data.data.some(q => q.status === 'resolved' && !q.studentRead);
+           setHasUnreadQueries(hasUnread);
+        }
+      } catch (err) {
+        console.error("DashboardHeader failed to check unread queries", err);
+      }
+    };
+    checkUnreadQueries();
   }, [studentName]);
 
   useEffect(() => {
@@ -66,6 +84,7 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
     { name: 'Dashboard', path: '/student-dashboard', icon: LayoutDashboard },
     { name: 'Browse', path: '/browse', icon: BookOpen },
     { name: 'My Courses', path: '/my-courses', icon: GraduationCap },
+    { name: 'My Queries', path: '/student/queries', icon: MessageSquare, hasBadge: hasUnreadQueries },
     { name: 'Certificates', path: '/certificates', icon: Award },
   ];
 
@@ -88,7 +107,7 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
               key={item.name}
               to={item.path}
               className={({ isActive }) => 
-                `flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                `flex items-center gap-2 px-3 py-2 rounded-lg transition-colors relative ${
                   isActive 
                     ? 'text-blue-600 bg-blue-50/80 font-semibold' 
                     : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -97,6 +116,9 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
             >
               <item.icon size={16} />
               {item.name}
+              {item.hasBadge && (
+                 <span className="absolute top-1.5 right-1 w-2 h-2 bg-red-500 rounded-full shadow-[0_0_0_2px_#ffffff]"></span>
+              )}
             </NavLink>
           ))}
         </nav>

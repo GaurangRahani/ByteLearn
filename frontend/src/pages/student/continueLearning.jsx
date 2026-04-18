@@ -16,7 +16,9 @@ import {
   Lock,
   Trophy,
   Award,
-  PartyPopper
+  PartyPopper,
+  MessageSquare,
+  Loader2
 } from 'lucide-react';
 import AssignmentViewer from '../../components/common/AssignmentViewer';
 import CustomVideoPlayer from '../../components/common/CustomVideoPlayer';
@@ -78,6 +80,8 @@ const ContinueLearning = () => {
   const [certificate, setCertificate] = useState(null);
   const [isFetchingCert, setIsFetchingCert] = useState(false);
   const [activeBottomTab, setActiveBottomTab] = useState('overview'); // 'overview' or 'qa'
+  const [courseQueries, setCourseQueries] = useState([]);
+  const [isLoadingQueries, setIsLoadingQueries] = useState(false);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -187,6 +191,29 @@ const ContinueLearning = () => {
 
     fetchQuizHistory();
   }, [activeItemId]);
+
+  useEffect(() => {
+    const fetchCourseQueries = async () => {
+      const token = localStorage.getItem('token');
+      if (!token || !id) return;
+
+      try {
+        setIsLoadingQueries(true);
+        const res = await axios.get(`/api/queries?courseId=${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setCourseQueries(res.data.data);
+      } catch (err) {
+        console.error('Error fetching course queries:', err);
+      } finally {
+        setIsLoadingQueries(false);
+      }
+    };
+
+    if (activeBottomTab === 'qa') {
+      fetchCourseQueries();
+    }
+  }, [id, activeBottomTab]);
 
   useEffect(() => {
     if (!course) return;
@@ -641,7 +668,52 @@ const ContinueLearning = () => {
                 </div>
               ) : (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <SupportQuery courseId={course?._id} lessonId={currentItem?.id} />
+                  <SupportQuery 
+                    courseId={course?._id} 
+                    lessonId={currentItem?.id} 
+                    onQuerySubmitted={() => {
+                        setActiveBottomTab('overview');
+                        setTimeout(() => setActiveBottomTab('qa'), 10);
+                    }} 
+                  />
+                  
+                  <div className="space-y-6 mt-8">
+                    <h3 className="text-lg font-bold text-slate-800 px-2 tracking-tight">Your Previous Questions</h3>
+                    
+                    {isLoadingQueries ? (
+                      <div className="flex justify-center py-12"><Loader2 className="animate-spin text-blue-600" /></div>
+                    ) : courseQueries.filter(q => (q.lessonId?._id || q.lessonId) === currentItem?.id).length > 0 ? (
+                      <div className="flex flex-col gap-4">
+                        {courseQueries.filter(q => (q.lessonId?._id || q.lessonId) === currentItem?.id).map((q) => (
+                          <div key={q._id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                            <div className="flex items-center justify-between mb-4">
+                              <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest ${q.status === 'resolved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                                {q.status}
+                              </span>
+                              <span className="text-xs text-slate-400 font-medium">
+                                {new Date(q.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-slate-800 font-bold text-sm mb-4 leading-relaxed">{q.question}</p>
+                            {q.answer && (
+                              <div className="mt-4 p-5 bg-slate-50 rounded-xl border border-slate-100">
+                                <p className="text-[11px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                  <MessageSquare size={12} /> Instructor Response
+                                </p>
+                                <p className="text-slate-600 text-sm leading-relaxed font-medium">{q.answer}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300">
+                        <MessageSquare className="mx-auto h-12 w-12 text-slate-300 mb-4" />
+                        <h4 className="text-slate-500 font-bold mb-1">No questions yet</h4>
+                        <p className="text-slate-400 text-sm">Ask your first question to get started.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
