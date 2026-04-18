@@ -28,6 +28,10 @@ const querySchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'resolved'],
     default: 'pending'
+  },
+  studentRead: {
+    type: Boolean,
+    default: true
   }
 }, { timestamps: true });
 
