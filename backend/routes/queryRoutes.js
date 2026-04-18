@@ -5,7 +5,8 @@ const {
   getStudentQueries, 
   getEducatorQueries,
   generateAIDrafts,
-  resolveQuery 
+  resolveQuery,
+  markQueryRead 
 } = require('../controller/queryController');
 const { protect, approvedEducator } = require('../middleware/authMiddleware');
 
@@ -13,6 +14,8 @@ const { protect, approvedEducator } = require('../middleware/authMiddleware');
 router.route('/')
   .post(protect, createQuery)
   .get(protect, getStudentQueries);
+
+router.patch('/:id/read', protect, markQueryRead);
 
 // Educator Routes
 router.get('/educator', protect, approvedEducator, getEducatorQueries);

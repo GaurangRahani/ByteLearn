@@ -1,7 +1,6 @@
 const Query = require('../model/Query');
 const Course = require('../model/Course');
 const Lesson = require('../model/Lesson');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 
 const createQuery = async (req, res) => {
@@ -87,31 +86,43 @@ const generateAIDrafts = async (req, res) => {
       return res.status(403).json({ success: false, message: "Not authorized" });
     }
 
-    // Initialize Gemini
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-      }
-    });
-
     const studentFirstName = query.studentId.name.split(' ')[0];
     const systemPrompt = `You are an expert teaching assistant helping an educator reply to a student. Output exactly 3 response options formatted as a JSON array of strings: ["Option 1", "Option 2", "Option 3"]. Keep each option to a maximum of 4 sentences. Option 1 must be direct, Option 2 must use an analogy, Option 3 must be highly encouraging. Never state that you are an AI. Address the student by their first name (${studentFirstName}).`;
 
     const userPrompt = `Course: ${query.courseId.title}, Question: ${query.question}`;
-    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
-    console.log(`[Gemini] Generating drafts for query: ${queryId}`);
-    const result = await model.generateContent(fullPrompt);
-    const response = await result.response;
-    const text = response.text();
-    console.log(`[Gemini] Raw Response:`, text);
+    console.log(`[AI] Generating drafts for query: ${queryId}`);
+    
+    const aiResponse = await fetch(`${process.env.OPENAI_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.API_KEY}`
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.7
+      })
+    });
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      throw new Error(`AI API Error: ${aiResponse.status} ${errorText}`);
+    }
+
+    const aiData = await aiResponse.json();
+    const text = aiData.choices[0].message.content;
+    console.log(`[AI] Raw Response:`, text);
 
     // Parse JSON
     try {
       // Clean potential markdown or whitespace
-      const cleanedJson = text.trim();
+      let cleanedJson = text.trim();
+      cleanedJson = cleanedJson.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
       const drafts = JSON.parse(cleanedJson);
 
       if (!Array.isArray(drafts)) {
@@ -120,11 +131,11 @@ const generateAIDrafts = async (req, res) => {
 
       res.status(200).json({ success: true, data: drafts.slice(0, 3) });
     } catch (e) {
-      console.error("Gemini JSON Parse Error:", e.message, "Text:", text);
+      console.error("AI JSON Parse Error:", e.message, "Text:", text);
       res.status(500).json({ success: false, message: "AI response format error. Please try again." });
     }
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("AI API Error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -151,6 +162,29 @@ const resolveQuery = async (req, res) => {
 
     query.answer = answer;
     query.status = 'resolved';
+    query.studentRead = false;
+    await query.save();
+
+    res.status(200).json({ success: true, data: query });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const markQueryRead = async (req, res) => {
+  try {
+    const queryId = req.params.id || req.params.queryId;
+    const query = await Query.findById(queryId);
+
+    if (!query) {
+      return res.status(404).json({ success: false, message: "Query not found" });
+    }
+
+    if (query.studentId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: "Not authorized" });
+    }
+
+    query.studentRead = true;
     await query.save();
 
     res.status(200).json({ success: true, data: query });
@@ -164,5 +198,6 @@ module.exports = {
   getStudentQueries,
   getEducatorQueries,
   generateAIDrafts,
-  resolveQuery
+  resolveQuery,
+  markQueryRead
 };

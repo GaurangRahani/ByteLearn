@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 
 const { getEarningsDashboard, requestWithdrawal } = require('../controller/earningsController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const { protect, educator } = require('../middleware/authMiddleware');
 
-router.get('/', protect, authorize('educator'), getEarningsDashboard);
+router.get('/', protect, educator, getEarningsDashboard);
 
 //for withdraw
-router.post('/withdraw', protect, authorize('educator'), requestWithdrawal);
+router.post('/withdraw', protect, educator, requestWithdrawal);
 
 module.exports = router;
