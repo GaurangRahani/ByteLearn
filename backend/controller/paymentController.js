@@ -3,6 +3,9 @@ const crypto = require('crypto');
 const Payment = require('../model/Payment');
 const Course = require('../model/Course');
 const Enrollment = require('../model/Enrollment');
+const User = require('../model/User');
+const Transaction = require('../model/Transaction');
+const mongoose = require('mongoose');
 const asyncHandler = require('express-async-handler');
 
 // API A: createOrder (POST /api/payment/checkout)
@@ -61,37 +64,83 @@ const verifyPayment = asyncHandler(async (req, res) => {
     const isAuthentic = expectedSignature === razorpay_signature;
 
     if (isAuthentic) {
-        // Find the payment record
-        const payment = await Payment.findOne({ razorpay_order_id });
-        if (!payment) {
-            return res.status(404).json({ success: false, message: "Payment record not found" });
-        }
+        const session = await mongoose.startSession();
+        session.startTransaction();
 
-        payment.razorpay_payment_id = razorpay_payment_id;
-        payment.razorpay_signature = razorpay_signature;
-        payment.status = 'success';
-        payment.paidAt = Date.now();
-        await payment.save();
+        try {
+            // Find the payment record
+            const payment = await Payment.findOne({ razorpay_order_id }).session(session);
+            if (!payment) {
+                await session.abortTransaction();
+                return res.status(404).json({ success: false, message: "Payment record not found" });
+            }
 
-        // Find or Create Enrollment
-        let enrollment = await Enrollment.findOne({ studentId, courseId: payment.courseId });
-        
-        if (!enrollment) {
-            enrollment = await Enrollment.create({
-                studentId,
-                courseId: payment.courseId,
-                status: 'active',
-                enrolledAt: Date.now()
+            payment.razorpay_payment_id = razorpay_payment_id;
+            payment.razorpay_signature = razorpay_signature;
+            payment.status = 'success';
+            payment.paidAt = Date.now();
+            await payment.save({ session });
+
+            // Find Course to get educatorId
+            const course = await Course.findById(payment.courseId).session(session);
+            if (course) {
+                const educatorId = course.educatorId;
+                const educatorEarnings = payment.amount * 0.80; // 80% to educator
+
+                // Atomically update walletBalance and totalEarnings
+                await User.findByIdAndUpdate(
+                    educatorId,
+                    { 
+                        $inc: { 
+                            walletBalance: educatorEarnings,
+                            totalEarnings: educatorEarnings 
+                        } 
+                    },
+                    { session }
+                );
+
+                // Create Credit Transaction
+                await Transaction.create([{
+                    educatorId,
+                    paymentId: payment._id,
+                    amount: educatorEarnings,
+                    type: 'credit',
+                    status: 'completed',
+                    description: `Sale of course: ${course.title} (80% Revenue Share)`
+                }], { session });
+            }
+
+            // Find or Create Enrollment
+            let enrollment = await Enrollment.findOne({ studentId, courseId: payment.courseId }).session(session);
+
+            if (!enrollment) {
+                enrollment = await Enrollment.create([{
+                    studentId,
+                    courseId: payment.courseId,
+                    status: 'active',
+                    enrolledAt: Date.now()
+                }], { session });
+            } else {
+                enrollment.status = 'active';
+                await enrollment.save({ session });
+            }
+
+            await session.commitTransaction();
+            session.endSession();
+
+            res.status(200).json({
+                success: true,
+                message: "Payment verified successfully"
             });
-        } else {
-            enrollment.status = 'active';
-            await enrollment.save();
+        } catch (error) {
+            await session.abortTransaction();
+            session.endSession();
+            console.error("Payment verification failed:", error);
+            res.status(500).json({
+                success: false,
+                message: "Failed to process payment and earnings."
+            });
         }
-
-        res.status(200).json({
-            success: true,
-            message: "Payment verified successfully"
-        });
     } else {
         await Payment.findOneAndUpdate(
             { razorpay_order_id },
