@@ -62,6 +62,19 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
     },
+    walletBalance: {
+      type: Number,
+      default: 0
+    },
+    totalEarnings: {
+      type: Number,
+      default: 0
+    },
+    bankDetails: {
+      accountName: { type: String },
+      accountNumber: { type: String },
+      bankName: { type: String },
+    },
     lastLogin: {
       type: Date,
     },
