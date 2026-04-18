@@ -10,7 +10,10 @@ import {
   UserCircle, 
   Loader2,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Landmark,
+  CreditCard,
+  Building
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -26,7 +29,12 @@ const EducatorProfile = () => {
     email: '',
     phone: '',
     gender: '',
-    dateOfBirth: ''
+    dateOfBirth: '',
+    bankDetails: {
+      accountName: '',
+      accountNumber: '',
+      bankName: ''
+    }
   });
 
   useEffect(() => {
@@ -41,13 +49,18 @@ const EducatorProfile = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      const { name, email, phone, gender, dateOfBirth } = res.data;
+      const { name, email, phone, gender, dateOfBirth, bankDetails } = res.data;
       setFormData({
         name: name || '',
         email: email || '',
         phone: phone || '',
         gender: gender || '',
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth).toISOString().split('T')[0] : ''
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth).toISOString().split('T')[0] : '',
+        bankDetails: {
+          accountName: bankDetails?.accountName || '',
+          accountNumber: bankDetails?.accountNumber || '',
+          bankName: bankDetails?.bankName || ''
+        }
       });
     } catch (err) {
       console.error("Error fetching educator profile:", err);
@@ -59,6 +72,16 @@ const EducatorProfile = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleBankChange = (e) => {
+    setFormData({
+      ...formData,
+      bankDetails: {
+        ...formData.bankDetails,
+        [e.target.name]: e.target.value
+      }
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -222,6 +245,66 @@ const EducatorProfile = () => {
                   </div>
                 </div>
 
+              </div>
+
+              <div className="pt-10 border-t border-slate-100 mt-10">
+                <div className="mb-8">
+                   <h3 className="text-xl font-black text-slate-800 tracking-tight">Payout Settings</h3>
+                   <p className="text-slate-500 font-medium text-sm mt-1">Provide your banking details to receive your course earnings.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+                  {/* Account Name */}
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Account Holder Name</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <User size={18} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                      </div>
+                      <input 
+                        type="text" 
+                        name="accountName"
+                        value={formData.bankDetails.accountName}
+                        onChange={handleBankChange}
+                        className="w-full h-14 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-2xl text-[15px] font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                        placeholder="e.g. User Test"
+                      />
+                    </div>
+                  </div>
+                  {/* Account Number */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Account Number</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <CreditCard size={18} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                      </div>
+                      <input 
+                        type="text" 
+                        name="accountNumber"
+                        value={formData.bankDetails.accountNumber}
+                        onChange={handleBankChange}
+                        className="w-full h-14 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-2xl text-[15px] font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                        placeholder="e.g. 123456789"
+                      />
+                    </div>
+                  </div>
+                  {/* Bank Name / IFSC */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Routing Code / IFSC</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Landmark size={18} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                      </div>
+                      <input 
+                        type="text" 
+                        name="bankName"
+                        value={formData.bankDetails.bankName}
+                        onChange={handleBankChange}
+                        className="w-full h-14 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-2xl text-[15px] font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all uppercase"
+                        placeholder="e.g. HDFC000123"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="pt-10 border-t border-slate-100 mt-12 flex items-center justify-between">
