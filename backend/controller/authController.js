@@ -209,6 +209,7 @@ const getUserProfile = async (req, res) => {
                 dateOfBirth: user.dateOfBirth,
                 educationLevel: user.educationLevel,
                 phone: user.phone,
+                bankDetails: user.bankDetails,
                 lastLogin: user.lastLogin,
             });
         } else {
@@ -256,6 +257,14 @@ const updateUserProfile = async (req, res) => {
         user.dateOfBirth = req.body.dateOfBirth || user.dateOfBirth;
         user.educationLevel = req.body.educationLevel || user.educationLevel;
         user.phone = req.body.phone || user.phone;
+
+        if (req.body.bankDetails) {
+            user.bankDetails = {
+                ...user.bankDetails,
+                ...req.body.bankDetails
+            };
+        }
+
         if (req.body.password) {
             return res.status(400).json({ message: 'Use change-password to update your password.' });
         }

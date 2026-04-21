@@ -91,10 +91,10 @@ const reviewEducator = async (req, res) => {
         user.educatorApplication.status = status;
         await user.save();
 
-        const subject = status === 'approved' 
-            ? '🎉 Your ByteLearn Educator Application is Approved!' 
+        const subject = status === 'approved'
+            ? '🎉 Your ByteLearn Educator Application is Approved!'
             : 'Update on your ByteLearn Educator Application';
-            
+
         const message = status === 'approved'
             ? `Hi ${user.name}, congratulations! Your educator application has been approved. You can now log in and start creating courses.`
             : `Hi ${user.name}, after review, your educator application was not approved at this time. You may re-apply with updated credentials.`;
@@ -193,10 +193,61 @@ const reviewPayoutRequest = async (req, res) => {
         transaction.status = status;
         await transaction.save();
 
+        res.status(200).json({
+            success: true,
+            message: `Payout request ${status === 'completed' ? 'approved' : 'rejected'} successfully`,
+            transaction
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// User Management
+const getAllUsers = async (req, res) => {
+    try {
+        const { role, search } = req.query;
+        let filter = {};
+
+        if (role) {
+            filter.role = role;
+        }
+
+        if (search) {
+            filter.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const users = await User.find(filter)
+            .select('-password -otp -otpExpires')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({ success: true, users });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const toggleUserStatus = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        if (user.role === 'admin') {
+            return res.status(403).json({ success: false, message: 'Cannot modify admin status' });
+        }
+
+        user.isBlocked = !user.isBlocked;
+        await user.save();
+
         res.status(200).json({ 
             success: true, 
-            message: `Payout request ${status === 'completed' ? 'approved' : 'rejected'} successfully`,
-            transaction 
+            message: `User status updated to ${user.isBlocked ? 'Blocked' : 'Active'}`, 
+            isBlocked: user.isBlocked 
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -209,6 +260,6 @@ module.exports = {
     getAllEducators,
     reviewEducator,
     getAdminStats,
-    getAllPayoutRequests,
-    reviewPayoutRequest
+    getAllUsers,
+    toggleUserStatus
 };
