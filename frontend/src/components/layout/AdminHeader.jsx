@@ -9,8 +9,7 @@ import {
   LayoutDashboard,
   ShieldCheck,
   BookCheck,
-  UserCog,
-  Banknote
+  UserCog
 } from 'lucide-react';
 
 const AdminHeader = () => {
@@ -19,9 +18,36 @@ const AdminHeader = () => {
   const profileRef = useRef(null);
 
   const adminUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const adminName = adminUser?.name || 'Admin';
+  const [adminName, setAdminName] = useState(adminUser?.name || 'Admin');
+  const [profilePic, setProfilePic] = useState(adminUser.profilePicture && adminUser.profilePicture !== 'default-profile.jpg' ? adminUser.profilePicture : null);
+
+  const fallbackPic = adminName 
+    ? `https://ui-avatars.com/api/?name=${adminName}&background=EFF6FF&color=2563EB`
+    : `https://ui-avatars.com/api/?name=Admin&background=EFF6FF&color=2563EB`;
 
   useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch('/api/auth/profile', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data) {
+          if (data.name) setAdminName(data.name);
+          if (data.profilePicture && data.profilePicture !== 'default-profile.jpg') {
+            setProfilePic(data.profilePicture);
+          } else if (data.profilePicture === 'default-profile.jpg') {
+            setProfilePic(null);
+          }
+        }
+      } catch (err) {
+        console.error("AdminHeader failed to fetch profile data", err);
+      }
+    };
+    fetchProfileData();
+
     const handleClickOutside = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setIsProfileOpen(false);
@@ -42,7 +68,6 @@ const AdminHeader = () => {
     { name: 'Educator Approvals', path: '/admin/educators', icon: <ShieldCheck size={16} /> },
     { name: 'Course Approvals', path: '/admin/courses', icon: <BookCheck size={16} /> },
     { name: 'User Management', path: '/admin/users', icon: <UserCog size={16} /> },
-    { name: 'Payouts', path: '/admin/payouts', icon: <Banknote size={16} /> },
   ];
 
   return (
@@ -84,8 +109,8 @@ const AdminHeader = () => {
             onClick={() => setIsProfileOpen(!isProfileOpen)}
             className="flex items-center gap-3 hover:bg-slate-50 p-2 rounded-xl transition-all"
           >
-            <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-200 shadow-sm">
-              {adminName?.charAt(0) || <User size={16} />}
+            <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-blue-600 font-bold border border-blue-200 shadow-sm overflow-hidden flex-shrink-0">
+               <img src={profilePic || fallbackPic} alt="Profile" className="w-full h-full object-cover" />
             </div>
             <div className="hidden sm:block text-left">
               <p className="text-sm font-bold text-slate-800 leading-none">{adminName}</p>
