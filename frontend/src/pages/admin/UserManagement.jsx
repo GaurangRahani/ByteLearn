@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Loader2
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import AdminHeader from '../../components/layout/AdminHeader';
 
 const UserManagement = () => {
@@ -47,11 +48,11 @@ const UserManagement = () => {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
       await axios.patch(`/api/admin/users/${userId}/toggle-status`, {}, config);
-      alert("User access status updated successfully.");
+      toast.success("User access status updated successfully.");
       fetchUsers();
     } catch (err) {
       console.error("Status toggle error:", err);
-      alert("Failed to update user status.");
+      toast.error(err.response?.data?.message || "Failed to update user status.");
     } finally {
       setIsProcessing(false);
     }
