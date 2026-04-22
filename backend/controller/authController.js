@@ -297,6 +297,11 @@ const updateUserProfile = async (req, res) => {
             email: updatedUser.email,
             role: updatedUser.role,
             isVerified: updatedUser.isVerified,
+            phone: updatedUser.phone,
+            educationLevel: updatedUser.educationLevel,
+            gender: updatedUser.gender,
+            dateOfBirth: updatedUser.dateOfBirth,
+            profilePicture: updatedUser.profilePicture,
             ...(updatedUser.isVerified === false && { message: 'Email updated. Please verify your new email with the OTP sent.' })
         });
     } catch (error) {
