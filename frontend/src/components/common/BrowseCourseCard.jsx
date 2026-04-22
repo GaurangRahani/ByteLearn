@@ -23,23 +23,24 @@ const BrowseCourseCard = ({ course }) => {
           alt={title} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        {/* Price Badge overlaying the thumbnail */}
-        <div className="absolute top-3 right-3 z-10">
-          {isFree ? (
-            <span className="bg-[#E6F4EA]/95 backdrop-blur-sm px-3 py-1.5 rounded-md shadow-sm border border-[#E6F4EA]">
-              <span className="text-[#1E8E3E] text-xs font-bold leading-none tracking-wide">Free</span>
-            </span>
-          ) : (
-            <span className="bg-[#2563EB]/95 backdrop-blur-sm px-3 py-1.5 rounded-md shadow-sm border border-[#2563EB]">
-              <span className="text-white text-xs font-bold leading-none tracking-wide">₹{Number(price).toFixed(2)}</span>
-            </span>
-          )}
-        </div>
       </div>
 
       {/* Card Body */}
       <div className="p-5 flex flex-col flex-grow">
-        <h3 className="font-bold text-slate-800 text-[16px] leading-[1.4] mb-0.5 line-clamp-1">{title}</h3>
+        <div className="flex items-start justify-between gap-4 mb-1.5">
+          <h3 className="font-bold text-slate-800 text-[18px] leading-[1.4] line-clamp-2 flex-grow">{title}</h3>
+          <div className="flex-shrink-0 mt-0.5">
+            {isFree ? (
+              <span className="bg-emerald-50 text-emerald-700 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-emerald-100 uppercase tracking-wide">
+                Free
+              </span>
+            ) : (
+              <span className="bg-blue-50 text-blue-700 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-blue-100">
+                ₹{Number(price).toFixed(0)}
+              </span>
+            )}
+          </div>
+        </div>
         
         {/* Educator Names - Displaying all collaborators */}
         <p className="text-[13px] text-slate-500 font-medium mb-3 line-clamp-1">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
 import { 
   FileText, 
   CheckCircle, 
@@ -257,6 +258,8 @@ const AssignmentCard = ({ sub, activeTab, variants }) => {
 };
 
 const EmptyState = ({ tab }) => {
+  const navigate = useNavigate();
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}

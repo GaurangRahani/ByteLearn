@@ -13,7 +13,7 @@ const CourseCard = ({ id, title, instructor, duration, progress, rating, totalRa
       className="bg-slate-50/50 rounded-[22px] border border-slate-100 p-6 flex flex-col md:flex-row md:items-center gap-6 group hover:border-blue-200 hover:bg-white hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-300"
     >
       <div className="flex-grow">
-        <h3 className="font-bold text-slate-800 text-[16px] mb-2 group-hover:text-blue-600 transition-colors">{title}</h3>
+        <h3 className="font-bold text-slate-800 text-[18px] mb-2 group-hover:text-blue-600 transition-colors">{title}</h3>
         <div className="flex flex-col gap-1 mb-6">
           <p className="text-[13px] font-semibold text-slate-500 flex items-center gap-4">
             <span className="flex items-center gap-1.5">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { User, Mail, Save, ArrowLeft, Upload, Trash2 } from 'lucide-react';
+import { User, Mail, Save, ArrowLeft, Upload, Trash2, Phone, GraduationCap, Calendar, UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -17,7 +17,14 @@ const UpdateProfile = () => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       const user = JSON.parse(userStr);
-      setFormData({ name: user.name, email: user.email });
+      setFormData({ 
+        name: user.name || '', 
+        email: user.email || '',
+        phone: user.phone || '',
+        educationLevel: user.educationLevel || '',
+        gender: user.gender || '',
+        dateOfBirth: user.dateOfBirth ? user.dateOfBirth.split('T')[0] : ''
+      });
       if (user.profilePicture && user.profilePicture !== 'default-profile.jpg') {
         setPreviewUrl(user.profilePicture);
       }
@@ -53,6 +60,10 @@ const UpdateProfile = () => {
       const dataToSend = new FormData();
       dataToSend.append('name', formData.name);
       dataToSend.append('email', formData.email);
+      dataToSend.append('phone', formData.phone);
+      dataToSend.append('educationLevel', formData.educationLevel);
+      dataToSend.append('gender', formData.gender);
+      dataToSend.append('dateOfBirth', formData.dateOfBirth);
       
       if (profilePicture) {
         dataToSend.append('profilePicture', profilePicture);
@@ -175,6 +186,81 @@ const UpdateProfile = () => {
                     name="email"
                     required
                     value={formData.email}
+                    onChange={handleChange}
+                    className="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[14px] font-semibold text-slate-700">Phone Number</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <Phone size={18} className="text-slate-400" />
+                  </div>
+                  <input 
+                    type="tel" 
+                    name="phone"
+                    placeholder="e.g. +91 9876543210"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[14px] font-semibold text-slate-700">Education Level</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <GraduationCap size={18} className="text-slate-400" />
+                  </div>
+                  <select 
+                    name="educationLevel"
+                    value={formData.educationLevel}
+                    onChange={handleChange}
+                    className="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800 font-medium appearance-none"
+                  >
+                    <option value="">Select Education Level</option>
+                    <option value="High School">High School</option>
+                    <option value="Undergraduate">Undergraduate</option>
+                    <option value="Graduate">Graduate</option>
+                    <option value="Post-Graduate">Post-Graduate</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[14px] font-semibold text-slate-700">Gender</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <UserCircle size={18} className="text-slate-400" />
+                  </div>
+                  <select 
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800 font-medium appearance-none"
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[14px] font-semibold text-slate-700">Date of Birth</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <Calendar size={18} className="text-slate-400" />
+                  </div>
+                  <input 
+                    type="date" 
+                    name="dateOfBirth"
+                    value={formData.dateOfBirth}
                     onChange={handleChange}
                     className="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800 font-medium"
                   />
