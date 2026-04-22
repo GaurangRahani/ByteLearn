@@ -90,13 +90,13 @@ const Header = () => {
   const fallbackPic = `https://ui-avatars.com/api/?name=${profileName}&background=EFF6FF&color=2563EB`;
 
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 h-20 flex items-center">
+    <header className="bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] h-16 flex items-center shadow-md">
       <div className="max-w-7xl mx-auto px-6 w-full flex justify-between items-center">
         
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 text-3xl font-bold text-slate-800 group">
-          <div className="bg-blue-600 p-1.5 rounded-xl group-hover:scale-105 transition-transform shadow-lg shadow-blue-500/20">
-            <GraduationCap size={28} className="text-white fill-white/10" />
+        <Link to="/" className="flex items-center gap-2.5 text-2xl font-bold text-white group">
+          <div className="bg-white/20 p-1.5 rounded-xl group-hover:scale-105 transition-transform shadow-lg">
+            <GraduationCap size={24} className="text-white fill-white/10" />
           </div>
           <span className="tracking-tight">ByteLearn</span>
         </Link>
@@ -105,20 +105,20 @@ const Header = () => {
         {isLoggedIn ? (
           <>
             {/* Nav Items - Desktop */}
-            <nav className="hidden lg:flex items-center gap-4 ml-10 flex-grow">
+            <nav className="hidden lg:flex items-center gap-2 ml-10 flex-grow">
               {navItems.map((item) => (
                 <NavLink
                   key={item.name}
                   to={item.path}
                   className={({ isActive }) => 
-                    `flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14.5px] font-bold transition-all relative ${
+                    `flex items-center gap-2 px-5 py-2 rounded-xl text-[13.5px] font-bold transition-all relative ${
                       isActive 
-                        ? 'text-blue-600 bg-blue-50' 
-                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                        ? 'text-[#2563EB] bg-white shadow-xl shadow-blue-900/20' 
+                        : 'text-blue-100 hover:text-white hover:bg-white/10'
                     }`
                   }
                 >
-                  <item.icon size={18} />
+                  <item.icon size={16} />
                   {item.name}
                   {item.hasBadge && (
                     <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
@@ -131,16 +131,16 @@ const Header = () => {
             <div className="relative" ref={profileRef}>
               <button 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-3 p-1.5 pr-4 hover:bg-slate-50 rounded-2xl transition-colors focus:outline-none border border-transparent hover:border-slate-100"
+                className="flex items-center gap-3 p-1.5 pr-4 hover:bg-white/10 rounded-2xl transition-colors focus:outline-none"
               >
-                <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
+                <div className="w-10 h-10 rounded-full border-2 border-white/20 shadow-sm overflow-hidden flex-shrink-0">
                    <img src={profilePic || fallbackPic} alt="Profile" className="w-full h-full object-cover" />
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-[15px] font-bold text-slate-800 leading-tight truncate max-w-[120px]">{profileName}</p>
-                  <p className="text-[12px] text-slate-400 font-bold uppercase tracking-wider">Student</p>
+                  <p className="text-[14px] font-bold text-white leading-tight truncate max-w-[120px]">{profileName}</p>
+                  <p className="text-[11px] text-blue-100 font-bold uppercase tracking-wider">Student</p>
                 </div>
-                <ChevronDown size={14} className={`text-slate-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={14} className={`text-blue-100 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isProfileOpen && (

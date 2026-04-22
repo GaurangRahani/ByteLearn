@@ -97,35 +97,35 @@ const DashboardHeader = ({ studentName = 'Student', fullWidth = false }) => {
     : `https://ui-avatars.com/api/?name=Student&background=EFF6FF&color=2563EB`;
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-      <div className={`${fullWidth ? 'w-full px-4' : 'max-w-[1400px] mx-auto px-6'} h-[72px] flex items-center justify-between`}>
+    <header className="bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] shadow-md">
+      <div className={`${fullWidth ? 'w-full px-4' : 'max-w-[1400px] mx-auto px-6'} h-[65px] flex items-center justify-between`}>
         
         {/* Logo */}
-        <div className="flex items-center gap-2 text-blue-600 mr-8">
-          <div className="bg-blue-600 p-1.5 rounded-lg flex items-center justify-center">
-            <GraduationCap size={24} className="text-white fill-white" />
+        <div className="flex items-center gap-2 text-white mr-8">
+          <div className="bg-white/20 p-1.5 rounded-lg flex items-center justify-center">
+            <GraduationCap size={22} className="text-white fill-white" />
           </div>
-          <span className="text-xl font-bold text-slate-800 tracking-tight">ByteLearn</span>
+          <span className="text-xl font-bold text-white tracking-tight">ByteLearn</span>
         </div>
 
         {/* Navigation */}
-        <nav className="hidden xl:flex items-center justify-center gap-8 text-[13px] font-medium flex-grow">
+        <nav className="hidden xl:flex items-center justify-center gap-2 text-[13px] font-bold flex-grow">
           {navItems.map((item) => (
             <NavLink
               key={item.name}
               to={item.path}
               className={({ isActive }) => 
-                `flex items-center gap-2 px-3 py-2 rounded-lg transition-colors relative ${
+                `flex items-center gap-2 px-4 py-2 rounded-xl transition-all relative ${
                   isActive 
-                    ? 'text-blue-600 bg-blue-50/80 font-semibold' 
-                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                    ? 'bg-white text-[#2563EB] shadow-xl shadow-blue-900/20' 
+                    : 'text-blue-100 hover:text-white hover:bg-white/10'
                 }`
               }
             >
-              <item.icon size={16} />
+              <item.icon size={15} />
               {item.name}
               {item.hasBadge && (
-                 <span className="absolute top-1.5 right-1 w-2 h-2 bg-red-500 rounded-full shadow-[0_0_0_2px_#ffffff]"></span>
+                 <span className={`absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white ${isActive ? 'bg-white' : ''}`}></span>
               )}
             </NavLink>
           ))}
@@ -137,14 +137,14 @@ const DashboardHeader = ({ studentName = 'Student', fullWidth = false }) => {
             onClick={() => setIsProfileOpen(!isProfileOpen)}
             className="flex items-center gap-3 focus:outline-none"
           >
-            <div className="w-9 h-9 bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
+            <div className="w-9 h-9 bg-white/10 border border-white/20 rounded-full flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
                <img src={profilePic || fallbackPic} alt="Profile" className="w-full h-full object-cover" />
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-[14px] font-bold text-slate-800 leading-tight truncate max-w-[120px]">{profileName}</p>
-              <p className="text-[13px] text-slate-500 font-medium">Student</p>
+              <p className="text-[13px] font-bold text-white leading-tight truncate max-w-[120px]">{profileName}</p>
+              <p className="text-[11px] text-blue-100 font-medium">Student</p>
             </div>
-            <ChevronDown size={14} className="text-slate-400 ml-1 flex-shrink-0" />
+            <ChevronDown size={14} className="text-blue-100 ml-1 flex-shrink-0" />
           </button>
 
           {/* Dropdown Menu */}

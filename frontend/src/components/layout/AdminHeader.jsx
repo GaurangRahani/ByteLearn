@@ -71,13 +71,13 @@ const AdminHeader = () => {
   ];
 
   return (
-    <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-      <div className="max-w-[1440px] mx-auto px-6 h-16 flex items-center justify-between">
+    <nav className="bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] shadow-md">
+      <div className="max-w-[1440px] mx-auto px-6 h-14 flex items-center justify-between">
 
         {/* Logo added */}
         <div className="flex items-center">
-          <Link to="/admin-dashboard" className="flex items-center gap-2 text-xl font-bold tracking-tight text-slate-800">
-            <div className="bg-blue-600 p-1.5 rounded-lg">
+          <Link to="/admin-dashboard" className="flex items-center gap-2 text-xl font-bold tracking-tight text-white">
+            <div className="bg-white/20 p-1.5 rounded-lg">
               <GraduationCap className="h-5 w-5 text-white" strokeWidth={2.5} />
             </div>
             <span className="hidden sm:inline">ByteLearn</span>
@@ -91,9 +91,9 @@ const AdminHeader = () => {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-semibold transition-all relative ${isActive
-                  ? 'bg-blue-50 text-blue-600 after:absolute after:bottom-[-16px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-600'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                `flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all relative ${isActive
+                  ? 'bg-white text-[#2563EB] shadow-xl shadow-blue-900/10'
+                  : 'text-blue-100 hover:text-white hover:bg-white/10'
                 }`
               }
             >
@@ -107,16 +107,16 @@ const AdminHeader = () => {
         <div className="flex items-center relative" ref={profileRef}>
           <button
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex items-center gap-3 hover:bg-slate-50 p-2 rounded-xl transition-all"
+            className="flex items-center gap-3 hover:bg-white/10 p-2 rounded-xl transition-all"
           >
-            <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-blue-600 font-bold border border-blue-200 shadow-sm overflow-hidden flex-shrink-0">
+            <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white font-bold border border-white/20 shadow-sm overflow-hidden flex-shrink-0">
                <img src={profilePic || fallbackPic} alt="Profile" className="w-full h-full object-cover" />
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-bold text-slate-800 leading-none">{adminName}</p>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Admin</p>
+              <p className="text-sm font-bold text-white leading-none">{adminName}</p>
+              <p className="text-[10px] text-blue-100 font-bold uppercase tracking-widest mt-1">Admin</p>
             </div>
-            <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={14} className={`text-blue-100 transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isProfileOpen && (

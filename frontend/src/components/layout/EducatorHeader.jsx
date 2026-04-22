@@ -73,14 +73,14 @@ const EducatorHeader = ({ educatorName, activePage }) => {
   ];
 
   return (
-    <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <nav className="bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] shadow-md">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-14">
           
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/educator-dashboard" className="flex items-center gap-2 text-xl font-bold tracking-tight text-slate-800">
-              <div className="bg-blue-600 p-1.5 rounded-lg">
+            <Link to="/educator-dashboard" className="flex items-center gap-2 text-xl font-bold tracking-tight text-white">
+              <div className="bg-white/20 p-1.5 rounded-lg">
                  <GraduationCap className="h-5 w-5 text-white" strokeWidth={2.5} />
               </div>
               <span>ByteLearn</span>
@@ -93,10 +93,10 @@ const EducatorHeader = ({ educatorName, activePage }) => {
               <Link 
                 key={link.path}
                 to={link.path} 
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-semibold transition-all relative ${
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all relative ${
                   activePage === link.path 
-                  ? 'bg-blue-50 text-blue-600 after:absolute after:bottom-[-16px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-600' 
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                  ? 'bg-white text-[#2563EB] shadow-xl shadow-blue-900/10' 
+                  : 'text-blue-100 hover:text-white hover:bg-white/10'
                 }`}
               >
                 {link.icon}
@@ -109,16 +109,16 @@ const EducatorHeader = ({ educatorName, activePage }) => {
           <div className="flex items-center relative" ref={profileRef}>
              <div 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-3 hover:bg-slate-50 p-2 rounded-xl transition-all cursor-pointer relative"
+                className="flex items-center gap-3 hover:bg-white/10 p-2 rounded-xl transition-all cursor-pointer relative"
              >
-               <div className="w-9 h-9 rounded-full border border-blue-200 shadow-sm overflow-hidden flex-shrink-0 bg-slate-50 flex items-center justify-center">
+               <div className="w-9 h-9 rounded-full border border-white/20 shadow-sm overflow-hidden flex-shrink-0 bg-white/10 flex items-center justify-center">
                  <img src={profilePic || fallbackPic} alt="Profile" className="w-full h-full object-cover" />
                </div>
                <div className="hidden sm:block text-left">
-                 <p className="text-sm font-bold text-slate-800 leading-none">{displayName}</p>
-                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Educator</p>
+                 <p className="text-sm font-bold text-white leading-none">{displayName}</p>
+                 <p className="text-[10px] text-blue-100 font-bold uppercase tracking-widest mt-1">Educator</p>
                </div>
-               <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''}`} />
+               <ChevronDown size={14} className={`text-blue-100 transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''}`} />
              </div>
 
              {/* Dropdown Menu */}
