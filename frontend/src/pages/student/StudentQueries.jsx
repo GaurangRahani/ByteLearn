@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
-import DashboardHeader from '../../components/layout/DashboardHeader';
+
 import { MessageSquare, Clock, CheckCircle2, ChevronRight, PlayCircle, BookOpen } from 'lucide-react';
 
 const StudentQueries = () => {
@@ -55,8 +55,7 @@ const StudentQueries = () => {
   const activeQuery = queries.find(q => q._id === activeQueryId);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans mb-12">
-      <DashboardHeader />
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       
       <main className="flex-grow max-w-[1400px] w-full mx-auto px-6 py-8 flex flex-col h-[85vh]">
         <div className="mb-6 flex-shrink-0">

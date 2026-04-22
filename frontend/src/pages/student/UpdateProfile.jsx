@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import DashboardHeader from '../../components/layout/DashboardHeader';
+
 import { User, Mail, Save, ArrowLeft, Upload, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -90,7 +90,6 @@ const UpdateProfile = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      <DashboardHeader />
       
       <main className="flex-grow max-w-[800px] w-full mx-auto px-6 py-10">
         

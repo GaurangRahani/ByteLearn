@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Filter, AlertCircle } from 'lucide-react';
-import DashboardHeader from '../../components/layout/DashboardHeader';
+
 import BrowseCourseCard from '../../components/common/BrowseCourseCard';
 
 const BrowseCourse = () => {
@@ -94,7 +94,6 @@ const BrowseCourse = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans mb-12">
-      <DashboardHeader />
       
       <main className="flex-grow max-w-[1400px] w-full mx-auto px-6 py-[42px]">
         {/* Header Section */}

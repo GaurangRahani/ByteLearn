@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Book, CheckCircle, Award, Clock, ArrowRight, FileText } from 'lucide-react';
-import DashboardHeader from '../../components/layout/DashboardHeader';
+
 import ContinueLearningSection from '../../components/common/ContinueLearningSection';
 
 const StudentDashboard = () => {
@@ -66,7 +66,6 @@ const StudentDashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-        <DashboardHeader studentName={studentName} />
         <main className="flex-grow w-full max-w-[1400px] mx-auto px-6 py-10">
           <div className="h-10 w-64 bg-slate-200 animate-pulse rounded-xl mb-4"></div>
           <div className="h-5 w-96 bg-slate-200 animate-pulse rounded-lg mb-10"></div>
@@ -87,7 +86,6 @@ const StudentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans mb-16">
-      <DashboardHeader studentName={studentName} />
       
       <motion.main 
         className="flex-grow w-full max-w-[1400px] mx-auto px-6 py-10"

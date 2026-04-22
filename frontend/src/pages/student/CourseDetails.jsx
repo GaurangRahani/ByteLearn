@@ -11,7 +11,7 @@ import {
   HelpCircle,
   BookOpen
 } from 'lucide-react';
-import DashboardHeader from '../../components/layout/DashboardHeader';
+
 import CourseReviews from '../../components/CourseReviews';
 import { CheckCircle2, ArrowRight } from 'lucide-react';
 
@@ -172,7 +172,6 @@ const CourseDetails = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-        <DashboardHeader />
         <div className="flex-grow flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -183,7 +182,6 @@ const CourseDetails = () => {
   if (error || !course) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-        <DashboardHeader />
         <div className="flex-grow flex flex-col items-center justify-center p-6 text-center">
           <h2 className="text-2xl font-bold text-slate-800 mb-2">Oops! Something went wrong</h2>
           <p className="text-slate-600 mb-6">{error || 'Course not found'}</p>
@@ -197,7 +195,6 @@ const CourseDetails = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans mb-16">
-      <DashboardHeader />
 
       <main className="flex-grow max-w-[1240px] w-full mx-auto px-6 py-8">
 

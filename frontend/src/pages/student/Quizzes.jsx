@@ -14,8 +14,8 @@ import {
   AlertCircle,
   ArrowUpRight
 } from 'lucide-react';
-import DashboardHeader from '../../components/layout/DashboardHeader';
-import Footer from '../../components/layout/Footer';
+
+
 
 const Quizzes = () => {
   const [quizzes, setQuizzes] = useState([]);
@@ -74,7 +74,6 @@ const Quizzes = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
-        <DashboardHeader studentName={studentName} />
         <div className="flex-grow w-full max-w-7xl mx-auto px-6 py-12">
           <div className="animate-pulse space-y-8">
             <div className="h-12 w-1/3 bg-slate-200 rounded-2xl"></div>
@@ -92,7 +91,6 @@ const Quizzes = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans text-slate-900">
-      <DashboardHeader studentName={studentName} />
       
       <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-12">
         {/* Header Section */}
@@ -170,7 +168,6 @@ const Quizzes = () => {
           )}
         </AnimatePresence>
       </main>
-      <Footer />
     </div>
   );
 };

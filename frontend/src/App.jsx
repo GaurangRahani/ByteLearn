@@ -38,78 +38,57 @@ import CourseApprovals from './pages/admin/CourseApprovals';
 import UserManagement from './pages/admin/UserManagement';
 import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
 
+import Layout from './components/layout/Layout';
+
 const AppContent = () => {
-  const location = useLocation();
-  const hideGlobalHeader =
-    location.pathname.startsWith('/educator') ||
-    location.pathname.startsWith('/educator-dashboard') ||
-    location.pathname.startsWith('/student-dashboard') ||
-    location.pathname.startsWith('/browse') ||
-    location.pathname.startsWith('/my-courses') ||
-    location.pathname.startsWith('/admin') ||
-    location.pathname.startsWith('/admin-dashboard') ||
-    location.pathname.startsWith('/course/') ||
-    location.pathname.startsWith('/learn/') ||
-    location.pathname.startsWith('/update-profile') ||
-    location.pathname.startsWith('/quiz/') ||
-    location.pathname.startsWith('/quiz-result') ||
-    location.pathname.startsWith('/assignments') ||
-    location.pathname.startsWith('/quizzes') ||
-    location.pathname.startsWith('/student/queries') ||
-    location.pathname.startsWith('/invite/') ||
-    location.pathname.startsWith('/certificates');
-
-
-
-
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
-      {!hideGlobalHeader && <Header />}
-      <main className="flex-grow">
-        <Routes>
+    <div className="bg-slate-50 font-sans">
+      <Routes>
+        {/* Routes WITH Header and Footer */}
+        <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
-          
-          {/* Admin Infrastructure */}
-          <Route element={<AdminProtectedRoute />}>
-             <Route path="/admin-dashboard" element={<AdminDashboard />} />
-             <Route path="/admin/educators" element={<EducatorApprovals />} />
-             <Route path="/admin/courses" element={<CourseApprovals />} />
-             <Route path="/admin/users" element={<UserManagement />} />
-          </Route>
-
-          <Route path="/register-student" element={<StudentRegister />} />
-          <Route path="/apply-educator" element={<EducatorRegister />} />
-          <Route path="/verify-otp" element={<VerifyOtp />} />
-          <Route path="/educator-status" element={<EducatorStatus />} />
-          <Route path="/educator-dashboard" element={<EducatorDashboard />} />
-          <Route path="/educator/courses" element={<MyCourses />} />
-          <Route path="/educator/student-management" element={<StudentManagement />} />
-          <Route path="/educator/review/:submissionId" element={<AssignmentReview />} />
-          <Route path="/educator/queries" element={<EducatorQueries />} />
-          <Route path="/educator/earnings" element={<EducatorEarnings />} />
-          <Route path="/educator/profile" element={<EducatorProfile />} />
-          <Route path="/course/create" element={<CreateCourse />} />
-          <Route path="/course/:id/curriculum" element={<CurriculumBuilder />} />
-          <Route path="/course/:id" element={<CourseDetailsPage />} />
-          <Route path="/student-dashboard" element={<StudentDashboard />} />
-          <Route path="/update-profile" element={<UpdateProfile />} />
           <Route path="/browse" element={<BrowseCourse />} />
           <Route path="/my-courses" element={<MyCourse />} />
+          <Route path="/course/:id" element={<CourseDetailsPage />} />
           <Route path="/course/:id/learn" element={<ContinueLearning />} />
           <Route path="/learn/:id" element={<ContinueLearning />} />
+          <Route path="/student-dashboard" element={<StudentDashboard />} />
+          <Route path="/update-profile" element={<UpdateProfile />} />
           <Route path="/quiz/:id/attempt" element={<ActiveQuiz />} />
           <Route path="/quiz-result" element={<QuizResultPage />} />
           <Route path="/assignments" element={<Assignments />} />
           <Route path="/quizzes" element={<Quizzes />} />
           <Route path="/certificates" element={<CertificatesPage />} />
           <Route path="/student/queries" element={<StudentQueries />} />
-          <Route path="/invite/:token" element={<InviteAcceptPage />} />
+        </Route>
 
+        {/* Routes WITHOUT Header and Footer (e.g., Auth pages) */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register-student" element={<StudentRegister />} />
+        <Route path="/apply-educator" element={<EducatorRegister />} />
+        <Route path="/verify-otp" element={<VerifyOtp />} />
+        <Route path="/educator-status" element={<EducatorStatus />} />
+        <Route path="/invite/:token" element={<InviteAcceptPage />} />
 
-          <Route path="/login" element={<Login />} />
+        {/* Admin Infrastructure */}
+        <Route element={<AdminProtectedRoute />}>
+             <Route path="/admin-dashboard" element={<AdminDashboard />} />
+             <Route path="/admin/educators" element={<EducatorApprovals />} />
+             <Route path="/admin/courses" element={<CourseApprovals />} />
+             <Route path="/admin/users" element={<UserManagement />} />
+        </Route>
 
-        </Routes>
-      </main>
+        {/* Educator Routes */}
+        <Route path="/educator-dashboard" element={<EducatorDashboard />} />
+        <Route path="/educator/courses" element={<MyCourses />} />
+        <Route path="/educator/student-management" element={<StudentManagement />} />
+        <Route path="/educator/review/:submissionId" element={<AssignmentReview />} />
+        <Route path="/educator/queries" element={<EducatorQueries />} />
+        <Route path="/educator/earnings" element={<EducatorEarnings />} />
+        <Route path="/educator/profile" element={<EducatorProfile />} />
+        <Route path="/course/create" element={<CreateCourse />} />
+        <Route path="/course/:id/curriculum" element={<CurriculumBuilder />} />
+      </Routes>
     </div>
   );
 };

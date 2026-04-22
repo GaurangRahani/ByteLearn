@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import DashboardHeader from '../../components/layout/DashboardHeader';
+
 import EnrolledCourseCard from '../../components/common/EnrolledCourseCard';
 
 const MyCourse = () => {
@@ -39,7 +39,6 @@ const MyCourse = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      <DashboardHeader />
       
       <main className="flex-1 w-full max-w-[1400px] mx-auto px-6 py-8">
         <div className="mb-8">
