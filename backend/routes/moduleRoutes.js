@@ -6,20 +6,25 @@ const {
     updateModule,
     deleteModule,
 } = require('../controller/moduleController');
-const { protect, approvedEducator } = require('../middleware/authMiddleware');
+const { protect, approvedEducator, courseCollaborator } = require('../middleware/authMiddleware');
 
 
 router.route('/')
-    .post(protect, approvedEducator, addModule)
+    .post(protect, approvedEducator, courseCollaborator, addModule)
     .get(getModulesByCourse);
 
 
 router.route('/:moduleId')
-    .put(protect, approvedEducator, updateModule)
-    .delete(protect, approvedEducator, deleteModule);
+    .put(protect, approvedEducator, courseCollaborator, updateModule)
+    .delete(protect, approvedEducator, courseCollaborator, deleteModule);
 
 //nested
 const lessonRoutes = require('./lessonRoutes');
+const assignmentRoutes = require('./assignmentRoutes');
+const quizRoutes = require('./quizRoutes');
+
 router.use('/:moduleId/lessons', lessonRoutes);
+router.use('/:moduleId/assignments', assignmentRoutes);
+router.use('/:moduleId/quizzes', quizRoutes);
 
 module.exports = router;

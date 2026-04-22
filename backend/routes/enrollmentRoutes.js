@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { enrollInFreeCourse, getMyCourses } = require('../controller/enrollmentController');
-const { protect } = require('../middleware/authMiddleware');
+const { enrollInCourse, getMyCourses, getEducatorRoster, getEnrollmentDetail } = require('../controller/enrollmentController');
+const { protect, approvedEducator } = require('../middleware/authMiddleware');
 
-router.post('/free', protect, enrollInFreeCourse);
+router.post('/enroll', protect, enrollInCourse);
 router.get('/my-courses', protect, getMyCourses);
+router.get('/educator/roster', protect, approvedEducator, getEducatorRoster);
+router.get('/educator/enrollment/:id', protect, approvedEducator, getEnrollmentDetail);
 
 module.exports = router;

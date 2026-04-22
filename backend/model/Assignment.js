@@ -6,10 +6,11 @@ const assignmentSchema = new mongoose.Schema({
   instructions: { type: String },
   questionPdfUrl: { type: String },
   totalMarks: { type: Number },
-  dueDate: { type: Date },
-  order: { type: Number, required: true }
+  order: { type: Number, required: true } 
 }, {
   timestamps: true
 });
+
+assignmentSchema.index({ moduleId: 1, order: 1 });
 
 module.exports = mongoose.model("Assignment", assignmentSchema);

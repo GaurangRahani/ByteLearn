@@ -1,6 +1,8 @@
 const Lesson = require('../model/Lesson');
 const Module = require('../model/Module');
 const Course = require('../model/Course');
+const Assignment = require('../model/Assignment');
+const Quiz = require('../model/Quiz');
 const { uploadOnCloudinary } = require('../utils/cloudinary');
 const fs = require('fs');
 
@@ -21,7 +23,12 @@ const cleanupTempFiles = (files) => {
 const verifyModuleOwnership = async (moduleId, userId) => {
     const module = await Module.findById(moduleId).populate('courseId');
     if (!module) return { error: 'Module not found', status: 404 };
-    if (module.courseId.educatorId.toString() !== userId.toString()) {
+    
+    const course = module.courseId;
+    const isOwner = course.educatorId.toString() === userId.toString();
+    const isCo = course.coInstructors?.some(c => c.userId.toString() === userId.toString());
+
+    if (!isOwner && !isCo) {
         return { error: 'Not authorized to manage lessons in this module', status: 403 };
     }
     return { module };
@@ -29,8 +36,8 @@ const verifyModuleOwnership = async (moduleId, userId) => {
 
 const addLesson = async (req, res) => {
     try {
-        const { title, content, order } = req.body;
-        let { duration } = req.body; 
+        const { title, content } = req.body;
+        let { duration, order } = req.body; 
 
         if (!title) {
             cleanupTempFiles(req.files);
@@ -43,36 +50,47 @@ const addLesson = async (req, res) => {
             return res.status(status).json({ message: error });
         }
 
-        let videoUrl = "";
-        if (req.files?.video?.[0]) {
-            const uploadedVideo = await uploadOnCloudinary(req.files.video[0].path);
-            if (!uploadedVideo) {
-                return res.status(500).json({ message: 'Error uploading video to Cloudinary' });
-            }
-            videoUrl = uploadedVideo.secure_url;
+        // --- Cross-Collection Unified Order Logic ---
+        if (!order) {
+            const [lastLesson, lastAssignment, lastQuiz] = await Promise.all([
+                Lesson.findOne({ moduleId: req.params.moduleId }).sort('-order'),
+                Assignment.findOne({ moduleId: req.params.moduleId }).sort('-order'),
+                Quiz.findOne({ moduleId: req.params.moduleId }).sort('-order')
+            ]);
+            const maxOrder = Math.max(
+                lastLesson?.order || 0,
+                lastAssignment?.order || 0,
+                lastQuiz?.order || 0
+            );
+            order = maxOrder + 1;
+        }
 
-            if (uploadedVideo.duration) {
-                duration = Math.round(uploadedVideo.duration);
+        let videoUrl = null;
+        let notesUrl = null;
+
+        if (req.body.lessonType === 'video') {
+            if (req.files?.video?.[0]) {
+                const uploadedVideo = await uploadOnCloudinary(req.files.video[0].path);
+                if (!uploadedVideo) return res.status(500).json({ message: 'Error uploading video to Cloudinary' });
+                videoUrl = uploadedVideo.secure_url;
+                if (uploadedVideo.duration) duration = Math.round(uploadedVideo.duration);
             }
         }
 
-        let attachmentUrl = "";
-        if (req.files?.attachment?.[0]) {
-            const uploadedAttachment = await uploadOnCloudinary(req.files.attachment[0].path);
-            if (!uploadedAttachment) {
-                return res.status(500).json({ message: 'Error uploading attachment to Cloudinary' });
-            }
-            attachmentUrl = uploadedAttachment.secure_url;
+        if (req.files?.notes?.[0]) {
+            const uploadedNotes = await uploadOnCloudinary(req.files.notes[0].path);
+            if (!uploadedNotes) return res.status(500).json({ message: 'Error uploading notes to Cloudinary' });
+            notesUrl = uploadedNotes.secure_url;
         }
 
         const lesson = await Lesson.create({
             moduleId: req.params.moduleId,
             title,
+            lessonType: req.body.lessonType || 'video',
             videoUrl,
-            attachmentUrl,
+            notesUrl,
             content,
             order,
-
             duration,
         });
 
@@ -128,10 +146,10 @@ const updateLesson = async (req, res) => {
             }
         }
 
-        if (req.files?.attachment?.[0]) {
-            const uploadedAttachment = await uploadOnCloudinary(req.files.attachment[0].path);
-            if (!uploadedAttachment) return res.status(500).json({ message: 'Error uploading new attachment' });
-            allowedUpdates.attachmentUrl = uploadedAttachment.secure_url;
+        if (req.files?.notes?.[0]) {
+            const uploadedNotes = await uploadOnCloudinary(req.files.notes[0].path);
+            if (!uploadedNotes) return res.status(500).json({ message: 'Error uploading notes' });
+            allowedUpdates.notesUrl = uploadedNotes.secure_url;
         }
 
         const updatedLesson = await Lesson.findByIdAndUpdate(

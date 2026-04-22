@@ -6,23 +6,23 @@ const {
     updateLesson,
     deleteLesson,
 } = require('../controller/lessonController');
-const { protect, approvedEducator } = require('../middleware/authMiddleware');
+const { protect, approvedEducator, courseCollaborator } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
 
 const lessonUpload = upload.fields([
     { name: 'video', maxCount: 1 },
-    { name: 'attachment', maxCount: 1 },
+    { name: 'notes', maxCount: 1 },
 ]);
 
 
 router.route('/')
-    .post(protect, approvedEducator, lessonUpload, addLesson)
+    .post(protect, approvedEducator, courseCollaborator, lessonUpload, addLesson)
     .get(getLessonsByModule);
 
 
 router.route('/:lessonId')
-    .put(protect, approvedEducator, lessonUpload, updateLesson)
-    .delete(protect, approvedEducator, deleteLesson);
+    .put(protect, approvedEducator, courseCollaborator, lessonUpload, updateLesson)
+    .delete(protect, approvedEducator, courseCollaborator, deleteLesson);
 
 module.exports = router;

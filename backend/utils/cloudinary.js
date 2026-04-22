@@ -11,9 +11,10 @@ const uploadOnCloudinary = async (localFilePath) => {
     try {
         if (!localFilePath) return null;
 
-        //Upload the file to Cloudinary automatically handling video/image formats
+        const isPdf = localFilePath.toLowerCase().endsWith('.pdf');
+
         const response = await cloudinary.uploader.upload(localFilePath, {
-            resource_type: "auto",
+            resource_type: isPdf ? "raw" : "auto",
         });
 
 
@@ -21,10 +22,30 @@ const uploadOnCloudinary = async (localFilePath) => {
         return response;
 
     } catch (error) {
-        //Removelocally saved temporary file
-        fs.unlinkSync(localFilePath);
+        try {
+            if (fs.existsSync(localFilePath)) {
+                fs.unlinkSync(localFilePath);
+            }
+        } catch (e) {
+            console.error("Failed to delete local temporary file:", e);
+        }
         return null;
     }
 };
 
-module.exports = { uploadOnCloudinary };
+const generateSignedPdfUrl = (publicIdWithExt, versionStr, resourceType = "image") => {
+    const options = {
+        resource_type: resourceType,
+        type: "upload",
+        flags: "attachment",
+        secure: true,
+        analytics: false
+    };
+    if (versionStr) {
+        options.version = versionStr.replace('v', '');
+    }
+    return cloudinary.url(publicIdWithExt, options);
+};
+
+module.exports = { uploadOnCloudinary, generateSignedPdfUrl };
+

@@ -1,15 +1,28 @@
 const User = require('../model/User');
 const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
+const { uploadOnCloudinary } = require('../utils/cloudinary');
+const { OAuth2Client } = require('google-auth-library');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 
 const registerStudent = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { 
+            name, 
+            email, 
+            password,
+            gender,
+            dateOfBirth,
+            educationLevel,
+            phone
+        } = req.body;
+
         if (!name || !email || !password) {
-            return res.status(400).json({ message: 'Please add all fields' });
+            return res.status(400).json({ message: 'Please add all required fields (name, email, password)' });
         }
 
         const userExists = await User.findOne({ email });
@@ -20,7 +33,29 @@ const registerStudent = async (req, res) => {
         const otp = generateOTP();
         const otpExpires = Date.now() + 10 * 60 * 1000;
 
-        const user = await User.create({ name, email, password, role: 'student', otp, otpExpires });
+        let profilePictureUrl = "default-profile.jpg";
+        if (req.file) {
+            const uploadResult = await uploadOnCloudinary(req.file.path);
+            if (uploadResult && uploadResult.url) {
+                profilePictureUrl = uploadResult.url;
+            }
+        } else if (req.body.profilePicture) {
+            profilePictureUrl = req.body.profilePicture;
+        }
+
+        const user = await User.create({ 
+            name, 
+            email, 
+            password, 
+            role: 'student', 
+            otp, 
+            otpExpires,
+            gender,
+            dateOfBirth,
+            educationLevel,
+            phone,
+            profilePicture: profilePictureUrl
+        });
 
         try {
             await sendEmail({
@@ -42,9 +77,9 @@ const registerStudent = async (req, res) => {
 
 const registerEducator = async (req, res) => {
     try {
-        const { name, email, password, qualifications, experience } = req.body;
+        const { name, email, password, qualifications, experience, gender, dateOfBirth, phone, supportingCredentials } = req.body;
         if (!name || !email || !password || !qualifications || !experience) {
-            return res.status(400).json({ message: 'Please add all fields' });
+            return res.status(400).json({ message: 'Please add all required fields' });
         }
 
         const userExists = await User.findOne({ email });
@@ -55,12 +90,43 @@ const registerEducator = async (req, res) => {
         const otp = generateOTP();
         const otpExpires = Date.now() + 10 * 60 * 1000;
 
+        let profilePictureUrl = "default-profile.jpg";
+        if (req.files && req.files.profilePicture) {
+            const localPath = req.files.profilePicture[0].path;
+            const uploadResult = await uploadOnCloudinary(localPath);
+            if (uploadResult && uploadResult.url) {
+                profilePictureUrl = uploadResult.url;
+            }
+        } else if (req.body.profilePicture) {
+            profilePictureUrl = req.body.profilePicture;
+        }
+
+        let credentialsArray = [];
+        if (req.files && req.files.supportingCredentials) {
+            // Upload all supporting credentials to Cloudinary in parallel
+            const uploadPromises = req.files.supportingCredentials.map(file => uploadOnCloudinary(file.path));
+            const uploadResults = await Promise.all(uploadPromises);
+            
+            credentialsArray = uploadResults
+                .filter(res => res !== null)
+                .map(res => res.url);
+        } else if (req.body.supportingCredentials) {
+            credentialsArray = Array.isArray(req.body.supportingCredentials) 
+                ? req.body.supportingCredentials 
+                : [req.body.supportingCredentials];
+        }
+
         const user = await User.create({
             name, email, password, role: 'educator', otp, otpExpires,
+            ...(gender && { gender }),
+            ...(dateOfBirth && { dateOfBirth }),
+            ...(phone && { phone }),
+            profilePicture: profilePictureUrl,
             educatorApplication: {
-                qualifications,
-                experience,
-                status: 'pending',
+                qualifications, 
+                experience, 
+                supportingCredentials: credentialsArray,
+                status: 'pending', 
                 appliedAt: new Date()
             }
         });
@@ -94,14 +160,28 @@ const loginUser = async (req, res) => {
 
         if (user && (await user.matchPassword(password))) {
             if (!user.isVerified) {
-                return res.status(403).json({ message: 'Account not verified. Please verify OTP.' });
+                // Automatically generate and send a new OTP
+                const otp = generateOTP();
+                user.otp = otp;
+                user.otpExpires = Date.now() + 10 * 60 * 1000;
+                await user.save();
+
+                try {
+                    await sendEmail({
+                        email: user.email,
+                        subject: 'Verify your ByteLearn Account',
+                        message: `Your new OTP is ${otp}. It will expire in 10 minutes.`
+                    });
+                } catch (err) {
+                    console.error('Failed to send OTP email on login attempt:', err.message);
+                }
+
+                return res.status(403).json({ message: 'Account not verified. A new OTP has been sent to your email.' });
             }
-            //Block check
             if (user.isBlocked) {
-                return res.status(403).json({ message: 'Your account has been suspended. Contact support.' });
+                return res.status(403).json({ message: 'Your account has been blocked. To request an unblock appeal, contact support@bytelearn.com' });
             }
 
-            //Update lastLogin
             user.lastLogin = Date.now();
             await user.save();
 
@@ -110,6 +190,9 @@ const loginUser = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                isVerified: user.isVerified,
+                profilePicture: user.profilePicture,
+                educatorApplication: user.educatorApplication,
                 token: generateToken(user._id),
             });
         } else {
@@ -136,7 +219,7 @@ const getUserProfile = async (req, res) => {
                 dateOfBirth: user.dateOfBirth,
                 educationLevel: user.educationLevel,
                 phone: user.phone,
-                bio: user.bio,
+                bankDetails: user.bankDetails,
                 lastLogin: user.lastLogin,
             });
         } else {
@@ -179,12 +262,29 @@ const updateUserProfile = async (req, res) => {
         }
 
         user.name = req.body.name || user.name;
-        user.profilePicture = req.body.profilePicture || user.profilePicture;
         user.gender = req.body.gender || user.gender;
         user.dateOfBirth = req.body.dateOfBirth || user.dateOfBirth;
         user.educationLevel = req.body.educationLevel || user.educationLevel;
         user.phone = req.body.phone || user.phone;
-        user.bio = req.body.bio || user.bio;
+
+        if (req.file) {
+            const uploadResult = await uploadOnCloudinary(req.file.path);
+            if (uploadResult && uploadResult.url) {
+                user.profilePicture = uploadResult.url;
+            }
+        } else if (req.body.removeProfilePicture === 'true' || req.body.profilePicture === '') {
+            user.profilePicture = "default-profile.jpg";
+        } else if (req.body.profilePicture) {
+            user.profilePicture = req.body.profilePicture;
+        }
+
+        if (req.body.bankDetails) {
+            user.bankDetails = {
+                ...user.bankDetails,
+                ...req.body.bankDetails
+            };
+        }
+
         if (req.body.password) {
             return res.status(400).json({ message: 'Use change-password to update your password.' });
         }
@@ -197,6 +297,11 @@ const updateUserProfile = async (req, res) => {
             email: updatedUser.email,
             role: updatedUser.role,
             isVerified: updatedUser.isVerified,
+            phone: updatedUser.phone,
+            educationLevel: updatedUser.educationLevel,
+            gender: updatedUser.gender,
+            dateOfBirth: updatedUser.dateOfBirth,
+            profilePicture: updatedUser.profilePicture,
             ...(updatedUser.isVerified === false && { message: 'Email updated. Please verify your new email with the OTP sent.' })
         });
     } catch (error) {
@@ -325,6 +430,7 @@ const verifyOtp = async (req, res) => {
             name: user.name,
             email: user.email,
             role: user.role,
+            profilePicture: user.profilePicture,
             token: generateToken(user._id),
         });
     } catch (error) {
@@ -369,6 +475,59 @@ const resendOtp = async (req, res) => {
     }
 };
 
+const googleLogin = async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) {
+            return res.status(400).json({ message: 'No Google ID token provided' });
+        }
+
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+        const { email, name, picture } = payload;
+
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            // Create new student user if they don't exist
+            const tempPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+            user = await User.create({
+                name,
+                email,
+                password: tempPassword,
+                role: 'student',
+                isVerified: true, // Google accounts are verified
+                profilePicture: picture || "default-profile.jpg",
+                lastLogin: Date.now()
+            });
+        } else {
+            if (user.isBlocked) {
+                return res.status(403).json({ message: 'Your account has been blocked. To request an unblock appeal, contact support@bytelearn.com' });
+            }
+            user.lastLogin = Date.now();
+            await user.save();
+        }
+
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            isVerified: user.isVerified,
+            profilePicture: user.profilePicture,
+            educatorApplication: user.educatorApplication,
+            token: generateToken(user._id),
+        });
+    } catch (error) {
+        console.error('Google login error:', error);
+        res.status(500).json({ message: 'Google login verification failed' });
+    }
+};
+
 module.exports = {
     registerStudent,
     registerEducator,
@@ -379,5 +538,6 @@ module.exports = {
     getAllEducators,
     updateEducatorStatus,
     verifyOtp,
-    resendOtp
+    resendOtp,
+    googleLogin
 };
