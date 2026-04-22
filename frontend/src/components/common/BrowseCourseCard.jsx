@@ -41,9 +41,12 @@ const BrowseCourseCard = ({ course }) => {
       <div className="p-5 flex flex-col flex-grow">
         <h3 className="font-bold text-slate-800 text-[16px] leading-[1.4] mb-0.5 line-clamp-1">{title}</h3>
         
-        {/* Educator Name - Positioned right below title */}
-        <p className="text-[13px] text-slate-500 font-medium mb-3">
-          By {course?.educatorId?.name || 'Unknown Educator'}
+        {/* Educator Names - Displaying all collaborators */}
+        <p className="text-[13px] text-slate-500 font-medium mb-3 line-clamp-1">
+          By {[
+            course?.educatorId?.name, 
+            ...(course?.coInstructors?.map(ci => ci.userId?.name) || [])
+          ].filter(Boolean).join(', ')}
         </p>
 
         <div className="flex items-center gap-2 mb-4">

@@ -17,11 +17,38 @@ const EducatorHeader = ({ educatorName, activePage }) => {
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
-
+  
   const localUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const displayName = educatorName && educatorName !== 'Educator' ? educatorName : (localUser.name || 'Educator');
+  const [displayName, setDisplayName] = useState(educatorName && educatorName !== 'Educator' ? educatorName : (localUser.name || 'Educator'));
+  const [profilePic, setProfilePic] = useState(localUser.profilePicture && localUser.profilePicture !== 'default-profile.jpg' ? localUser.profilePicture : null);
+
+  const fallbackPic = displayName 
+    ? `https://ui-avatars.com/api/?name=${displayName}&background=EFF6FF&color=2563EB`
+    : `https://ui-avatars.com/api/?name=Educator&background=EFF6FF&color=2563EB`;
 
   useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch('/api/auth/profile', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data) {
+          if (data.name) setDisplayName(data.name);
+          if (data.profilePicture && data.profilePicture !== 'default-profile.jpg') {
+            setProfilePic(data.profilePicture);
+          } else if (data.profilePicture === 'default-profile.jpg') {
+            setProfilePic(null);
+          }
+        }
+      } catch (err) {
+        console.error("EducatorHeader failed to fetch profile data", err);
+      }
+    };
+    fetchProfileData();
+
     const handleClickOutside = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setIsProfileOpen(false);
@@ -84,8 +111,8 @@ const EducatorHeader = ({ educatorName, activePage }) => {
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center gap-3 hover:bg-slate-50 p-2 rounded-xl transition-all cursor-pointer relative"
              >
-               <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-200 shadow-sm">
-                 {displayName?.charAt(0) || <User size={16} />}
+               <div className="w-9 h-9 rounded-full border border-blue-200 shadow-sm overflow-hidden flex-shrink-0 bg-slate-50 flex items-center justify-center">
+                 <img src={profilePic || fallbackPic} alt="Profile" className="w-full h-full object-cover" />
                </div>
                <div className="hidden sm:block text-left">
                  <p className="text-sm font-bold text-slate-800 leading-none">{displayName}</p>

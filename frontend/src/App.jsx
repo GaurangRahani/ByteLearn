@@ -13,6 +13,7 @@ import AssignmentReview from './pages/educator/AssignmentReview';
 import EducatorQueries from './pages/educator/EducatorQueries';
 import EducatorEarnings from './pages/educator/EducatorEarnings';
 import EducatorProfile from './pages/educator/EducatorProfile';
+import InviteAcceptPage from './pages/educator/InviteAcceptPage';
 import Login from './pages/auth/Login';
 import Header from './components/layout/Header';
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -35,7 +36,6 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import EducatorApprovals from './pages/admin/EducatorApprovals';
 import CourseApprovals from './pages/admin/CourseApprovals';
 import UserManagement from './pages/admin/UserManagement';
-import PayoutRequests from './pages/admin/PayoutRequests';
 import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
 
 const AppContent = () => {
@@ -56,6 +56,7 @@ const AppContent = () => {
     location.pathname.startsWith('/assignments') ||
     location.pathname.startsWith('/quizzes') ||
     location.pathname.startsWith('/student/queries') ||
+    location.pathname.startsWith('/invite/') ||
     location.pathname.startsWith('/certificates');
 
 
@@ -74,7 +75,6 @@ const AppContent = () => {
              <Route path="/admin/educators" element={<EducatorApprovals />} />
              <Route path="/admin/courses" element={<CourseApprovals />} />
              <Route path="/admin/users" element={<UserManagement />} />
-             <Route path="/admin/payouts" element={<PayoutRequests />} />
           </Route>
 
           <Route path="/register-student" element={<StudentRegister />} />
@@ -103,6 +103,7 @@ const AppContent = () => {
           <Route path="/quizzes" element={<Quizzes />} />
           <Route path="/certificates" element={<CertificatesPage />} />
           <Route path="/student/queries" element={<StudentQueries />} />
+          <Route path="/invite/:token" element={<InviteAcceptPage />} />
 
 
           <Route path="/login" element={<Login />} />

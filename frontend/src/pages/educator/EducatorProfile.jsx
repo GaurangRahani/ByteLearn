@@ -23,6 +23,9 @@ const EducatorProfile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [removePic, setRemovePic] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -49,7 +52,10 @@ const EducatorProfile = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      const { name, email, phone, gender, dateOfBirth, bankDetails } = res.data;
+      const { name, email, phone, gender, dateOfBirth, bankDetails, profilePicture } = res.data;
+      if (profilePicture && profilePicture !== 'default-profile.jpg') {
+        setPreviewUrl(profilePicture);
+      }
       setFormData({
         name: name || '',
         email: email || '',
@@ -84,18 +90,52 @@ const EducatorProfile = () => {
     });
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfilePicture(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setRemovePic(false);
+    }
+  };
+
+  const handleRemovePicture = () => {
+    setProfilePicture(null);
+    setPreviewUrl(null);
+    setRemovePic(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.put('/api/auth/profile', formData, {
+      
+      const dataToSend = new FormData();
+      dataToSend.append('name', formData.name);
+      dataToSend.append('email', formData.email);
+      dataToSend.append('phone', formData.phone);
+      dataToSend.append('gender', formData.gender);
+      dataToSend.append('dateOfBirth', formData.dateOfBirth);
+
+      if (formData.bankDetails.accountName) dataToSend.append('bankDetails[accountName]', formData.bankDetails.accountName);
+      if (formData.bankDetails.accountNumber) dataToSend.append('bankDetails[accountNumber]', formData.bankDetails.accountNumber);
+      if (formData.bankDetails.bankName) dataToSend.append('bankDetails[bankName]', formData.bankDetails.bankName);
+
+      if (profilePicture) {
+        dataToSend.append('profilePicture', profilePicture);
+      } else if (removePic) {
+        dataToSend.append('removeProfilePicture', 'true');
+      }
+
+      const res = await axios.put('/api/auth/profile', dataToSend, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       // Update local storage if name changed
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       user.name = res.data.name;
+      user.profilePicture = res.data.profilePicture;
       localStorage.setItem('user', JSON.stringify(user));
 
       toast.success("Profile updated successfully!");
@@ -110,6 +150,10 @@ const EducatorProfile = () => {
       setIsSaving(false);
     }
   };
+
+  const fallbackAvatar = formData.name 
+    ? `https://ui-avatars.com/api/?name=${formData.name}&background=EFF6FF&color=2563EB`
+    : `https://ui-avatars.com/api/?name=Educator&background=EFF6FF&color=2563EB`;
 
   if (loading) {
     return (
@@ -138,12 +182,35 @@ const EducatorProfile = () => {
         <div className="bg-white rounded-[32px] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden relative">
           
           <div className="bg-gradient-to-r from-blue-600 to-indigo-700 h-32 relative">
-             <div className="absolute -bottom-12 left-10">
-                <div className="w-28 h-28 bg-white rounded-3xl p-1 shadow-lg">
-                   <div className="w-full h-full bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
-                      <UserCircle size={60} />
+             <div className="absolute -bottom-12 left-10 flex items-end gap-4">
+                <div className="w-28 h-28 bg-white rounded-3xl p-1 shadow-lg relative cursor-pointer group" onClick={() => document.getElementById('profileUpdateInput').click()}>
+                   <div className="w-full h-full bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 overflow-hidden relative">
+                      <img 
+                        src={previewUrl || fallbackAvatar} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                         <span className="text-white text-xs font-bold uppercase tracking-widest text-center">Change<br/>Photo</span>
+                      </div>
                    </div>
+                   <input 
+                     type="file" 
+                     id="profileUpdateInput" 
+                     className="hidden" 
+                     accept="image/*"
+                     onChange={handleFileChange}
+                   />
                 </div>
+                {(previewUrl || profilePicture) && (
+                  <button 
+                    type="button"
+                    onClick={handleRemovePicture}
+                    className="mb-1 bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-red-100 transition-colors"
+                  >
+                    Remove Photo
+                  </button>
+                )}
              </div>
           </div>
 

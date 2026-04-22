@@ -108,7 +108,16 @@ const Login = () => {
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 text-center">
-            {error}
+            {error.split('support@bytelearn.com').map((part, i, arr) => 
+               i < arr.length - 1 ? (
+                 <span key={i}>
+                   {part}
+                   <a href="mailto:support@bytelearn.com" className="font-bold underline hover:text-red-700">support@bytelearn.com</a>
+                 </span>
+               ) : (
+                 <span key={i}>{part}</span>
+               )
+            )}
           </div>
         )}
 

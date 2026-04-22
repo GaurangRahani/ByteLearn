@@ -10,7 +10,7 @@ import {
   Tag,
   BarChart2,
   Globe,
-  DollarSign,
+  IndianRupee,
   User,
   FileText,
   AlertCircle
@@ -209,7 +209,7 @@ const CourseApprovals = () => {
                   <InfoBadge icon={<BarChart2 size={12} />} label="Level" value={selectedCourse.level} color={levelColor[selectedCourse.level] || 'bg-slate-50 text-slate-600 border-slate-100'} />
                   <InfoBadge icon={<Globe size={12} />} label="Language" value={selectedCourse.language} color="bg-slate-50 text-slate-600 border-slate-100" />
                   <InfoBadge
-                    icon={<DollarSign size={12} />}
+                    icon={<IndianRupee size={12} />}
                     label="Price"
                     value={selectedCourse.isPaid ? `₹${selectedCourse.price}` : 'Free'}
                     color={selectedCourse.isPaid ? 'bg-violet-50 text-violet-600 border-violet-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}

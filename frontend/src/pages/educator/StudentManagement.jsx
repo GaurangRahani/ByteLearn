@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { 
   Users, 
@@ -20,7 +21,10 @@ import {
 import EducatorHeader from '../../components/layout/EducatorHeader';
 
 const StudentManagement = () => {
-  const [activeTab, setActiveTab] = useState('grading'); // 'grading' or 'roster'
+  const [searchParams] = useSearchParams();
+  const courseIdParam = searchParams.get('courseId');
+  
+  const [activeTab, setActiveTab] = useState(courseIdParam ? 'roster' : 'grading'); // 'grading' or 'roster'
   const [educatorName, setEducatorName] = useState('Educator');
   const [loading, setLoading] = useState(true);
   
@@ -29,7 +33,7 @@ const StudentManagement = () => {
   
   // States for Course Roster
   const [courses, setCourses] = useState([]);
-  const [selectedCourse, setSelectedCourse] = useState(''); // Empty means none selected
+  const [selectedCourse, setSelectedCourse] = useState(courseIdParam || ''); // Set from URL if present
   const [roster, setRoster] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -103,14 +107,13 @@ const StudentManagement = () => {
         return matchesSearch && matchesCourse;
     })
     .sort((a, b) => {
-        // Sorting Logic: At Risk Students Top
         const aLastActive = new Date(a.performance?.lastActive || a.updatedAt);
         const bLastActive = new Date(b.performance?.lastActive || b.updatedAt);
         const aInactive = Math.floor((new Date() - aLastActive) / (1000 * 60 * 60 * 24)) >= 7;
         const bInactive = Math.floor((new Date() - bLastActive) / (1000 * 60 * 60 * 24)) >= 7;
         
-        const aLowGrade = (a.performance?.liveGrade || 0) < 60; // Using 60 as risk threshold
-        const bLowGrade = (b.performance?.liveGrade || 0) < 60;
+        const aLowGrade = a.performance?.liveGrade !== null && a.performance?.liveGrade < 60; // Using 60 as risk threshold
+        const bLowGrade = b.performance?.liveGrade !== null && b.performance?.liveGrade < 60;
         
         const aAtRisk = aInactive || aLowGrade;
         const bAtRisk = bInactive || bLowGrade;
@@ -305,8 +308,9 @@ const GradingQueueView = ({ submissions }) => {
 const CourseRosterView = ({ roster, courses, selectedCourse, setSelectedCourse, totalCount, searchTerm, setSearchTerm, onViewDetail }) => {
   // Calculate Class Metrics
   const courseStudents = roster.filter(r => !selectedCourse || r.courseId?._id === selectedCourse);
-  const classAvg = courseStudents.length > 0 
-    ? Math.round(courseStudents.reduce((acc, curr) => acc + (curr.performance?.liveGrade || 0), 0) / courseStudents.length)
+  const classAvgValid = courseStudents.filter(r => r.performance?.liveGrade !== null && r.performance?.liveGrade !== undefined);
+  const classAvg = classAvgValid.length > 0
+    ? Math.round(classAvgValid.reduce((acc, curr) => acc + curr.performance.liveGrade, 0) / classAvgValid.length)
     : 0;
   const completionCount = courseStudents.filter(r => r.progressPercentage === 100).length;
   const completionRate = courseStudents.length > 0 
@@ -321,14 +325,21 @@ const CourseRosterView = ({ roster, courses, selectedCourse, setSelectedCourse, 
     const rows = courseStudents.map(s => {
         const lastActive = new Date(s.performance?.lastActive || s.updatedAt);
         const diffDays = Math.floor((new Date() - lastActive) / (1000 * 60 * 60 * 24));
-        const status = diffDays >= 7 || (s.performance?.liveGrade || 0) < 60 ? "At Risk" : s.performance?.liveGrade >= 75 ? "Passing" : "Borderline";
+        const hasLiveGrade = s.performance?.liveGrade !== null && s.performance?.liveGrade !== undefined;
+        let status = "Not Started";
+        if (diffDays >= 7) status = "At Risk (Inactive)";
+        else if (hasLiveGrade && s.performance.liveGrade < 60) status = "At Risk (Low Grade)";
+        else if (hasLiveGrade && s.performance.liveGrade >= 75) status = "Passing";
+        else if (hasLiveGrade) status = "Borderline";
+        else if (s.progressPercentage > 0) status = "In Progress";
+        else status = "Not Started";
         
         return [
             `"${s.studentId?.name || 'Unknown'}"`,
             `"${s.studentId?.email || 'N/A'}"`,
             `"${s.courseId?.title || 'N/A'}"`,
             `${s.progressPercentage}%`,
-            `${s.performance?.liveGrade || 0}%`,
+            `${hasLiveGrade ? s.performance.liveGrade + '%' : 'N/A'}`,
             `"${status}"`,
             `"${diffDays === 0 ? 'Today' : diffDays + ' days ago'}"`
         ];
@@ -434,7 +445,7 @@ const CourseRosterView = ({ roster, courses, selectedCourse, setSelectedCourse, 
               <tr className="bg-slate-50/50">
                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Student Identity</th>
                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Course Progress</th>
+                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[200px]">Course & Progress</th>
                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Live Grade</th>
                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Activity</th>
                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
@@ -473,6 +484,18 @@ const CourseRosterView = ({ roster, courses, selectedCourse, setSelectedCourse, 
                              <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
                              At Risk (Inactive)
                           </span>
+                       ) : enrollment.performance?.liveGrade === null || enrollment.performance?.liveGrade === undefined ? (
+                          enrollment.progressPercentage > 0 ? (
+                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest border border-blue-100">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                In Progress
+                             </span>
+                          ) : (
+                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest border border-slate-200">
+                                <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                Not Started
+                             </span>
+                          )
                        ) : enrollment.performance?.liveGrade >= 75 ? (
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest border border-emerald-100">
                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -491,28 +514,35 @@ const CourseRosterView = ({ roster, courses, selectedCourse, setSelectedCourse, 
                        )}
                     </td>
                     <td className="px-6 py-5">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-1.5">
+                           <BookOpen size={14} className="text-blue-500 flex-shrink-0" />
+                           <span className="text-xs font-bold text-slate-700 line-clamp-1" title={enrollment.courseId?.title}>{enrollment.courseId?.title || 'Unknown Course'}</span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Content Completion</span>
                             <span className="text-xs font-black text-slate-700">{enrollment.progressPercentage}%</span>
-                        </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div 
-                             className={`h-full rounded-full transition-all duration-1000 shadow-sm ${
-                                enrollment.progressPercentage === 100 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'
-                             }`} 
-                             style={{ width: `${enrollment.progressPercentage}%` }}
-                          />
+                          </div>
+                          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div 
+                               className={`h-full rounded-full transition-all duration-1000 shadow-sm ${
+                                  enrollment.progressPercentage === 100 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                               }`} 
+                               style={{ width: `${enrollment.progressPercentage}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-5 text-center">
                       <div className="inline-flex flex-col items-center">
                          <div className={`text-lg font-black ${
-                            enrollment.performance?.liveGrade >= 70 ? 'text-emerald-600' : 
-                            enrollment.performance?.liveGrade >= 40 ? 'text-amber-500' : 'text-rose-500'
+                            enrollment.performance?.liveGrade === null || enrollment.performance?.liveGrade === undefined ? 'text-slate-400' :
+                            enrollment.performance?.liveGrade >= 75 ? 'text-emerald-600' : 
+                            enrollment.performance?.liveGrade >= 60 ? 'text-amber-500' : 'text-rose-500'
                          }`}>
-                            {enrollment.performance?.liveGrade || 0}%
+                            {enrollment.performance?.liveGrade === null || enrollment.performance?.liveGrade === undefined ? '--' : enrollment.performance?.liveGrade}%
                          </div>
                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Weighted Avg</div>
                       </div>

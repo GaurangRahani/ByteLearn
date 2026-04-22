@@ -158,9 +158,15 @@ const AssignmentReview = () => {
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Reviewing Task</p>
                         <p className="text-sm font-bold text-slate-700">{submission.assignmentId.title}</p>
                     </div>
-                    <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border border-blue-100 shadow-sm">
-                        <AlertCircle size={14} /> Pending Review
-                    </div>
+                    {submission.status === 'graded' ? (
+                        <div className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border border-emerald-100 shadow-sm">
+                            <CheckCircle2 size={14} /> Graded by {submission.gradedBy?.name || 'Instructor'}
+                        </div>
+                    ) : (
+                        <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border border-blue-100 shadow-sm">
+                            <AlertCircle size={14} /> Pending Review
+                        </div>
+                    )}
                 </div>
             </header>
 

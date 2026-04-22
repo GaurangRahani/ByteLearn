@@ -9,14 +9,15 @@ const EnrolledCourseCard = ({ enrollment, progress }) => {
     title,
     description,
     thumbnail,
-    price,
-    isFree,
-    instructorName,
-    enrollmentCount,
-    duration,
-    rating,
-    totalRatings
+    educatorId,
+    coInstructors,
+    duration
   } = enrollment;
+
+  const allInstructorNames = [
+    educatorId?.name,
+    ...(coInstructors?.map(ci => ci.userId?.name) || [])
+  ].filter(Boolean).join(', ');
 
   return (
     <div 
@@ -26,7 +27,7 @@ const EnrolledCourseCard = ({ enrollment, progress }) => {
       {/* Thumbnail Container */}
       <div className="relative h-48 w-full overflow-hidden">
         <img 
-          src={thumbnail || "/api/placeholder/400/250"} 
+          src={thumbnail || "https://via.placeholder.com/400x250?text=Course"} 
           alt={title} 
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
@@ -36,10 +37,13 @@ const EnrolledCourseCard = ({ enrollment, progress }) => {
       <div className="p-5 flex flex-col flex-grow">
         {/* Text content wrapped in a container that grows */}
         <div className="flex-grow">
-          <h3 className="font-bold text-slate-800 text-lg leading-tight mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+          <h3 className="font-bold text-slate-800 text-[16px] leading-tight mb-1 group-hover:text-blue-600 transition-colors line-clamp-1">
             {title}
           </h3>
-          <p className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-2">
+          <p className="text-[13px] text-slate-500 font-medium mb-3 line-clamp-1">
+            By {allInstructorNames || 'ByteLearn Faculty'}
+          </p>
+          <p className="text-slate-500 text-[13px] leading-relaxed mb-6 line-clamp-2 min-h-[40px]">
             {description}
           </p>
         </div>

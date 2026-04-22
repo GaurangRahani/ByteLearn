@@ -9,6 +9,9 @@ import {
 } from 'lucide-react';
 import EducatorHeader from '../../components/layout/EducatorHeader';
 import GradingConfiguration from './GradingConfiguration';
+import CollaborationManager from './CollaborationManager';
+import { User as UserIconAlt } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Reusable Label
@@ -254,7 +257,7 @@ const QuizBuilder = ({ moduleId, courseId, onSave, onCancel }) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Content Item Row
-const ContentItem = ({ item }) => {
+const ContentItem = ({ item, isLocked, onDelete }) => {
   const typeConfig = {
     lesson: {
       icon: item.videoUrl ? <Video size={18} /> : <FileText size={18} />,
@@ -294,7 +297,14 @@ const ContentItem = ({ item }) => {
         </div>
       </div>
       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
+        {!isLocked && (
+          <button 
+            onClick={() => onDelete(item._id, item._type)}
+            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -310,6 +320,7 @@ const CurriculumBuilder = () => {
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
   const [educatorName, setEducatorName] = useState('Educator');
+  const [userProfile, setUserProfile] = useState(null);
 
 
   const [expandedModuleId, setExpandedModuleId] = useState(null);
@@ -357,6 +368,7 @@ const CurriculumBuilder = () => {
           axios.get(`/api/courses/${courseId}`, config),
           axios.get(`/api/courses/${courseId}/modules`, config)
         ]);
+        setUserProfile(profileRes.data);
         setEducatorName(profileRes.data?.name || 'Educator');
         setCourse(courseRes.data?.data || courseRes.data);
         const modulesData = modulesRes.data?.data || modulesRes.data || [];
@@ -443,9 +455,49 @@ const CurriculumBuilder = () => {
       setNewModuleTitle('');
       setIsAddingModule(false);
     } catch (err) {
-      alert('Failed to add module.');
+      console.error('Error adding module:', err);
+      alert('Failed to add module. Please try again.');
     } finally {
       setIsSavingModule(false);
+    }
+  };
+
+  const handleDeleteModule = async (moduleId) => {
+    if (!window.confirm('Are you sure? This will delete all lessons and assignments inside this module!')) return;
+    const loadingToast = toast.loading('Deleting module...');
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`/api/courses/${courseId}/modules/${moduleId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setModules(prev => prev.filter(m => m._id !== moduleId));
+      const newContent = { ...moduleContent };
+      delete newContent[moduleId];
+      setModuleContent(newContent);
+      toast.success('Module deleted', { id: loadingToast });
+    } catch (err) {
+      console.error('Error deleting module:', err);
+      toast.error('Failed to delete module', { id: loadingToast });
+    }
+  };
+
+  const handleDeleteContent = async (itemId, type, moduleId) => {
+    if (!window.confirm(`Delete this ${type}?`)) return;
+    const loadingToast = toast.loading(`Deleting ${type}...`);
+    try {
+      const token = localStorage.getItem('token');
+      const plural = type === 'quiz' ? 'quizzes' : type + 's';
+      await axios.delete(`/api/courses/${courseId}/modules/${moduleId}/${plural}/${itemId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setModuleContent(prev => ({
+        ...prev,
+        [moduleId]: prev[moduleId].filter(i => i._id !== itemId)
+      }));
+      toast.success(`${type} deleted`, { id: loadingToast });
+    } catch (err) {
+      console.error('Error deleting content:', err);
+      toast.error(`Failed to delete ${type}`, { id: loadingToast });
     }
   };
 
@@ -530,6 +582,8 @@ const CurriculumBuilder = () => {
 
   const courseTitle = course?.title || 'Course Builder';
   const totalItems = Object.values(moduleContent).reduce((sum, items) => sum + items.length, 0);
+  const isOwner = userProfile?._id === course?.educatorId?._id || userProfile?._id === course?.educatorId;
+  const isLocked = course?.status === 'approved';
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -562,14 +616,6 @@ const CurriculumBuilder = () => {
               {course?.status || 'draft'}
             </div>
 
-            <button
-              onClick={() => navigate(`/course/${courseId}`)}
-              className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-lg hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm"
-            >
-              <Eye size={16} />
-              Preview
-            </button>
-
             {course?.status === 'draft' && (
               <button
                 onClick={handleSubmitReview}
@@ -588,10 +634,12 @@ const CurriculumBuilder = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
             <div className="text-center md:text-left">
               <h2 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">
-                {activeTab === 'curriculum' ? 'Curriculum Builder' : 'Grading & Certification'}
+                {isLocked ? 'Course Curriculum Hub' : activeTab === 'curriculum' ? 'Curriculum Builder' : 'Grading & Certification'}
               </h2>
               <p className="text-slate-500 text-lg">
-                {activeTab === 'curriculum'
+                {isLocked 
+                  ? 'Overview of the course structure and live content modules.' 
+                  : activeTab === 'curriculum'
                   ? 'Structure your course by creating modules and learning materials.'
                   : 'Define the rules of success, weighting, and certification criteria.'}
               </p>
@@ -614,6 +662,16 @@ const CurriculumBuilder = () => {
               Grading & Success Rules
               {activeTab === 'grading' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full shadow-[0_-2px_10px_rgba(37,99,235,0.2)]" />}
             </button>
+
+            {isOwner && (
+              <button
+                onClick={() => setActiveTab('collaborators')}
+                className={`pb-4 px-6 text-sm font-bold transition-all relative ${activeTab === 'collaborators' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                Collaborators
+                {activeTab === 'collaborators' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full shadow-[0_-2px_10px_rgba(37,99,235,0.2)]" />}
+              </button>
+            )}
           </div>
         </div>
 
@@ -623,6 +681,8 @@ const CurriculumBuilder = () => {
             initialConfig={course?.gradingConfiguration}
             onSaved={(updatedCourse) => setCourse(updatedCourse)}
           />
+        ) : activeTab === 'collaborators' ? (
+          <CollaborationManager courseId={courseId} isOwner={isOwner} />
         ) : (
           <>
             <div className="space-y-5">
@@ -658,6 +718,17 @@ const CurriculumBuilder = () => {
                         <div className={`p-1.5 rounded-full transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-indigo-100 text-indigo-600' : 'text-slate-400 bg-slate-100 group-hover:bg-slate-200'}`}>
                           <ChevronDown size={18} />
                         </div>
+                        {!isLocked && (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteModule(module._id);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all ml-2"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -677,7 +748,12 @@ const CurriculumBuilder = () => {
                         ) : (
                           <div className="space-y-3">
                             {items.map((item) => (
-                              <ContentItem key={item._id} item={item} />
+                              <ContentItem 
+                                key={item._id} 
+                                item={item} 
+                                isLocked={isLocked} 
+                                onDelete={(itemId, type) => handleDeleteContent(itemId, type, module._id)}
+                              />
                             ))}
                           </div>
                         )}
@@ -858,7 +934,7 @@ const CurriculumBuilder = () => {
                             </form>
                           </div>
 
-                        ) : (
+                        ) : !isLocked && (
                           /* 3-Button Premium Action Strip */
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                             <button
@@ -891,38 +967,40 @@ const CurriculumBuilder = () => {
               })}
             </div>
 
-            {/* Add Module Container */}
-            <div className="mt-8">
-              {isAddingModule ? (
-                <div className="bg-white rounded-2xl border border-blue-200 p-8 shadow-xl shadow-blue-500/10 animate-in zoom-in-95 duration-200">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><BookOpen size={24} /></div>
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-800 tracking-tight">New Module</h3>
-                      <p className="text-sm text-slate-500 font-medium">Create a new section for your course</p>
+            {!isLocked && (
+              /* Add Module Container */
+              <div className="mt-8">
+                {isAddingModule ? (
+                  <div className="bg-white rounded-2xl border border-blue-200 p-8 shadow-xl shadow-blue-500/10 animate-in zoom-in-95 duration-200">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><BookOpen size={24} /></div>
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-800 tracking-tight">New Module</h3>
+                        <p className="text-sm text-slate-500 font-medium">Create a new section for your course</p>
+                      </div>
                     </div>
+                    <form onSubmit={handleAddModule}>
+                      <Input autoFocus placeholder="e.g. Chapter 1: Getting Started" value={newModuleTitle} onChange={e => setNewModuleTitle(e.target.value)} className="text-lg font-bold mb-6 py-4 px-5" />
+                      <div className="flex justify-end gap-3">
+                        <button type="button" onClick={() => setIsAddingModule(false)} className="px-6 py-3 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
+                        <button type="submit" disabled={isSavingModule || !newModuleTitle.trim()} className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:hover:scale-100">
+                          {isSavingModule ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                          Create Module
+                        </button>
+                      </div>
+                    </form>
                   </div>
-                  <form onSubmit={handleAddModule}>
-                    <Input autoFocus placeholder="e.g. Chapter 1: Getting Started" value={newModuleTitle} onChange={e => setNewModuleTitle(e.target.value)} className="text-lg font-bold mb-6 py-4 px-5" />
-                    <div className="flex justify-end gap-3">
-                      <button type="button" onClick={() => setIsAddingModule(false)} className="px-6 py-3 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
-                      <button type="submit" disabled={isSavingModule || !newModuleTitle.trim()} className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:hover:scale-100">
-                        {isSavingModule ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                        Create Module
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setIsAddingModule(true)}
-                  className="w-full py-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-500 font-semibold hover:border-slate-400 hover:text-slate-700 hover:bg-slate-100/50 transition-all flex items-center justify-center gap-3 group"
-                >
-                  <PlusCircle size={24} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
-                  Add New Module
-                </button>
-              )}
-            </div>
+                ) : (
+                  <button
+                    onClick={() => setIsAddingModule(true)}
+                    className="w-full py-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-500 font-semibold hover:border-slate-400 hover:text-slate-700 hover:bg-slate-100/50 transition-all flex items-center justify-center gap-3 group"
+                  >
+                    <PlusCircle size={24} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
+                    Add New Module
+                  </button>
+                )}
+              </div>
+            )}
           </>
         )}
       </main>

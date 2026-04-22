@@ -100,7 +100,13 @@ const EducatorQueries = () => {
       setAiDrafts([]);
     } catch (err) {
       console.error('Error sending reply:', err);
-      toast.error('Failed to send reply');
+      if (err.response?.status === 409) {
+        toast.error('This query was already answered by another instructor.');
+        fetchQueries(); // Refresh list
+        setActiveQuery(null);
+      } else {
+        toast.error(err.response?.data?.message || 'Failed to send reply');
+      }
     } finally {
       setIsSubmitting(false);
     }

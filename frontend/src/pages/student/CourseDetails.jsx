@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { 
-  ArrowLeft, 
-  User, 
-  Users, 
-  Star, 
-  Clock, 
-  FileText, 
-  HelpCircle, 
-  BookOpen 
+import {
+  ArrowLeft,
+  User,
+  Users,
+  Star,
+  Clock,
+  FileText,
+  HelpCircle,
+  BookOpen
 } from 'lucide-react';
 import DashboardHeader from '../../components/layout/DashboardHeader';
 import CourseReviews from '../../components/CourseReviews';
@@ -33,19 +33,32 @@ const CourseDetails = () => {
 
         const token = localStorage.getItem('token');
         if (token) {
-            try {
-                const enrollmentRes = await axios.get('/api/enrollments/my-courses', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const enrollments = enrollmentRes.data?.data || [];
-                const isEnrolled = enrollments.some(e => {
-                    const eCourseId = e.courseId?._id || e.courseId;
-                    return eCourseId === courseData._id;
-                });
-                courseData.isEnrolled = isEnrolled;
-            } catch (err) {
-                console.error('Failed to fetch enrollments status', err);
+          try {
+            const profileRes = await axios.get('/api/auth/profile', {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            const user = profileRes.data;
+
+            const isCoInstructor = courseData.coInstructors?.some(ci =>
+              ci.userId?._id === user._id || ci.userId === user._id
+            );
+
+            if (((user.role === 'educator' || user.role === 'admin') && courseData.educatorId?._id === user._id) || isCoInstructor) {
+              courseData.isOwner = true;
+            } else if (user.role === 'student' || !user.role) {
+              const enrollmentRes = await axios.get('/api/enrollments/my-courses', {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              const enrollments = enrollmentRes.data?.data || [];
+              const isEnrolled = enrollments.some(e => {
+                const eCourseId = e.courseId?._id || e.courseId;
+                return eCourseId === courseData._id;
+              });
+              courseData.isEnrolled = isEnrolled;
             }
+          } catch (err) {
+            console.error('Failed to fetch user specific status', err);
+          }
         }
 
         setCourse(courseData);
@@ -127,7 +140,7 @@ const CourseDetails = () => {
             color: "#2563EB",
           },
           modal: {
-            ondismiss: function() {
+            ondismiss: function () {
               setEnrolling(false);
             }
           }
@@ -139,7 +152,7 @@ const CourseDetails = () => {
         await axios.post('/api/enrollments/enroll', { courseId: id }, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        alert("Enrolled successfully!"); 
+        alert("Enrolled successfully!");
         navigate('/my-courses');
       }
     } catch (err) {
@@ -169,7 +182,7 @@ const CourseDetails = () => {
 
   if (error || !course) {
     return (
-       <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
         <DashboardHeader />
         <div className="flex-grow flex flex-col items-center justify-center p-6 text-center">
           <h2 className="text-2xl font-bold text-slate-800 mb-2">Oops! Something went wrong</h2>
@@ -185,17 +198,17 @@ const CourseDetails = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans mb-16">
       <DashboardHeader />
-      
+
       <main className="flex-grow max-w-[1240px] w-full mx-auto px-6 py-8">
-        
+
         <Link to="/browse" className="inline-flex items-center text-slate-500 hover:text-blue-600 text-[15px] font-medium mb-6 transition-colors">
           <ArrowLeft size={18} className="mr-2" /> Back to Browse
         </Link>
-        
+
         <div className="flex flex-col lg:flex-row gap-8">
-          
+
           <div className="lg:w-[70%] flex flex-col gap-6">
-            
+
             <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
               <div className="flex items-start justify-between mb-4">
                 <h1 className="text-[32px] font-bold text-slate-800 tracking-tight leading-tight pr-4">
@@ -204,7 +217,7 @@ const CourseDetails = () => {
                 <div className="mt-1 flex-shrink-0">
                   {course.isPaid ? (
                     <span className="bg-blue-50 text-blue-700 font-semibold px-4 py-1.5 rounded-lg text-sm border border-blue-100">
-                      ${course.price}
+                      ₹{course.price}
                     </span>
                   ) : (
                     <span className="bg-emerald-50 text-emerald-700 font-semibold px-4 py-1.5 rounded-lg text-sm border border-emerald-100">
@@ -213,12 +226,46 @@ const CourseDetails = () => {
                   )}
                 </div>
               </div>
-              
-              {/* Meta Row */}
+
+              {/* Meta Row with Multiple Educators */}
               <div className="flex flex-wrap items-center gap-6 text-slate-500 text-[15px]">
-                <div className="flex items-center gap-2">
-                  <User size={18} className="text-slate-400" />
-                  <span>{course.educatorId?.name || 'Unknown Educator'}</span>
+                <div className="flex items-center">
+                  <div className="flex -space-x-3 overflow-hidden">
+                    {/* Primary Educator Avatar */}
+                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-md flex-shrink-0 z-10 transition-transform hover:z-30 hover:scale-105">
+                      <img 
+                        src={course.educatorId?.profilePicture || "https://ui-avatars.com/api/?name=" + (course.educatorId?.name || "E")} 
+                        alt={course.educatorId?.name} 
+                        className="w-full h-full object-cover" 
+                      />
+                    </div>
+                    {/* Co-Instructor Avatars */}
+                    {course.coInstructors?.map((ci, idx) => (
+                      <div 
+                        key={ci.userId?._id || idx} 
+                        className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm flex-shrink-0 bg-slate-50 relative transition-all hover:z-30 hover:scale-105"
+                        style={{ zIndex: (course.coInstructors.length - idx) }}
+                      >
+                        <img 
+                          src={ci.userId?.profilePicture || "https://ui-avatars.com/api/?name=" + (ci.userId?.name || "C")} 
+                          alt={ci.userId?.name} 
+                          className="w-full h-full object-cover" 
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-col ml-1">
+                    <span className="font-bold text-slate-800 leading-[1.3] mb-1">
+                      {[
+                        course.educatorId?.name,
+                        ...(course.coInstructors?.map(ci => ci.userId?.name) || [])
+                      ].filter(Boolean).join(' • ')}
+                    </span>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                      {(course.coInstructors?.length > 0) ? 'Instructors Team' : 'Lead Instructor'}
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Users size={18} className="text-slate-400" />
@@ -228,8 +275,8 @@ const CourseDetails = () => {
                   <Star size={18} className="text-amber-400 fill-amber-400" />
                   <span>{(course.rating || 0).toFixed(1)}</span>
                   <span className="text-slate-400 text-sm font-normal">
-                    {course.totalRatings > 0 
-                      ? `(${course.totalRatings} ${course.totalRatings === 1 ? 'review' : 'reviews'})` 
+                    {course.totalRatings > 0
+                      ? `(${course.totalRatings} ${course.totalRatings === 1 ? 'review' : 'reviews'})`
                       : '(No reviews)'}
                   </span>
                 </div>
@@ -246,7 +293,7 @@ const CourseDetails = () => {
 
             {/* Tabs Navigation */}
             <div className="flex gap-8 border-b border-slate-200 mt-6 mb-8">
-              <button 
+              <button
                 onClick={() => setActiveTab('syllabus')}
                 className={`pb-4 text-[15px] font-bold transition-all relative ${activeTab === 'syllabus' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
               >
@@ -254,7 +301,7 @@ const CourseDetails = () => {
                 {activeTab === 'syllabus' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full shadow-sm" />}
               </button>
 
-              <button 
+              <button
                 onClick={() => setActiveTab('reviews')}
                 className={`pb-4 text-[15px] font-bold transition-all relative ${activeTab === 'reviews' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
               >
@@ -268,7 +315,7 @@ const CourseDetails = () => {
               {activeTab === 'syllabus' && (
                 <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
                   <h2 className="text-xl font-bold text-slate-800 mb-6">Course Content</h2>
-                  
+
                   {course.modules && course.modules.length > 0 ? (
                     <div className="flex flex-col gap-4">
                       {course.modules.map((module, index) => (
@@ -282,7 +329,7 @@ const CourseDetails = () => {
                               {module.lessons?.length || 0} lessons
                             </span>
                           </div>
-                          
+
                           {/* Sub Items (Lessons) */}
                           <div className="flex flex-col gap-0.5 mt-2">
                             {module.lessons && module.lessons.map((lesson) => (
@@ -337,74 +384,81 @@ const CourseDetails = () => {
           </div>
 
           <div className="lg:w-[30%] relative">
-             <div className="sticky top-6">
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                  {/* Thumbnail Cover Image */}
-                  <div className="w-full h-[220px] bg-slate-100 relative rounded-xl overflow-hidden mb-6">
-                    {course.thumbnail ? (
-                      <img 
-                        src={course.thumbnail} 
-                        alt={course.title} 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center w-full h-full text-slate-400">
-                        <BookOpen size={48} className="opacity-20" />
+            <div className="sticky top-6">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                {/* Thumbnail Cover Image */}
+                <div className="w-full h-[220px] bg-slate-100 relative rounded-xl overflow-hidden mb-6">
+                  {course.thumbnail ? (
+                    <img
+                      src={course.thumbnail}
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full text-slate-400">
+                      <BookOpen size={48} className="opacity-20" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Layout */}
+                <div className="px-2 pb-2 mt-2">
+                  {course.isOwner ? (
+                    <Link
+                      to={`/course/${course._id}/curriculum`}
+                      className="flex items-center justify-center w-full bg-slate-900 border-2 border-slate-900 text-white hover:bg-slate-800 font-bold py-3 rounded-xl transition-all mb-8 shadow-sm text-[15px]"
+                    >
+                      Manage Curriculum <ArrowRight size={18} className="ml-2" />
+                    </Link>
+                  ) : course.isEnrolled ? (
+                    <Link
+                      to={`/learn/${course._id}`}
+                      className="flex items-center justify-center w-full bg-white border-2 border-[#2563EB] text-[#2563EB] hover:bg-blue-50 font-bold py-3 rounded-xl transition-all mb-8 shadow-sm text-[15px]"
+                    >
+                      Continue Learning <ArrowRight size={18} className="ml-2" />
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={handleBuyCourse}
+                      disabled={enrolling}
+                      className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all mb-8 text-[15px]"
+                    >
+                      {enrolling ? 'Processing...' : (course.isPaid ? 'Buy Now' : 'Enroll Now')}
+                    </button>
+                  )}
+
+                  <div className="mb-2">
+                    <h4 className="font-bold text-slate-800 text-[15px] mb-4">This course includes:</h4>
+
+                    <div className="flex flex-col gap-3.5">
+                      <div className="flex items-center gap-3 text-slate-600">
+                        <BookOpen size={18} className="text-blue-500 flex-shrink-0" />
+                        <span className="text-[14px] font-medium">{course.modules?.length || 0} modules with video lessons</span>
                       </div>
-                    )}
-                  </div>
-                  
-                  {/* Action Layout */}
-                  <div className="px-2 pb-2 mt-2">
-                     {course.isEnrolled ? (
-                       <Link 
-                         to={`/learn/${course._id}`}
-                         className="flex items-center justify-center w-full bg-white border-2 border-[#2563EB] text-[#2563EB] hover:bg-blue-50 font-bold py-3 rounded-xl transition-all mb-8 shadow-sm text-[15px]"
-                       >
-                         Continue Learning <ArrowRight size={18} className="ml-2" />
-                       </Link>
-                     ) : (
-                       <button 
-                         onClick={handleBuyCourse}
-                         disabled={enrolling}
-                         className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all mb-8 text-[15px]"
-                       >
-                         {enrolling ? 'Processing...' : (course.isPaid ? 'Buy Now' : 'Enroll Now')}
-                       </button>
-                     )}
-                     
-                     <div className="mb-2">
-                        <h4 className="font-bold text-slate-800 text-[15px] mb-4">This course includes:</h4>
-                        
-                        <div className="flex flex-col gap-3.5">
-                           <div className="flex items-center gap-3 text-slate-600">
-                             <BookOpen size={18} className="text-blue-500 flex-shrink-0" />
-                             <span className="text-[14px] font-medium">{course.modules?.length || 0} modules with video lessons</span>
-                           </div>
-                           
-                           <div className="flex items-center gap-3 text-slate-600">
-                             <FileText size={18} className="text-amber-500 flex-shrink-0" />
-                             <span className="text-[14px] font-medium">Assignments with feedback</span>
-                           </div>
-                           
-                           <div className="flex items-center gap-3 text-slate-600">
-                             <HelpCircle size={18} className="text-purple-500 flex-shrink-0" />
-                             <span className="text-[14px] font-medium">Quizzes to test your knowledge</span>
-                           </div>
-                           
-                           <div className="flex items-center gap-3 text-slate-600 pb-2">
-                             <div className="bg-[#118A51] text-white text-[12px] font-bold px-2 py-1 rounded w-max flex-shrink-0 tracking-wide">
-                               Certificate
-                             </div>
-                             <span className="text-[14px] font-medium">upon completion</span>
-                           </div>
+
+                      <div className="flex items-center gap-3 text-slate-600">
+                        <FileText size={18} className="text-amber-500 flex-shrink-0" />
+                        <span className="text-[14px] font-medium">Assignments with feedback</span>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-slate-600">
+                        <HelpCircle size={18} className="text-purple-500 flex-shrink-0" />
+                        <span className="text-[14px] font-medium">Quizzes to test your knowledge</span>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-slate-600 pb-2">
+                        <div className="bg-[#118A51] text-white text-[12px] font-bold px-2 py-1 rounded w-max flex-shrink-0 tracking-wide">
+                          Certificate
                         </div>
-                     </div>
+                        <span className="text-[14px] font-medium">upon completion</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-             </div>
+              </div>
+            </div>
           </div>
-          
+
         </div>
 
       </main>

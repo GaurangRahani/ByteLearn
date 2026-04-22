@@ -9,7 +9,7 @@ import {
   Tag, 
   Layers, 
   Globe, 
-  DollarSign, 
+  IndianRupee, 
   Loader2,
   AlertCircle
 } from 'lucide-react';
@@ -209,7 +209,7 @@ const CreateCourse = () => {
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 space-y-6">
                <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-                  <DollarSign size={20} />
+                  <IndianRupee size={20} />
                 </div>
                 <h2 className="text-xl font-bold text-slate-800">Pricing & Language</h2>
               </div>

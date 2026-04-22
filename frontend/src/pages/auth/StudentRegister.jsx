@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GraduationCap, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { GraduationCap, CheckCircle2, ChevronDown, ChevronUp, Upload } from 'lucide-react';
 import axios from 'axios';
 
 const StudentRegister = () => {
   const navigate = useNavigate();
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -23,6 +25,14 @@ const StudentRegister = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfilePicture(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
@@ -32,19 +42,24 @@ const StudentRegister = () => {
     setLoading(true);
     setError(null);
     try {
-      // Remove any fields that the user left empty so the backend receives 'undefined'
-      const dataToSend = { ...formData };
-      delete dataToSend.confirmPassword;
+      const dataToSend = new FormData();
 
-      Object.keys(dataToSend).forEach(key => {
-        if (dataToSend[key] === '') {
-          delete dataToSend[key];
+      Object.keys(formData).forEach(key => {
+        if (key !== 'confirmPassword' && formData[key] !== '') {
+          dataToSend.append(key, formData[key]);
         }
       });
 
+      if (profilePicture) {
+        dataToSend.append('profilePicture', profilePicture);
+      }
 
-      const res = await axios.post('/api/auth/register-student', dataToSend);
-      // alert(res.data.message); 
+      const res = await axios.post('/api/auth/register-student', dataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
       navigate('/verify-otp', { state: { email: formData.email } });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
@@ -195,6 +210,34 @@ const StudentRegister = () => {
                   <option value="postgraduate">Postgraduate</option>
                   <option value="other">Other</option>
                 </select>
+              </div>
+
+              {/* Profile Picture Section */}
+              <div className="md:col-span-2 pt-2">
+                <div className="mb-2">
+                  <h3 className="text-sm font-semibold text-slate-800">Profile Picture</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Upload a photo to personalize your account</p>
+                </div>
+
+                <div
+                  className="w-full border border-dashed border-slate-300 rounded-lg bg-slate-50 hover:bg-slate-100 flex flex-col items-center justify-center py-6 cursor-pointer transition-colors text-center"
+                  onClick={() => document.getElementById('profilePicInput').click()}
+                >
+                  <Upload size={24} className="text-slate-500 mb-2" />
+                  {profilePicture ? (
+                    <span className="text-sm font-medium text-blue-600">{profilePicture.name}</span>
+                  ) : (
+                    <span className="text-sm text-slate-500 font-medium">Click to upload your image</span>
+                  )}
+
+                  <input
+                    type="file"
+                    id="profilePicInput"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                </div>
               </div>
             </div>
           )}

@@ -1,10 +1,92 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardHeader from '../../components/layout/DashboardHeader';
-import { User, Mail, Save, ArrowLeft } from 'lucide-react';
+import { User, Mail, Save, ArrowLeft, Upload, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const UpdateProfile = () => {
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({ name: '', email: '' });
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [removePic, setRemovePic] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setFormData({ name: user.name, email: user.email });
+      if (user.profilePicture && user.profilePicture !== 'default-profile.jpg') {
+        setPreviewUrl(user.profilePicture);
+      }
+    }
+  }, []);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfilePicture(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setRemovePic(false);
+    }
+  };
+
+  const handleRemovePicture = () => {
+    setProfilePicture(null);
+    setPreviewUrl(null);
+    setRemovePic(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      
+      const dataToSend = new FormData();
+      dataToSend.append('name', formData.name);
+      dataToSend.append('email', formData.email);
+      
+      if (profilePicture) {
+        dataToSend.append('profilePicture', profilePicture);
+      } else if (removePic) {
+        dataToSend.append('removeProfilePicture', 'true');
+      }
+
+      const res = await axios.put('/api/auth/profile', dataToSend, config);
+      
+      // Update local storage
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        const updatedUser = { ...user, ...res.data };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      
+      toast.success(res.data.message || 'Profile updated successfully!');
+      if (res.data.isVerified === false) {
+          navigate('/verify-otp', { state: { email: formData.email } });
+      } else {
+          setTimeout(() => navigate(-1), 1000);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fallbackAvatar = formData.name 
+    ? `https://ui-avatars.com/api/?name=${formData.name}&background=EFF6FF&color=2563EB`
+    : `https://ui-avatars.com/api/?name=User&background=EFF6FF&color=2563EB`;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -23,18 +105,46 @@ const UpdateProfile = () => {
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight mb-2">Update Profile</h1>
           <p className="text-slate-500 text-[15px] mb-8">Manage your profile details and preferences.</p>
           
-          <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-6" onSubmit={handleSubmit}>
             
             <div className="flex items-center gap-6 mb-8">
-              <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                <User size={40} className="mt-1" />
+              <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-slate-50 bg-slate-100 flex-shrink-0 shadow-sm">
+                <img 
+                  src={previewUrl || fallbackAvatar} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <button 
-                type="button"
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-[14px] transition-colors"
-              >
-                Change Picture
-              </button>
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <button 
+                    type="button"
+                    onClick={() => document.getElementById('profileUpdateInput').click()}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-[14px] transition-colors"
+                  >
+                    <Upload size={16} />
+                    Change Picture
+                  </button>
+                  {(previewUrl || profilePicture) && (
+                    <button 
+                      type="button"
+                      onClick={handleRemovePicture}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-medium rounded-lg text-[14px] transition-colors"
+                    >
+                      <Trash2 size={16} />
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <input 
+                  type="file" 
+                  id="profileUpdateInput" 
+                  className="hidden" 
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+                <p className="text-xs text-slate-400">Recommended: Square JPG, PNG. Max 5MB.</p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -46,8 +156,11 @@ const UpdateProfile = () => {
                   </div>
                   <input 
                     type="text" 
-                    defaultValue="Student"
-                    className="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800 font-medium"
                   />
                 </div>
               </div>
@@ -60,8 +173,11 @@ const UpdateProfile = () => {
                   </div>
                   <input 
                     type="email" 
-                    defaultValue="student@bytelearn.com"
-                    className="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    name="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800 font-medium"
                   />
                 </div>
               </div>
@@ -77,10 +193,11 @@ const UpdateProfile = () => {
               </button>
               <button 
                 type="submit"
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded-xl text-[14px] transition-colors shadow-sm"
+                disabled={loading}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded-xl text-[14px] transition-colors shadow-sm disabled:opacity-70"
               >
                 <Save size={16} />
-                Save Changes
+                {loading ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
 
@@ -92,3 +209,4 @@ const UpdateProfile = () => {
 };
 
 export default UpdateProfile;
+

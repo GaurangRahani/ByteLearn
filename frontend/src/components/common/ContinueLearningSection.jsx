@@ -25,18 +25,25 @@ const ContinueLearningSection = ({ courses = [] }) => {
       </div>
       
       <div className="px-8 pb-8 space-y-5">
-        {courses.map(course => (
-          <CourseCard 
-            key={course._id || course.id}
-            id={course.id || course._id}
-            title={course.title}
-            instructor={course.educatorId?.name || "Educator"}
-            duration={course.totalDuration ? `${course.totalDuration}h` : "8h"}
-            progress={course.progressPercentage || 0}
-            rating={course.rating}
-            totalRatings={course.totalRatings}
-          />
-        ))}
+        {courses.map(course => {
+          const instructorList = [
+            course.educatorId?.name,
+            ...(course.coInstructors?.map(ci => ci.userId?.name) || [])
+          ].filter(Boolean).join(', ');
+
+          return (
+            <CourseCard 
+              key={course._id || course.id}
+              id={course.id || course._id}
+              title={course.title}
+              instructor={instructorList || "Educator"}
+              duration={course.totalDuration ? `${course.totalDuration}h` : "8h"}
+              progress={course.progressPercentage || 0}
+              rating={course.rating}
+              totalRatings={course.totalRatings}
+            />
+          );
+        })}
       </div>
     </div>
   );

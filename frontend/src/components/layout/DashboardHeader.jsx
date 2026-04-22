@@ -19,6 +19,7 @@ import {
 const DashboardHeader = ({ studentName = 'Student' }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profileName, setProfileName] = useState(studentName);
+  const [profilePic, setProfilePic] = useState(null);
   const [hasUnreadQueries, setHasUnreadQueries] = useState(false);
   const profileRef = useRef(null);
   const navigate = useNavigate();
@@ -28,20 +29,23 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
       setProfileName(studentName);
       return; 
     }
-    const fetchProfileName = async () => {
+    const fetchProfileData = async () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const res = await axios.get('/api/auth/profile', config);
-        if (res.data && res.data.name) {
-          setProfileName(res.data.name);
+        if (res.data) {
+          if (res.data.name) setProfileName(res.data.name);
+          if (res.data.profilePicture && res.data.profilePicture !== 'default-profile.jpg') {
+            setProfilePic(res.data.profilePicture);
+          }
         }
       } catch (err) {
         console.error("DashboardHeader failed to fetch profile name", err);
       }
     };
-    fetchProfileName();
+    fetchProfileData();
 
     const checkUnreadQueries = async () => {
       try {
@@ -88,6 +92,10 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
     { name: 'Certificates', path: '/certificates', icon: Award },
   ];
 
+  const fallbackPic = profileName 
+    ? `https://ui-avatars.com/api/?name=${profileName}&background=EFF6FF&color=2563EB`
+    : `https://ui-avatars.com/api/?name=Student&background=EFF6FF&color=2563EB`;
+
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
       <div className="max-w-[1400px] mx-auto px-6 h-[72px] flex items-center justify-between">
@@ -129,14 +137,14 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
             onClick={() => setIsProfileOpen(!isProfileOpen)}
             className="flex items-center gap-3 focus:outline-none"
           >
-            <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 shadow-sm overflow-hidden">
-              <UserIcon size={20} className="mt-1" fill="currentColor" />
+            <div className="w-9 h-9 bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
+               <img src={profilePic || fallbackPic} alt="Profile" className="w-full h-full object-cover" />
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-[14px] font-bold text-slate-800 leading-tight">{profileName}</p>
+              <p className="text-[14px] font-bold text-slate-800 leading-tight truncate max-w-[120px]">{profileName}</p>
               <p className="text-[13px] text-slate-500 font-medium">Student</p>
             </div>
-            <ChevronDown size={14} className="text-slate-400 ml-1" />
+            <ChevronDown size={14} className="text-slate-400 ml-1 flex-shrink-0" />
           </button>
 
           {/* Dropdown Menu */}
