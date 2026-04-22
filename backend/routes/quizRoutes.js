@@ -7,19 +7,21 @@ const {
     initializeOrResumeQuiz,
     autoSaveAnswer,
     submitFinalQuiz,
-    getMyQuizAttempts
+    getMyQuizAttempts,
+    deleteQuiz
 } = require('../controller/quizController');
-const { protect, approvedEducator } = require('../middleware/authMiddleware');
+const { protect, approvedEducator, courseCollaborator } = require('../middleware/authMiddleware');
 
 router.get('/me', protect, getMyQuizAttempts);
 
 router.route('/')
-    .post(protect, approvedEducator, createQuizWithQuestions)
+    .post(protect, approvedEducator, courseCollaborator, createQuizWithQuestions)
     .get(getQuizzesByModule);
 
 router.get('/:quizId/start', protect, initializeOrResumeQuiz);
 router.patch('/:quizId/save', protect, autoSaveAnswer);
 router.post('/:quizId/submit', protect, submitFinalQuiz);
 router.get('/:id', protect, getQuizById);
+router.delete('/:id', protect, approvedEducator, deleteQuiz);
 
 module.exports = router;

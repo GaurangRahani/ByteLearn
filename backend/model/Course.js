@@ -6,6 +6,10 @@ const courseSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  coInstructors: [{
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    acceptedAt: { type: Date, default: Date.now }
+  }],
   title: { type: String, required: true },
   description: { type: String, required: true },
   thumbnail: String,

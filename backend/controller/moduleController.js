@@ -1,5 +1,9 @@
 const Module = require('../model/Module');
 const Course = require('../model/Course');
+const Lesson = require('../model/Lesson');
+const Quiz = require('../model/Quiz');
+const Question = require('../model/Question');
+const Assignment = require('../model/Assignment');
 
 const addModule = async (req, res) => {
     try {
@@ -9,16 +13,8 @@ const addModule = async (req, res) => {
             return res.status(400).json({ message: 'Title and order are required' });
         }
 
-        const course = await Course.findById(req.params.courseId);
-
-        if (!course) {
-            return res.status(404).json({ message: 'Course not found' });
-        }
-
-        //Only the educator who owns the course can add modules
-        if (course.educatorId.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ message: 'Not authorized to add modules to this course' });
-        }
+        // auth check now handled by courseCollaborator middleware
+        const course = req.course;
 
         const module = await Module.create({
             courseId: req.params.courseId,
@@ -56,10 +52,7 @@ const updateModule = async (req, res) => {
             return res.status(404).json({ message: 'Module not found' });
         }
 
-        // Check that the requesting educator owns the course this module belongs to
-        if (module.courseId.educatorId.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ message: 'Not authorized to update this module' });
-        }
+        // auth check now handled by courseCollaborator middleware
 
         // Whitelist allowed updates — courseId and _id cannot be changed
         const allowedUpdates = {};
@@ -80,19 +73,26 @@ const updateModule = async (req, res) => {
 
 const deleteModule = async (req, res) => {
     try {
-        const module = await Module.findById(req.params.moduleId).populate('courseId');
+        const moduleId = req.params.moduleId;
+        const module = await Module.findById(moduleId).populate('courseId');
 
         if (!module) {
             return res.status(404).json({ message: 'Module not found' });
         }
 
-        if (module.courseId.educatorId.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ message: 'Not authorized to delete this module' });
-        }
+        // --- Cascading Deletion ---
+        const quizzes = await Quiz.find({ moduleId });
+        const quizIds = quizzes.map(q => q._id);
 
-        await Module.findByIdAndDelete(req.params.moduleId);
-        //TODO : Add cascading deletes for lessons and quizzes
-        res.json({ message: 'Module deleted successfully' });
+        await Promise.all([
+            Lesson.deleteMany({ moduleId }),
+            Question.deleteMany({ quizId: { $in: quizIds } }),
+            Quiz.deleteMany({ moduleId }),
+            Assignment.deleteMany({ moduleId }),
+            Module.findByIdAndDelete(moduleId)
+        ]);
+
+        res.json({ message: 'Module and all its contents deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

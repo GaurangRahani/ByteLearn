@@ -33,6 +33,7 @@ const certificateRoutes = require('./routes/certificateRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const earningsRoutes = require('./routes/earningsRoutes');
+const inviteRoutes = require('./routes/inviteRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
@@ -47,6 +48,7 @@ app.use('/api/certificates', certificateRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/educator/earnings', earningsRoutes);
+app.use('/api/invites', inviteRoutes);
 
 app.use((err, req, res, next) => {
     console.error(err.stack);

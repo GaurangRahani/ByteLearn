@@ -16,7 +16,7 @@ const {
 const { protect, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
-router.post("/register-student", registerStudent);
+router.post("/register-student", upload.single('profilePicture'), registerStudent);
 router.post("/register-educator", upload.fields([
     { name: 'profilePicture', maxCount: 1 },
     { name: 'supportingCredentials', maxCount: 5 }
@@ -26,7 +26,7 @@ router.post("/verify-otp", verifyOtp);
 router.post("/resend-otp", resendOtp);
 router.post("/google", googleLogin);
 
-router.route("/profile").get(protect, getUserProfile).put(protect, updateUserProfile);
+router.route("/profile").get(protect, getUserProfile).put(protect, upload.single('profilePicture'), updateUserProfile);
 router.put("/change-password", protect, changePassword);
 
 router.get("/educators", protect, admin, getAllEducators);

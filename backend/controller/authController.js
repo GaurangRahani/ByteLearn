@@ -18,8 +18,7 @@ const registerStudent = async (req, res) => {
             gender,
             dateOfBirth,
             educationLevel,
-            phone,
-            profilePicture
+            phone
         } = req.body;
 
         if (!name || !email || !password) {
@@ -34,6 +33,16 @@ const registerStudent = async (req, res) => {
         const otp = generateOTP();
         const otpExpires = Date.now() + 10 * 60 * 1000;
 
+        let profilePictureUrl = "default-profile.jpg";
+        if (req.file) {
+            const uploadResult = await uploadOnCloudinary(req.file.path);
+            if (uploadResult && uploadResult.url) {
+                profilePictureUrl = uploadResult.url;
+            }
+        } else if (req.body.profilePicture) {
+            profilePictureUrl = req.body.profilePicture;
+        }
+
         const user = await User.create({ 
             name, 
             email, 
@@ -45,7 +54,7 @@ const registerStudent = async (req, res) => {
             dateOfBirth,
             educationLevel,
             phone,
-            profilePicture
+            profilePicture: profilePictureUrl
         });
 
         try {
@@ -170,7 +179,7 @@ const loginUser = async (req, res) => {
                 return res.status(403).json({ message: 'Account not verified. A new OTP has been sent to your email.' });
             }
             if (user.isBlocked) {
-                return res.status(403).json({ message: 'Your account has been suspended. Contact support.' });
+                return res.status(403).json({ message: 'Your account has been blocked. To request an unblock appeal, contact support@bytelearn.com' });
             }
 
             user.lastLogin = Date.now();
@@ -182,6 +191,7 @@ const loginUser = async (req, res) => {
                 email: user.email,
                 role: user.role,
                 isVerified: user.isVerified,
+                profilePicture: user.profilePicture,
                 educatorApplication: user.educatorApplication,
                 token: generateToken(user._id),
             });
@@ -252,11 +262,21 @@ const updateUserProfile = async (req, res) => {
         }
 
         user.name = req.body.name || user.name;
-        user.profilePicture = req.body.profilePicture || user.profilePicture;
         user.gender = req.body.gender || user.gender;
         user.dateOfBirth = req.body.dateOfBirth || user.dateOfBirth;
         user.educationLevel = req.body.educationLevel || user.educationLevel;
         user.phone = req.body.phone || user.phone;
+
+        if (req.file) {
+            const uploadResult = await uploadOnCloudinary(req.file.path);
+            if (uploadResult && uploadResult.url) {
+                user.profilePicture = uploadResult.url;
+            }
+        } else if (req.body.removeProfilePicture === 'true' || req.body.profilePicture === '') {
+            user.profilePicture = "default-profile.jpg";
+        } else if (req.body.profilePicture) {
+            user.profilePicture = req.body.profilePicture;
+        }
 
         if (req.body.bankDetails) {
             user.bankDetails = {
@@ -405,6 +425,7 @@ const verifyOtp = async (req, res) => {
             name: user.name,
             email: user.email,
             role: user.role,
+            profilePicture: user.profilePicture,
             token: generateToken(user._id),
         });
     } catch (error) {
@@ -480,7 +501,7 @@ const googleLogin = async (req, res) => {
             });
         } else {
             if (user.isBlocked) {
-                return res.status(403).json({ message: 'Your account has been suspended. Contact support.' });
+                return res.status(403).json({ message: 'Your account has been blocked. To request an unblock appeal, contact support@bytelearn.com' });
             }
             user.lastLogin = Date.now();
             await user.save();
@@ -492,6 +513,7 @@ const googleLogin = async (req, res) => {
             email: user.email,
             role: user.role,
             isVerified: user.isVerified,
+            profilePicture: user.profilePicture,
             educatorApplication: user.educatorApplication,
             token: generateToken(user._id),
         });

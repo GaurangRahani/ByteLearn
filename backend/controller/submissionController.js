@@ -88,7 +88,13 @@ const getEducatorSubmissions = async (req, res) => {
     try {
         const educatorId = req.user._id;
 
-        const educatorCourses = await Course.find({ educatorId }).select('_id');
+        // Include courses where educator is owner OR co-instructor
+        const educatorCourses = await Course.find({
+            $or: [
+                { educatorId },
+                { 'coInstructors.userId': educatorId }
+            ]
+        }).select('_id');
         const courseIds = educatorCourses.map(c => c._id);
 
         if (courseIds.length === 0) {
@@ -118,20 +124,30 @@ const gradeSubmission = async (req, res) => {
 
         const submission = await Submission.findById(submissionId)
             .populate('studentId', 'name email')
-            .populate('courseId', 'title educatorId')
+            .populate({ path: 'courseId', select: 'title educatorId coInstructors', populate: { path: 'educatorId', select: 'name' } })
             .populate('assignmentId', 'title totalMarks');
 
         if (!submission) {
             return res.status(404).json({ message: 'Submission not found' });
         }
 
-        if (submission.courseId.educatorId.toString() !== req.user._id.toString()) {
+        // Check authorization: owner OR co-instructor
+        const userId = req.user._id.toString();
+        const isOwner = submission.courseId.educatorId._id.toString() === userId;
+        const isCo = submission.courseId.coInstructors?.some(c => c.userId.toString() === userId);
+        if (!isOwner && !isCo) {
             return res.status(403).json({ message: 'Not authorized to grade this submission' });
+        }
+
+        // First-come-first-serve lock: reject if already graded
+        if (submission.status === 'graded') {
+            return res.status(409).json({ message: 'This submission has already been graded by another instructor.' });
         }
 
         submission.marksObtained = marksObtained;
         submission.feedback = feedback;
         submission.status = 'graded';
+        submission.gradedBy = req.user._id;
         await submission.save();
 
         try {
@@ -250,15 +266,19 @@ const getSubmissionById = async (req, res) => {
         const { submissionId } = req.params;
         const submission = await Submission.findById(submissionId)
             .populate('studentId', 'name email profilePicture')
-            .populate('courseId', 'title educatorId')
-            .populate('assignmentId', 'title totalMarks instructions');
+            .populate({ path: 'courseId', select: 'title educatorId coInstructors' })
+            .populate('assignmentId', 'title totalMarks instructions')
+            .populate('gradedBy', 'name');
 
         if (!submission) {
             return res.status(404).json({ message: 'Submission not found' });
         }
 
-        // Verify ownership
-        if (submission.courseId.educatorId.toString() !== req.user._id.toString()) {
+        // Verify ownership — owner OR co-instructor
+        const userId = req.user._id.toString();
+        const isOwner = submission.courseId.educatorId.toString() === userId;
+        const isCo = submission.courseId.coInstructors?.some(c => c.userId.toString() === userId);
+        if (!isOwner && !isCo) {
             return res.status(403).json({ message: 'Not authorized to view this submission' });
         }
 

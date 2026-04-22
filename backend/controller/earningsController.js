@@ -102,20 +102,20 @@ const requestWithdrawal = asyncHandler(async (req, res) => {
             { session }
         );
 
-        // Create a 'debit' transaction marked as 'pending'
+        // Create a 'debit' transaction marked as 'completed'
         const withdrawTx = await Transaction.create([{
             educatorId,
             amount: amount,
             type: 'debit',
-            status: 'pending',
-            description: 'Payout request to bank account'
+            status: 'completed',
+            description: 'Payout successfully processed to bank account'
         }], { session });
 
         await session.commitTransaction();
 
         res.status(200).json({
             success: true,
-            message: 'Payout requested successfully',
+            message: 'Payout successfully processed',
             transaction: withdrawTx[0]
         });
 

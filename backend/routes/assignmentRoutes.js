@@ -7,18 +7,18 @@ const {
     deleteAssignment,
     getAssignmentPdfUrl
 } = require('../controller/assignmentController');
-const { protect, approvedEducator } = require('../middleware/authMiddleware');
+const { protect, approvedEducator, courseCollaborator } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
 const assignmentUpload = upload.single('questionPdf');
 
 router.route('/')
-    .post(protect, approvedEducator, assignmentUpload, addAssignment)
+    .post(protect, approvedEducator, courseCollaborator, assignmentUpload, addAssignment)
     .get(getAssignmentsByModule);
 
 router.route('/:assignmentId')
-    .put(protect, approvedEducator, assignmentUpload, updateAssignment)
-    .delete(protect, approvedEducator, deleteAssignment);
+    .put(protect, approvedEducator, courseCollaborator, assignmentUpload, updateAssignment)
+    .delete(protect, approvedEducator, courseCollaborator, deleteAssignment);
 
 router.get('/:assignmentId/download', protect, getAssignmentPdfUrl);
 

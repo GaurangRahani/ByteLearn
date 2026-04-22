@@ -4,6 +4,10 @@ const Lesson = require('../model/Lesson');
 const Enrollment = require('../model/Enrollment');
 const Submission = require('../model/Submission');
 const QuizAttempt = require('../model/QuizAttempt');
+const Quiz = require('../model/Quiz');
+const Question = require('../model/Question');
+const Assignment = require('../model/Assignment');
+const mongoose = require('mongoose');
 const { evaluateCourseCompletion } = require('../services/evaluationService');
 const { uploadOnCloudinary } = require('../utils/cloudinary');
 const fs = require('fs');
@@ -88,8 +92,20 @@ const createCourse = async (req, res) => {
 
 const getEducatorCourses = async (req, res) => {
     try {
-        const courses = await Course.find({ educatorId: req.user._id }).sort({ createdAt: -1 });
-        res.status(200).json({ success: true, data: courses });
+        const userId = req.user._id;
+
+        // Fetch both owned courses and co-instructed courses
+        const [ownedCourses, coInstructedCourses] = await Promise.all([
+            Course.find({ educatorId: userId }).sort({ createdAt: -1 }),
+            Course.find({ 'coInstructors.userId': userId })
+                .populate('educatorId', 'name profilePicture')
+                .sort({ createdAt: -1 })
+        ]);
+
+        const owned = ownedCourses.map(c => ({ ...c.toObject(), isOwner: true }));
+        const coInstructed = coInstructedCourses.map(c => ({ ...c.toObject(), isOwner: false }));
+
+        res.status(200).json({ success: true, data: [...owned, ...coInstructed] });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -154,8 +170,9 @@ const getAllCourses = async (req, res) => {
         }
 
         const courses = await Course.find(query)
-            .select("title thumbnail price isPaid level rating totalRatings description educatorId category")
+            .select("title thumbnail price isPaid level rating totalRatings description educatorId category coInstructors")
             .populate("educatorId", "name")
+            .populate("coInstructors.userId", "name")
             .sort({ createdAt: -1 });
 
         res.status(200).json({ success: true, data: courses });
@@ -168,6 +185,7 @@ const getCourseById = async (req, res) => {
     try {
         const course = await Course.findById(req.params.id)
             .populate('educatorId', 'name profilePicture')
+            .populate('coInstructors.userId', 'name profilePicture')
             .populate({
                 path: 'modules',
                 options: { sort: { order: 1 } },
@@ -187,9 +205,10 @@ const getCourseById = async (req, res) => {
             const userId = req.user ? req.user._id.toString() : null;
             const userRole = req.user ? req.user.role : null;
             const isOwner = course.educatorId._id.toString() === userId;
+            const isCo = course.coInstructors?.some(c => c.userId._id.toString() === userId);
             const isAdmin = userRole === 'admin';
 
-            if (!isOwner && !isAdmin) {
+            if (!isOwner && !isCo && !isAdmin) {
                 return res.status(404).json({ success: false, message: 'Course not found' });
             }
         }
@@ -298,22 +317,53 @@ const updateCourse = async (req, res) => {
 };
 
 const deleteCourse = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
-        const course = await Course.findById(req.params.id);
+        const courseId = req.params.id;
+        const course = await Course.findById(courseId).session(session);
 
         if (!course) {
+            await session.abortTransaction();
             return res.status(404).json({ success: false, message: 'Course not found' });
         }
 
         if (course.educatorId.toString() !== req.user._id.toString()) {
+            await session.abortTransaction();
             return res.status(403).json({ success: false, message: 'Not authorized to delete this course' });
         }
 
-        await Course.findByIdAndDelete(req.params.id);
+        // --- Cascading Deletion ---
+        
+        // 1. Find all modules first to get their IDs
+        const modules = await Module.find({ courseId }).session(session);
+        const moduleIds = modules.map(m => m._id);
 
-        res.status(200).json({ success: true, message: 'Course deleted successfully' });
+        // 2. Find all quizzes in those modules to get quiz IDs (for question deletion)
+        const quizzes = await Quiz.find({ moduleId: { $in: moduleIds } }).session(session);
+        const quizIds = quizzes.map(q => q._id);
+
+        // 3. Perform bulk deletions
+        await Promise.all([
+            Question.deleteMany({ quizId: { $in: quizIds } }).session(session),
+            Quiz.deleteMany({ moduleId: { $in: moduleIds } }).session(session),
+            Lesson.deleteMany({ moduleId: { $in: moduleIds } }).session(session),
+            Assignment.deleteMany({ moduleId: { $in: moduleIds } }).session(session),
+            Module.deleteMany({ courseId }).session(session),
+            Enrollment.deleteMany({ courseId }).session(session),
+            Submission.deleteMany({ courseId }).session(session),
+            QuizAttempt.deleteMany({ courseId }).session(session),
+            Course.findByIdAndDelete(courseId).session(session)
+        ]);
+
+        await session.commitTransaction();
+        res.status(200).json({ success: true, message: 'Course and all its content deleted successfully' });
     } catch (error) {
+        await session.abortTransaction();
+        console.error("Delete Course Error:", error);
         res.status(500).json({ success: false, message: error.message });
+    } finally {
+        session.endSession();
     }
 };
 

@@ -49,8 +49,13 @@ const getEducatorQueries = async (req, res) => {
     const { status, courseId } = req.query;
     const educatorId = req.user._id;
 
-    // First find courses owned by this educator
-    const educatorCourses = await Course.find({ educatorId }, '_id');
+    // Find courses where educator is owner OR co-instructor
+    const educatorCourses = await Course.find({
+      $or: [
+        { educatorId },
+        { 'coInstructors.userId': educatorId }
+      ]
+    }, '_id');
     const courseIds = educatorCourses.map(c => c._id);
 
     const filter = { courseId: { $in: courseIds } };
@@ -61,6 +66,7 @@ const getEducatorQueries = async (req, res) => {
       .populate('studentId', 'name email')
       .populate('courseId', 'title')
       .populate('lessonId', 'title')
+      .populate('repliedBy', 'name')
       .sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, data: queries });
@@ -75,15 +81,18 @@ const generateAIDrafts = async (req, res) => {
     const queryId = req.params.id || req.params.queryId;
     const query = await Query.findById(queryId)
       .populate('studentId', 'name')
-      .populate('courseId', 'title educatorId');
+      .populate('courseId', 'title educatorId coInstructors');
 
     if (!query) {
       return res.status(404).json({ success: false, message: "Query not found" });
     }
 
-    // Security check
-    if (query.courseId.educatorId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: "Not authorized" });
+    // Security check — owner OR co-instructor
+    const userId = req.user._id.toString();
+    const isOwner = query.courseId.educatorId.toString() === userId;
+    const isCo = query.courseId.coInstructors?.some(c => c.userId.toString() === userId);
+    if (!isOwner && !isCo) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 
     const studentFirstName = query.studentId.name.split(' ')[0];
@@ -149,20 +158,29 @@ const resolveQuery = async (req, res) => {
       return res.status(400).json({ success: false, message: "Answer is required" });
     }
 
-    const query = await Query.findById(queryId).populate('courseId');
+    const query = await Query.findById(queryId).populate('courseId', 'educatorId coInstructors');
 
     if (!query) {
-      return res.status(404).json({ success: false, message: "Query not found" });
+      return res.status(404).json({ success: false, message: 'Query not found' });
     }
 
-    // Check if the user is the educator of this course
-    if (query.courseId.educatorId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: "Not authorized to resolve this query" });
+    // Check if the user is the educator of this course (owner or co-instructor)
+    const userId = req.user._id.toString();
+    const isOwner = query.courseId.educatorId.toString() === userId;
+    const isCo = query.courseId.coInstructors?.some(c => c.userId.toString() === userId);
+    if (!isOwner && !isCo) {
+      return res.status(403).json({ success: false, message: 'Not authorized to resolve this query' });
+    }
+
+    // First-come-first-serve lock: reject if already resolved
+    if (query.status === 'resolved') {
+      return res.status(409).json({ success: false, message: 'This query has already been answered by another instructor.' });
     }
 
     query.answer = answer;
     query.status = 'resolved';
     query.studentRead = false;
+    query.repliedBy = req.user._id;
     await query.save();
 
     res.status(200).json({ success: true, data: query });

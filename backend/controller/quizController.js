@@ -13,7 +13,12 @@ const mongoose = require('mongoose');
 const verifyModuleOwnership = async (moduleId, userId) => {
     const module = await Module.findById(moduleId).populate('courseId');
     if (!module) return { error: 'Module not found', status: 404 };
-    if (module.courseId.educatorId.toString() !== userId.toString()) {
+    
+    const course = module.courseId;
+    const isOwner = course.educatorId.toString() === userId.toString();
+    const isCo = course.coInstructors?.some(c => c.userId.toString() === userId.toString());
+
+    if (!isOwner && !isCo) {
         return { error: 'Not authorized to manage content in this module', status: 403 };
     }
     return { module };
@@ -326,6 +331,24 @@ const getMyQuizAttempts = async (req, res) => {
     }
 };
 
+const deleteQuiz = async (req, res) => {
+    try {
+        const quiz = await Quiz.findById(req.params.id);
+        if (!quiz) return res.status(404).json({ success: false, message: 'Quiz not found' });
+        
+        const { error, status } = await verifyModuleOwnership(quiz.moduleId, req.user._id);
+        if (error) return res.status(status).json({ success: false, message: error });
+        
+        await Quiz.findByIdAndDelete(req.params.id);
+        // Cascading delete for questions
+        await Question.deleteMany({ quizId: req.params.id });
+        
+        res.status(200).json({ success: true, message: 'Quiz deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
 module.exports = {
     createQuizWithQuestions,
     getQuizzesByModule,
@@ -333,6 +356,7 @@ module.exports = {
     initializeOrResumeQuiz,
     autoSaveAnswer,
     submitFinalQuiz,
-    getMyQuizAttempts
+    getMyQuizAttempts,
+    deleteQuiz
 };
 

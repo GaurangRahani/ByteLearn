@@ -16,7 +16,12 @@ const cleanupTempFiles = (req) => {
 const verifyModuleOwnership = async (moduleId, userId) => {
     const module = await Module.findById(moduleId).populate('courseId');
     if (!module) return { error: 'Module not found', status: 404 };
-    if (module.courseId.educatorId.toString() !== userId.toString()) {
+    
+    const course = module.courseId;
+    const isOwner = course.educatorId.toString() === userId.toString();
+    const isCo = course.coInstructors?.some(c => c.userId.toString() === userId.toString());
+
+    if (!isOwner && !isCo) {
         return { error: 'Not authorized to manage assignments in this module', status: 403 };
     }
     return { module };

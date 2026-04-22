@@ -76,4 +76,44 @@ const approvedEducator = (req, res, next) => {
     }
 };
 
-module.exports = { protect, optionalProtect, admin, educator, approvedEducator };
+/**
+ * Middleware factory: checks if the authenticated educator is either
+ * the primary owner (educatorId) OR a co-instructor of the course.
+ * The courseId is resolved from params (courseId or id) or body.
+ */
+const courseCollaborator = async (req, res, next) => {
+    try {
+        if (!req.user || req.user.role !== 'educator') {
+            return res.status(403).json({ message: 'Not authorized: educator only' });
+        }
+        if (req.user.educatorApplication?.status !== 'approved') {
+            return res.status(403).json({ message: 'Not authorized: You must be an approved educator' });
+        }
+
+        const Course = require('../model/Course');
+        const courseId = req.params.courseId || req.params.id || req.body.courseId;
+        if (!courseId) return next(); // let controller handle missing courseId
+
+        const course = await Course.findById(courseId).select('educatorId coInstructors');
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        const userId = req.user._id.toString();
+        const isOwner = course.educatorId.toString() === userId;
+        const isCo = course.coInstructors?.some(c => c.userId.toString() === userId);
+
+        if (!isOwner && !isCo) {
+            return res.status(403).json({ message: 'Not authorized for this course' });
+        }
+
+        // Attach useful flags to request for downstream controllers
+        req.isCourseOwner = isOwner;
+        req.course = course;
+        next();
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+module.exports = { protect, optionalProtect, admin, educator, approvedEducator, courseCollaborator };

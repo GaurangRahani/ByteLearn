@@ -9,11 +9,11 @@ exports.getStudentDashboardData = async (req, res) => {
     const [enrollments, recentQuizzes, recentAssignments] = await Promise.all([
       Enrollment.find({ studentId }).populate({
         path: 'courseId',
-        select: 'title thumbnail educatorId totalDuration gradingConfiguration rating totalRatings',
-        populate: {
-          path: 'educatorId',
-          select: 'name'
-        }
+        select: 'title thumbnail educatorId coInstructors totalDuration gradingConfiguration rating totalRatings',
+        populate: [
+          { path: 'educatorId', select: 'name' },
+          { path: 'coInstructors.userId', select: 'name' }
+        ]
       }),
       QuizAttempt.find({ studentId, status: 'completed' })
         .sort({ submittedAt: -1 })

@@ -81,33 +81,45 @@ const verifyPayment = asyncHandler(async (req, res) => {
             payment.paidAt = Date.now();
             await payment.save({ session });
 
-            // Find Course to get educatorId
-            const course = await Course.findById(payment.courseId).session(session);
+            // Find Course to get educatorId and co-instructors
+            const course = await Course.findById(payment.courseId)
+                .populate('coInstructors.userId', 'name')
+                .session(session);
             if (course) {
-                const educatorId = course.educatorId;
-                const educatorEarnings = payment.amount * 0.80; // 80% to educator
+                const totalEducatorShare = payment.amount * 0.80; // 80% total to instructors
 
-                // Atomically update walletBalance and totalEarnings
-                await User.findByIdAndUpdate(
-                    educatorId,
-                    { 
-                        $inc: { 
-                            walletBalance: educatorEarnings,
-                            totalEarnings: educatorEarnings 
-                        } 
-                    },
-                    { session }
-                );
+                // Build list of all instructors: primary owner + co-instructors
+                const allInstructors = [
+                    { id: course.educatorId, label: 'Primary Educator' },
+                    ...(course.coInstructors || []).map(c => ({ id: c.userId, label: 'Co-Instructor' }))
+                ];
 
-                // Create Credit Transaction
-                await Transaction.create([{
-                    educatorId,
-                    paymentId: payment._id,
-                    amount: educatorEarnings,
-                    type: 'credit',
-                    status: 'completed',
-                    description: `Sale of course: ${course.title} (80% Revenue Share)`
-                }], { session });
+                const perInstructorShare = totalEducatorShare / allInstructors.length;
+                const sharePercent = Math.round(80 / allInstructors.length);
+
+                for (const instructor of allInstructors) {
+                    // Atomically update walletBalance and totalEarnings for each instructor
+                    await User.findByIdAndUpdate(
+                        instructor.id,
+                        { 
+                            $inc: { 
+                                walletBalance: perInstructorShare,
+                                totalEarnings: perInstructorShare
+                            } 
+                        },
+                        { session }
+                    );
+
+                    // Create Credit Transaction for each instructor
+                    await Transaction.create([{
+                        educatorId: instructor.id,
+                        paymentId: payment._id,
+                        amount: perInstructorShare,
+                        type: 'credit',
+                        status: 'completed',
+                        description: `Sale of course: ${course.title} (${sharePercent}% Revenue Share — ${instructor.label})`
+                    }], { session });
+                }
             }
 
             // Find or Create Enrollment

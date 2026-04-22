@@ -77,8 +77,13 @@ const getEducatorRoster = async (req, res) => {
     try {
         const educatorId = req.user._id;
 
-        // Find courses owned by this educator
-        const educatorCourses = await Course.find({ educatorId }).select('_id');
+        // Find courses owned by or co-instructed by this educator
+        const educatorCourses = await Course.find({ 
+            $or: [
+                { educatorId },
+                { 'coInstructors.userId': educatorId }
+            ]
+        }).select('_id');
         const courseIds = educatorCourses.map(c => c._id);
 
         if (courseIds.length === 0) {
@@ -129,14 +134,21 @@ const getEducatorRoster = async (req, res) => {
             }
 
 
-            const liveGrade = (quizAvg * (config.quizWeight / 100)) + (assignmentAvg * (config.assignmentWeight / 100));
+            let liveGrade = null;
+            if (quizAttempts.length > 0 && submissions.length > 0) {
+                 liveGrade = (quizAvg * (config.quizWeight / 100)) + (assignmentAvg * (config.assignmentWeight / 100));
+            } else if (quizAttempts.length > 0) {
+                 liveGrade = quizAvg;
+            } else if (submissions.length > 0) {
+                 liveGrade = assignmentAvg;
+            }
 
             return {
                 ...enrollment,
                 performance: {
-                    quizAvg: Math.round(quizAvg),
-                    assignmentAvg: Math.round(assignmentAvg),
-                    liveGrade: Math.round(liveGrade),
+                    quizAvg: quizAttempts.length > 0 ? Math.round(quizAvg) : null,
+                    assignmentAvg: submissions.length > 0 ? Math.round(assignmentAvg) : null,
+                    liveGrade: liveGrade !== null ? Math.round(liveGrade) : null,
                     lastActive: enrollment.studentId?.lastLogin || enrollment.updatedAt
                 }
             };
@@ -161,7 +173,7 @@ const getEnrollmentDetail = async (req, res) => {
             .populate('studentId', 'name email profilePicture lastLogin')
             .populate({
                 path: 'courseId',
-                select: 'title gradingConfiguration educatorId',
+                select: 'title gradingConfiguration educatorId coInstructors',
                 populate: [
                     { path: 'modules', populate: [{ path: 'lessons' }, { path: 'quizzes' }, { path: 'assignments' }] }
                 ]
@@ -172,8 +184,11 @@ const getEnrollmentDetail = async (req, res) => {
             return res.status(404).json({ success: false, message: "Enrollment not found" });
         }
 
-        // Verify educator ownership
-        if (enrollment.courseId.educatorId.toString() !== educatorId.toString()) {
+        // Verify educator ownership or collaboration
+        const isOwner = enrollment.courseId.educatorId.toString() === educatorId.toString();
+        const isCo = enrollment.courseId.coInstructors?.some(c => c.userId.toString() === educatorId.toString());
+
+        if (!isOwner && !isCo) {
             return res.status(403).json({ success: false, message: "Unauthorized access to this enrollment" });
         }
 

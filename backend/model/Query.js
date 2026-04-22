@@ -32,7 +32,8 @@ const querySchema = new mongoose.Schema({
   studentRead: {
     type: Boolean,
     default: true
-  }
+  },
+  repliedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Query', querySchema);
