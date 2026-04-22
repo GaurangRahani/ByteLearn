@@ -16,7 +16,7 @@ import {
   User as UserIcon
 } from 'lucide-react';
 
-const DashboardHeader = ({ studentName = 'Student' }) => {
+const DashboardHeader = ({ studentName = 'Student', fullWidth = false }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profileName, setProfileName] = useState(studentName);
   const [profilePic, setProfilePic] = useState(null);
@@ -98,7 +98,7 @@ const DashboardHeader = ({ studentName = 'Student' }) => {
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-      <div className="max-w-[1400px] mx-auto px-6 h-[72px] flex items-center justify-between">
+      <div className={`${fullWidth ? 'w-full px-4' : 'max-w-[1400px] mx-auto px-6'} h-[72px] flex items-center justify-between`}>
         
         {/* Logo */}
         <div className="flex items-center gap-2 text-blue-600 mr-8">
