@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, Download, PlayCircle } from 'lucide-react';
 import CustomVideoPlayer from './CustomVideoPlayer';
+import Playground from './Playground';
 
 const LessonViewer = ({ 
   currentItem, 
@@ -25,8 +26,30 @@ const LessonViewer = ({
     return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
   };
 
+  const [isPlaygroundOpen, setIsPlaygroundOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsPlaygroundOpen(false);
+      }
+    };
+    if (isPlaygroundOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isPlaygroundOpen]);
+
   return (
-    <div className="flex flex-col h-full">
+    <div className={isPlaygroundOpen ? "fixed inset-0 z-[100] bg-slate-900 flex flex-col lg:flex-row w-screen h-screen" : "flex flex-col h-full w-full"}>
+      <div className={isPlaygroundOpen ? "w-full lg:w-1/2 flex flex-col h-full overflow-y-auto bg-white" : "w-full flex flex-col"}>
+      
       {currentItem.type === 'video' && (
         currentItem.videoUrl ? (
           <CustomVideoPlayer videoUrl={currentItem.videoUrl} title={currentItem.title} />
@@ -37,6 +60,17 @@ const LessonViewer = ({
             <p className="text-sm max-w-xs mt-2">The educator hasn't uploaded a video for this lesson yet.</p>
           </div>
         )
+      )}
+
+      {!isPlaygroundOpen && (
+        <div className="flex justify-end p-3 bg-slate-50 border-b border-slate-200">
+          <button 
+            onClick={() => setIsPlaygroundOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 text-sm font-medium transition-colors shadow-sm"
+          >
+            🧑‍💻 Open Code Editor
+          </button>
+        </div>
       )}
 
       <div className="p-8 flex-grow flex flex-col">
@@ -109,8 +143,15 @@ const LessonViewer = ({
           </button>
         </div>
       </div>
+      </div>
+      {isPlaygroundOpen && (
+        <div className="w-full lg:w-1/2 h-full overflow-hidden bg-slate-900 border-l border-slate-700 relative">
+          <Playground onClose={() => setIsPlaygroundOpen(false)} />
+        </div>
+      )}
     </div>
   );
 };
+
 
 export default LessonViewer;
