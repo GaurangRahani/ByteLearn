@@ -1,0 +1,279 @@
+const Course = require('../model/Course');
+const Module = require('../model/Module');
+const Lesson = require('../model/Lesson');
+const Enrollment = require('../model/Enrollment');
+const { uploadOnCloudinary } = require('../utils/cloudinary');
+const fs = require('fs');
+
+//delete a temp file if it exists
+const cleanupTempFile = (file) => {
+    if (file && fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+    }
+};
+
+const createCourse = async (req, res) => {
+    try {
+        const { title, description, category, level, price, isPaid, language } = req.body;
+
+        if (!title || !description) {
+            cleanupTempFile(req.file);
+            return res.status(400).json({ success: false, message: 'Title and description are required' });
+        }
+
+        let thumbnailUrl = "";
+        if (req.file) {
+            const uploadedImage = await uploadOnCloudinary(req.file.path);
+            if (!uploadedImage) {
+                return res.status(500).json({ success: false, message: 'Error uploading thumbnail to Cloudinary' });
+            }
+            thumbnailUrl = uploadedImage.secure_url;
+        }
+
+        const course = await Course.create({
+            educatorId: req.user._id,
+            title,
+            description,
+            thumbnail: thumbnailUrl,
+            category,
+            level,
+            price,
+            isPaid,
+            language,
+            status: 'draft'
+        });
+
+        res.status(201).json({ success: true, data: course });
+    } catch (error) {
+        cleanupTempFile(req.file);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const getEducatorCourses = async (req, res) => {
+    try {
+        const courses = await Course.find({ educatorId: req.user._id }).sort({ createdAt: -1 });
+        res.status(200).json({ success: true, data: courses });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const getAllCourses = async (req, res) => {
+    try {
+        const { search, category } = req.query;
+        let query = { status: "approved" };
+
+        if (search) {
+            query.title = { $regex: search, $options: "i" };
+        }
+        if (category) {
+            query.category = category;
+        }
+
+        const courses = await Course.find(query)
+            .select("title thumbnail price isPaid level rating educatorId")
+            .populate("educatorId", "name")
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({ success: true, data: courses });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const getCourseById = async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id)
+            .populate('educatorId', 'name profilePicture bio')
+            .populate({
+                path: 'modules',
+                options: { sort: { order: 1 } },
+                populate: {
+                    path: 'lessons',
+                    options: { sort: { order: 1 } },
+                    transform: (doc) => {
+                        const lesson = doc.toObject ? doc.toObject() : doc;
+                        // No preview — always hide video and content from public catalog
+                        delete lesson.videoUrl;
+                        delete lesson.attachmentUrl;
+                        delete lesson.content;
+                        return lesson;
+                    }
+                }
+            });
+
+        if (!course) {
+            return res.status(404).json({ success: false, message: 'Course not found' });
+        }
+
+        // If course is not approved, only the owning educator or an admin can view it
+        if (course.status !== 'approved') {
+            const userId = req.user ? req.user._id.toString() : null;
+            const userRole = req.user ? req.user.role : null;
+            const isOwner = course.educatorId._id.toString() === userId;
+            const isAdmin = userRole === 'admin';
+
+            if (!isOwner && !isAdmin) {
+                return res.status(404).json({ success: false, message: 'Course not found' });
+            }
+        }
+
+        res.status(200).json({ success: true, data: course });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const updateCourse = async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id);
+
+        if (!course) {
+            cleanupTempFile(req.file);
+            return res.status(404).json({ success: false, message: 'Course not found' });
+        }
+
+        if (course.educatorId.toString() !== req.user._id.toString()) {
+            cleanupTempFile(req.file);
+            return res.status(403).json({ success: false, message: 'Not authorized to update this course' });
+        }
+
+        //Explicitly whitelist updatable fields
+        const allowedUpdates = {
+            title: req.body.title,
+            description: req.body.description,
+            category: req.body.category,
+            tags: req.body.tags,
+            level: req.body.level,
+            price: req.body.price,
+            isPaid: req.body.isPaid,
+            language: req.body.language,
+        };
+
+        //Remove undefined keys 
+        Object.keys(allowedUpdates).forEach(
+            (key) => allowedUpdates[key] === undefined && delete allowedUpdates[key]
+        );
+
+        //thumbnail upload
+        if (req.file) {
+            const uploadedImage = await uploadOnCloudinary(req.file.path);
+            if (!uploadedImage) {
+                return res.status(500).json({ success: false, message: 'Error uploading new thumbnail to Cloudinary' });
+            }
+            allowedUpdates.thumbnail = uploadedImage.secure_url;
+        }
+
+        const updatedCourse = await Course.findByIdAndUpdate(
+            req.params.id,
+            allowedUpdates,
+            { new: true, runValidators: true }
+        );
+
+        res.status(200).json({ success: true, data: updatedCourse });
+    } catch (error) {
+        cleanupTempFile(req.file);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const deleteCourse = async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id);
+
+        if (!course) {
+            return res.status(404).json({ success: false, message: 'Course not found' });
+        }
+
+        if (course.educatorId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: 'Not authorized to delete this course' });
+        }
+
+        await Course.findByIdAndDelete(req.params.id);
+
+        res.status(200).json({ success: true, message: 'Course deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+//educator submit course for admin review
+const submitForReview = async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id);
+
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        //Ownership check
+        if (course.educatorId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Not authorized to submit this course' });
+        }
+
+        if (!['draft', 'rejected'].includes(course.status)) {
+            return res.status(400).json({
+                message: `Course is already "${course.status}". Only draft or rejected courses can be submitted for review.`
+            });
+        }
+
+        const moduleCount = await Module.countDocuments({ courseId: course._id });
+        if (moduleCount === 0) {
+            return res.status(400).json({ message: 'You cannot submit an empty course. Add at least one module first.' });
+        }
+
+        course.status = 'pending';
+        course.adminFeedback = undefined;
+        await course.save();
+
+        res.json({ message: 'Course submitted for review successfully.', status: course.status });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const getAuthorizedCourseContent = async (req, res) => {
+    try {
+        const studentId = req.user._id;
+        const courseId = req.params.id;
+
+        const enrollment = await Enrollment.findOne({ studentId, courseId });
+
+        if (!enrollment) {
+            return res.status(403).json({ success: false, message: "Access denied. Not enrolled in this course." });
+        }
+
+        const course = await Course.findById(courseId)
+            .populate('educatorId', 'name profilePicture bio')
+            .populate({
+                path: 'modules',
+                options: { sort: { order: 1 } },
+                populate: [
+                    { path: 'lessons', options: { sort: { order: 1 } } },
+                    { path: 'quizzes', options: { sort: { order: 1 } } },
+                    { path: 'assignments', options: { sort: { order: 1 } } }
+                ]
+            })
+            .lean();
+
+        if (!course) {
+            return res.status(404).json({ success: false, message: 'Course not found' });
+        }
+
+        res.status(200).json({ success: true, data: { course, progress: enrollment } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+module.exports = {
+    createCourse,
+    getEducatorCourses,
+    getAllCourses,
+    getCourseById,
+    updateCourse,
+    deleteCourse,
+    submitForReview,
+    getAuthorizedCourseContent,
+};
