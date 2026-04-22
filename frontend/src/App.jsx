@@ -1,121 +1,107 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import Home from './pages/Home';
+import StudentRegister from './pages/auth/StudentRegister';
+import EducatorRegister from './pages/auth/EducatorRegister';
+import VerifyOtp from './pages/auth/VerifyOtp';
+import EducatorStatus from './pages/auth/EducatorStatus';
+import EducatorDashboard from './pages/educator/EducatorDashboard';
+import CreateCourse from './pages/educator/CreateCourse';
+import MyCourses from './pages/educator/MyCourses';
+import CurriculumBuilder from './pages/educator/CurriculumBuilder';
+import StudentManagement from './pages/educator/StudentManagement';
+import AssignmentReview from './pages/educator/AssignmentReview';
+import EducatorQueries from './pages/educator/EducatorQueries';
+import EducatorEarnings from './pages/educator/EducatorEarnings';
+import EducatorProfile from './pages/educator/EducatorProfile';
+import InviteAcceptPage from './pages/educator/InviteAcceptPage';
+import Login from './pages/auth/Login';
+import Header from './components/layout/Header';
+import StudentDashboard from './pages/student/StudentDashboard';
+import BrowseCourse from './pages/student/BrowseCourse';
+import MyCourse from './pages/student/MyCourse';
+import ContinueLearning from './pages/student/continueLearning';
+import CourseDetailsPage from './pages/student/CourseDetails';
+import UpdateProfile from './pages/student/UpdateProfile';
+import ActiveQuiz from './pages/student/ActiveQuiz';
+import QuizResultPage from './pages/student/QuizResultPage';
+import Assignments from './pages/student/Assignments';
+import Quizzes from './pages/student/Quizzes';
+import CertificatesPage from './pages/student/CertificatesPage';
+import StudentQueries from './pages/student/StudentQueries';
+
+
+
+
+import AdminDashboard from './pages/admin/AdminDashboard';
+import EducatorApprovals from './pages/admin/EducatorApprovals';
+import CourseApprovals from './pages/admin/CourseApprovals';
+import UserManagement from './pages/admin/UserManagement';
+import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
+
+import Layout from './components/layout/Layout';
+
+const AppContent = () => {
+  return (
+    <div className="bg-slate-50 font-sans">
+      <Routes>
+        {/* Routes WITH Header and Footer */}
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/browse" element={<BrowseCourse />} />
+          <Route path="/my-courses" element={<MyCourse />} />
+          <Route path="/course/:id" element={<CourseDetailsPage />} />
+          <Route path="/course/:id/learn" element={<ContinueLearning />} />
+          <Route path="/learn/:id" element={<ContinueLearning />} />
+          <Route path="/student-dashboard" element={<StudentDashboard />} />
+          <Route path="/update-profile" element={<UpdateProfile />} />
+          <Route path="/quiz/:id/attempt" element={<ActiveQuiz />} />
+          <Route path="/quiz-result" element={<QuizResultPage />} />
+          <Route path="/assignments" element={<Assignments />} />
+          <Route path="/quizzes" element={<Quizzes />} />
+          <Route path="/certificates" element={<CertificatesPage />} />
+          <Route path="/student/queries" element={<StudentQueries />} />
+        </Route>
+
+        {/* Routes WITHOUT Header and Footer (e.g., Auth pages) */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register-student" element={<StudentRegister />} />
+        <Route path="/apply-educator" element={<EducatorRegister />} />
+        <Route path="/verify-otp" element={<VerifyOtp />} />
+        <Route path="/educator-status" element={<EducatorStatus />} />
+        <Route path="/invite/:token" element={<InviteAcceptPage />} />
+
+        {/* Admin Infrastructure */}
+        <Route element={<AdminProtectedRoute />}>
+             <Route path="/admin-dashboard" element={<AdminDashboard />} />
+             <Route path="/admin/educators" element={<EducatorApprovals />} />
+             <Route path="/admin/courses" element={<CourseApprovals />} />
+             <Route path="/admin/users" element={<UserManagement />} />
+        </Route>
+
+        {/* Educator Routes */}
+        <Route path="/educator-dashboard" element={<EducatorDashboard />} />
+        <Route path="/educator/courses" element={<MyCourses />} />
+        <Route path="/educator/student-management" element={<StudentManagement />} />
+        <Route path="/educator/review/:submissionId" element={<AssignmentReview />} />
+        <Route path="/educator/queries" element={<EducatorQueries />} />
+        <Route path="/educator/earnings" element={<EducatorEarnings />} />
+        <Route path="/educator/profile" element={<EducatorProfile />} />
+        <Route path="/course/create" element={<CreateCourse />} />
+        <Route path="/course/:id/curriculum" element={<CurriculumBuilder />} />
+      </Routes>
+    </div>
+  );
+};
+
+import { Toaster } from 'react-hot-toast';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+    <BrowserRouter>
+      <Toaster position="top-center" reverseOrder={false} />
+      <AppContent />
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
