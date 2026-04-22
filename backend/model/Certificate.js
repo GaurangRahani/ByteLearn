@@ -39,7 +39,6 @@ const certificateSchema = new mongoose.Schema({
     }
 });
  
-// Compound unique index: One student per course certificate
 certificateSchema.index({ studentId: 1, courseId: 1 }, { unique: true });
  
 module.exports = mongoose.model('Certificate', certificateSchema);
