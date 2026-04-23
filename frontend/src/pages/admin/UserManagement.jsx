@@ -61,7 +61,7 @@ const UserManagement = () => {
   const activeCount = users.filter(u => !u.isBlocked).length;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans">
       <AdminHeader />
 
       <main className="max-w-[1440px] mx-auto px-10 py-10">
@@ -69,7 +69,7 @@ const UserManagement = () => {
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div>
-            <h1 className="text-[32px] font-black text-slate-800 tracking-tight mb-1">User Management</h1>
+            <h1 className="text-[32px] font-bold text-slate-800 tracking-tight mb-1">User Management</h1>
             <p className="text-slate-500 font-medium tracking-tight">Manage and control all user accounts on ByteLearn.</p>
           </div>
           {/* Role Filter Tabs */}
@@ -127,7 +127,7 @@ const UserManagement = () => {
         </div>
 
         {/* Users Table */}
-        <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden min-h-[400px] relative">
+        <div className="bg-white rounded-[24px] border border-slate-200 shadow-sm overflow-hidden min-h-[400px] max-h-[700px] overflow-y-auto custom-scrollbar relative">
           {loading && (
             <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center gap-3">
               <Loader2 size={28} className="animate-spin text-blue-600" />
@@ -135,7 +135,7 @@ const UserManagement = () => {
             </div>
           )}
           <table className="w-full text-left">
-            <thead className="bg-[#F8FAFC] border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+            <thead className="bg-[#F8FAFC] border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
               <tr>
                 <th className="px-8 py-5">User</th>
                 <th className="px-8 py-5">Role</th>
@@ -144,7 +144,7 @@ const UserManagement = () => {
                 <th className="px-8 py-5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100">
               {users.length === 0 && !loading ? (
                 <tr>
                   <td colSpan="5" className="p-20 text-center">
@@ -158,7 +158,7 @@ const UserManagement = () => {
                 </tr>
               ) : (
                 users.map((user) => (
-                  <tr key={user._id} className="group hover:bg-slate-50/50 transition-colors">
+                  <tr key={user._id} className="group hover:bg-blue-50 transition-colors">
                     {/* User Info */}
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">

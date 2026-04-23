@@ -16,9 +16,15 @@ import {
   Target,
   Zap,
   Download,
-  MoreHorizontal
+  MoreHorizontal,
+  Mail,
+  AlertTriangle,
+  TrendingUp,
+  Trophy,
+  RefreshCw
 } from 'lucide-react';
 import EducatorHeader from '../../components/layout/EducatorHeader';
+import Footer from '../../components/layout/Footer';
 
 const StudentManagement = () => {
   const [searchParams] = useSearchParams();
@@ -169,17 +175,16 @@ const StudentManagement = () => {
           </div>
 
           {/* Global Course Filter */}
-          <div className="flex items-center gap-4 bg-white p-2 pl-5 rounded-2xl shadow-sm border border-slate-100 min-w-[320px]">
-             <div className="flex items-center gap-2 text-blue-600">
-                <Filter size={18} className="opacity-70" />
-                <span className="text-[11px] font-black uppercase tracking-widest">Filter by</span>
+          <div className="flex items-center gap-3 bg-white px-4 py-1.5 rounded-xl shadow-sm border border-slate-200 min-w-[320px]">
+             <div className="flex items-center gap-2 text-blue-600 shrink-0">
+                <Filter size={16} className="opacity-70" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Filter</span>
              </div>
-             <div className="h-8 w-px bg-slate-100 mx-2" />
+             <div className="h-6 w-px bg-slate-100 mx-1" />
              <select 
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
-                className="flex-grow bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 cursor-pointer appearance-none pr-8"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right center', backgroundSize: '1.5em' }}
+                className="flex-grow bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 cursor-pointer h-9 py-0"
              >
                 <option value="">All Active Courses</option>
                 {courses.map(course => (
@@ -223,6 +228,7 @@ const StudentManagement = () => {
           loading={detailLoading}
         />
       </main>
+      <Footer />
     </div>
   );
 };
@@ -255,9 +261,9 @@ const GradingQueueView = ({ submissions }) => {
             <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Action</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-50">
+        <tbody className="divide-y divide-slate-200">
           {submissions.map((sub) => (
-            <tr key={sub._id} className="hover:bg-slate-50/50 transition-colors">
+            <tr key={sub._id} className="hover:bg-blue-50 transition-colors group cursor-default">
               <td className="px-6 py-5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">
@@ -361,33 +367,42 @@ const CourseRosterView = ({ roster, courses, selectedCourse, setSelectedCourse, 
     <div className="space-y-6">
       {/* Summary Analytics Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5">
-            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+         <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-[2rem] shadow-lg shadow-slate-200/50 flex items-center gap-5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500 text-white">
+               <Users size={80} />
+            </div>
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-md border border-white/10 text-white rounded-2xl flex items-center justify-center relative z-10">
                <Users size={24} />
             </div>
-            <div>
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Enrolled</p>
-               <h3 className="text-2xl font-black text-slate-800">{courseStudents.length} Students</h3>
+            <div className="relative z-10">
+               <p className="text-[10px] font-black text-white/80 uppercase tracking-widest mb-1">Total Enrolled</p>
+               <h3 className="text-3xl font-black text-white">{courseStudents.length} Students</h3>
             </div>
          </div>
          
-         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5">
-            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
+         <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 p-6 rounded-[2rem] shadow-lg shadow-slate-200/50 flex items-center gap-5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500 text-white">
+               <Target size={80} />
+            </div>
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-md border border-white/10 text-white rounded-2xl flex items-center justify-center relative z-10">
                <Target size={24} />
             </div>
-            <div>
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Class Avg Grade</p>
-               <h3 className="text-2xl font-black text-slate-800">{classAvg}% Score</h3>
+            <div className="relative z-10">
+               <p className="text-[10px] font-black text-white/80 uppercase tracking-widest mb-1">Class Avg Grade</p>
+               <h3 className="text-3xl font-black text-white">{classAvg}% Score</h3>
             </div>
          </div>
 
-         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5">
-            <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+         <div className="bg-gradient-to-br from-indigo-500 to-purple-700 p-6 rounded-[2rem] shadow-lg shadow-slate-200/50 flex items-center gap-5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500 text-white">
+               <Zap size={80} />
+            </div>
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-md border border-white/10 text-white rounded-2xl flex items-center justify-center relative z-10">
                <Zap size={24} />
             </div>
-            <div>
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Completion Rate</p>
-               <h3 className="text-2xl font-black text-slate-800">{completionRate}% Done</h3>
+            <div className="relative z-10">
+               <p className="text-[10px] font-black text-white/80 uppercase tracking-widest mb-1">Completion Rate</p>
+               <h3 className="text-3xl font-black text-white">{completionRate}% Done</h3>
             </div>
          </div>
       </div>
@@ -451,14 +466,14 @@ const CourseRosterView = ({ roster, courses, selectedCourse, setSelectedCourse, 
                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-200">
               {roster.map((enrollment) => {
                 const lastActive = new Date(enrollment.performance?.lastActive || enrollment.updatedAt);
                 const diffDays = Math.floor((new Date() - lastActive) / (1000 * 60 * 60 * 24));
                 const isInactive = diffDays >= 7;
 
                 return (
-                  <tr key={enrollment._id} className="hover:bg-slate-50/50 transition-colors group">
+                  <tr key={enrollment._id} className="hover:bg-blue-50 transition-colors group cursor-default">
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-4">
                         <div className="relative">
@@ -684,15 +699,8 @@ const StudentDetailDrawer = ({ isOpen, onClose, detail, loading }) => {
            )}
         </div>
 
-        {/* Action Bar */}
-        <div className="bg-white p-6 border-t border-slate-100 flex gap-3">
-           <button 
-             onClick={() => window.location.href = `/educator/queries?student=${detail?.enrollment?.studentId?._id}`}
-             className="flex-grow py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
-           >
-              Nudge Student (Direct Message) <ArrowRight size={18} />
-           </button>
-        </div>
+        {/* Smart Academic Nudge Action Bar */}
+        <SmartNudgeBar detail={detail} />
       </div>
     </div>
   );
@@ -808,6 +816,168 @@ const ActivityTimeline = ({ timeline }) => {
             <Clock size={32} className="text-slate-200 mx-auto mb-3" />
             <p className="text-sm text-slate-400 font-bold">No activity recorded yet</p>
          </div>
+      )}
+    </div>
+  );
+};
+
+/* --- Smart Academic Nudge Bar --- */
+const SmartNudgeBar = ({ detail }) => {
+  const [sending, setSending] = React.useState(false);
+  const [sent, setSent] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  const grade = detail?.enrollment?.performance?.liveGrade;
+  const lastActive = detail?.enrollment?.performance?.lastActive || detail?.enrollment?.updatedAt;
+  const rawDiffDays = lastActive ? Math.floor((new Date() - new Date(lastActive)) / (1000 * 60 * 60 * 24)) : null;
+  const diffDays = rawDiffDays !== null ? rawDiffDays : 0;
+  const diffDaysLabel = rawDiffDays === null ? 'Unknown' : diffDays === 0 ? 'Today' : `${diffDays} days ago`;
+  const studentName = detail?.enrollment?.studentId?.name || 'Student';
+  const studentEmail = detail?.enrollment?.studentId?.email || '';
+  const courseName = detail?.enrollment?.courseId?.title || 'your course';
+
+  // Determine student status
+  const isInactive = rawDiffDays === null || diffDays >= 7;
+  const isTopPerformer = !isInactive && grade !== null && grade !== undefined && grade >= 75;
+  const isNeedsAttention = !isInactive && grade !== null && grade !== undefined && grade >= 60 && grade < 75;
+
+  let nudgeConfig = {};
+
+    if (isInactive) {
+    nudgeConfig = {
+      type: 'inactive',
+      status: 'Inactive',
+      label: 'Request Participation',
+      sublabel: `Last active: ${diffDaysLabel}`,
+      icon: <RefreshCw size={16} />,
+      color: 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100',
+      badgeBg: 'bg-indigo-50',
+      badgeText: 'text-indigo-700',
+      badgeDot: 'bg-indigo-400',
+    };
+  } else if (isTopPerformer) {
+    nudgeConfig = {
+      type: 'top_performer',
+      status: 'Excellent Performance',
+      label: 'Acknowledge Excellence',
+      sublabel: `${grade}% — Outstanding Achievement`,
+      icon: <Trophy size={16} />,
+      color: 'bg-blue-600 hover:bg-blue-700 shadow-blue-100',
+      badgeBg: 'bg-blue-50',
+      badgeText: 'text-blue-700',
+      badgeDot: 'bg-blue-500',
+    };
+  } else if (isNeedsAttention) {
+    nudgeConfig = {
+      type: 'needs_attention',
+      status: 'Academic Check-in',
+      label: 'Send Progress Update',
+      sublabel: `${grade}% — Performance is Stable`,
+      icon: <TrendingUp size={16} />,
+      color: 'bg-amber-500 hover:bg-amber-600 shadow-amber-100',
+      badgeBg: 'bg-amber-50',
+      badgeText: 'text-amber-700',
+      badgeDot: 'bg-amber-400',
+    };
+  } else {
+    nudgeConfig = {
+      type: 'at_risk',
+      status: 'Academic Risk',
+      label: 'Send Progress Warning',
+      sublabel: grade !== null && grade !== undefined ? `${grade}% — Urgent Review Required` : 'Initial Evaluation Pending',
+      icon: <AlertTriangle size={16} />,
+      color: 'bg-rose-600 hover:bg-rose-700 shadow-rose-100',
+      badgeBg: 'bg-rose-50',
+      badgeText: 'text-rose-700',
+      badgeDot: 'bg-rose-500',
+    };
+  }
+
+  const handleSendNudge = async () => {
+    if (!studentEmail) return;
+    setSending(true);
+    setError('');
+    setSent(false);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        'http://localhost:5000/api/communication/send-progress-email',
+        {
+          studentEmail,
+          studentName,
+          type: nudgeConfig.type,
+          grade,
+          courseName,
+          daysInactive: diffDays,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSent(true);
+      setTimeout(() => setSent(false), 4000);
+    } catch (err) {
+      setError('Failed to send email. Please try again.');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="bg-white border-t border-slate-100 p-6 space-y-3">
+      {/* Status Banner */}
+      <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl ${nudgeConfig.badgeBg}`}>
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${nudgeConfig.badgeDot}`} />
+          <span className={`text-[10px] font-black uppercase tracking-widest ${nudgeConfig.badgeText}`}>
+            Student Status
+          </span>
+        </div>
+        <span className={`text-[11px] font-black ${nudgeConfig.badgeText}`}>
+          {nudgeConfig.status} — {nudgeConfig.sublabel}
+        </span>
+      </div>
+
+      {/* Feedback messages */}
+      {sent && (
+        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold px-4 py-3 rounded-xl">
+          <Mail size={14} /> Email sent to {studentEmail} successfully!
+        </div>
+      )}
+      {error && (
+        <div className="flex items-center gap-2 bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold px-4 py-3 rounded-xl">
+          <AlertTriangle size={14} /> {error}
+        </div>
+      )}
+
+      {/* Action Button */}
+      <button
+        onClick={handleSendNudge}
+        disabled={!studentEmail || sending || sent}
+        className={`w-full py-4 text-white rounded-2xl font-black text-sm shadow-xl transition-all flex items-center justify-center gap-2.5 disabled:opacity-60 disabled:cursor-not-allowed ${nudgeConfig.color}`}
+      >
+        {sending ? (
+          <>
+            <RefreshCw size={16} className="animate-spin" />
+            Sending Email...
+          </>
+        ) : sent ? (
+          <>
+            <Mail size={16} />
+            Email Sent!
+          </>
+        ) : (
+          <>
+            {nudgeConfig.icon}
+            {nudgeConfig.label}
+            <Mail size={16} className="ml-1 opacity-70" />
+          </>
+        )}
+      </button>
+
+      {!studentEmail && (
+        <p className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+          No email address on file for this student
+        </p>
       )}
     </div>
   );

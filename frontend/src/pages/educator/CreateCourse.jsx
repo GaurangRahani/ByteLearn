@@ -14,6 +14,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import EducatorHeader from '../../components/layout/EducatorHeader';
+import Footer from '../../components/layout/Footer';
 
 const CreateCourse = () => {
   const navigate = useNavigate();
@@ -333,6 +334,7 @@ const CreateCourse = () => {
 
         </form>
       </main>
+      <Footer />
     </div>
   );
 };

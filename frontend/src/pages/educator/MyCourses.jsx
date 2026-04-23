@@ -18,6 +18,7 @@ import {
   Mail
 } from 'lucide-react';
 import EducatorHeader from '../../components/layout/EducatorHeader';
+import Footer from '../../components/layout/Footer';
 import toast from 'react-hot-toast';
 
 const MyCourses = () => {
@@ -227,7 +228,7 @@ const MyCourses = () => {
               return (
                 <div 
                   key={courseId} 
-                  className="group bg-white p-4 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all flex flex-col md:flex-row items-center gap-6"
+                  className="group bg-white p-4 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 hover:bg-blue-50 transition-all flex flex-col md:flex-row items-center gap-6 cursor-default"
                 >
                   <div className="w-full md:w-48 h-32 rounded-2xl overflow-hidden bg-slate-100 flex-shrink-0 relative">
                      <img 
@@ -352,6 +353,7 @@ const MyCourses = () => {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 };

@@ -18,6 +18,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import EducatorHeader from '../../components/layout/EducatorHeader';
+import Footer from '../../components/layout/Footer';
 
 const EducatorProfile = () => {
   const navigate = useNavigate();
@@ -408,6 +409,7 @@ const EducatorProfile = () => {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };

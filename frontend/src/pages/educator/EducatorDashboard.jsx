@@ -9,6 +9,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import EducatorHeader from '../../components/layout/EducatorHeader';
+import Footer from '../../components/layout/Footer';
 
 const EducatorDashboard = () => {
   const navigate = useNavigate();
@@ -54,10 +55,10 @@ const EducatorDashboard = () => {
   }, [navigate]);
 
   const stats = [
-    { title: 'CREATED COURSES', value: statsData.totalCourses, icon: <BookOpen size={20} />, color: 'bg-blue-500', textColor: 'text-blue-500' },
-    { title: 'TOTAL STUDENTS', value: statsData.totalStudents, icon: <Users size={20} />, color: 'bg-emerald-500', textColor: 'text-emerald-500' },
-    { title: 'PENDING APPROVALS', value: statsData.pendingApprovals, icon: <Clock size={20} />, color: 'bg-amber-500', textColor: 'text-amber-500' },
-    { title: 'APPROVED COURSES', value: statsData.approvedCourses, icon: <CheckCircle2 size={20} />, color: 'bg-emerald-500', textColor: 'text-emerald-500' },
+    { title: 'CREATED COURSES', value: statsData.totalCourses, icon: <BookOpen size={24} />, bg: 'bg-gradient-to-br from-blue-600 to-blue-800' },
+    { title: 'TOTAL STUDENTS', value: statsData.totalStudents, icon: <Users size={24} />, bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700' },
+    { title: 'PENDING APPROVALS', value: statsData.pendingApprovals, icon: <Clock size={24} />, bg: 'bg-gradient-to-br from-indigo-500 to-purple-700' },
+    { title: 'APPROVED COURSES', value: statsData.approvedCourses, icon: <CheckCircle2 size={24} />, bg: 'bg-gradient-to-br from-amber-500 to-orange-600' },
   ];
 
   return (
@@ -76,15 +77,18 @@ const EducatorDashboard = () => {
         {/* 4 Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           {stats.map((stat, index) => (
-            <div key={index} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-shadow">
-              <div className="flex items-start mb-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm ${stat.color}`}>
+            <div key={index} className={`${stat.bg} p-6 rounded-[24px] shadow-lg shadow-slate-200/50 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-white overflow-hidden relative group`}>
+              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
+                {stat.icon}
+              </div>
+              <div className="flex items-start mb-4 relative z-10">
+                <div className="w-12 h-12 rounded-[16px] flex items-center justify-center bg-white/20 backdrop-blur-md shadow-sm border border-white/10 text-white">
                   {stat.icon}
                 </div>
               </div>
-              <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{stat.title}</p>
-                <h3 className="text-3xl font-black text-slate-800 tracking-tight">{stat.value}</h3>
+              <div className="relative z-10">
+                <p className="text-[11px] font-black text-white/80 uppercase tracking-widest mb-1">{stat.title}</p>
+                <h3 className="text-4xl font-black text-white tracking-tight drop-shadow-sm">{stat.value}</h3>
               </div>
             </div>
           ))}
@@ -99,12 +103,12 @@ const EducatorDashboard = () => {
             </Link>
           </div>
           
-          <div className="divide-y divide-slate-50 p-2">
+          <div className="divide-y divide-slate-200 p-2 max-h-[460px] overflow-y-auto custom-scrollbar">
             {coursesList.length === 0 ? (
               <div className="p-8 text-center text-slate-500 text-sm">No courses created yet. Click "Create Course" to get started!</div>
             ) : (
              coursesList.map((course) => (
-              <div key={course.id} className="p-4 hover:bg-slate-50 rounded-xl transition-colors flex items-center justify-between group">
+              <div key={course.id} className="p-4 hover:bg-blue-50 rounded-xl transition-colors flex items-center justify-between group cursor-default">
                 <div>
                    <div className="flex items-center gap-3 mb-1.5">
                      <h3 className="text-[15px] font-bold text-slate-800">{course.title}</h3>
@@ -137,7 +141,7 @@ const EducatorDashboard = () => {
         </div>
 
       </main>
-
+      <Footer />
     </div>
   );
 };

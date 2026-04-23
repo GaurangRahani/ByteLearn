@@ -168,7 +168,7 @@ const EducatorQueries = () => {
                 <button
                   key={q._id}
                   onClick={() => handleQuerySelect(q)}
-                  className={`w-full text-left p-6 border-b border-slate-50 transition-all hover:bg-slate-50/80 relative group ${activeQuery?._id === q._id ? 'bg-blue-50/30' : ''}`}
+                  className={`w-full text-left p-6 border-b border-slate-200 transition-all hover:bg-blue-50 relative group ${activeQuery?._id === q._id ? 'bg-blue-50/30' : ''}`}
                 >
                   {activeQuery?._id === q._id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600" />}
                   <div className="flex items-center justify-between mb-2">

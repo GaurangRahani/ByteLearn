@@ -8,6 +8,7 @@ import {
   AlertCircle, Layers, PlusCircle, Eye
 } from 'lucide-react';
 import EducatorHeader from '../../components/layout/EducatorHeader';
+import Footer from '../../components/layout/Footer';
 import GradingConfiguration from './GradingConfiguration';
 import CollaborationManager from './CollaborationManager';
 import { User as UserIconAlt } from 'lucide-react';
@@ -1004,6 +1005,7 @@ const CurriculumBuilder = () => {
           </>
         )}
       </main>
+      <Footer />
     </div>
   );
 };

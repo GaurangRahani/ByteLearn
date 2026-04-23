@@ -79,7 +79,7 @@ const CourseApprovals = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans">
       <AdminHeader />
 
       <main className="max-w-[1440px] mx-auto px-10 py-10">
@@ -112,7 +112,7 @@ const CourseApprovals = () => {
             <p className="text-sm text-slate-400 font-medium">All submissions have been processed.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-4 max-h-[750px] overflow-y-auto pr-2 custom-scrollbar">
             {courses.map((course) => (
               <div
                 key={course._id}
@@ -201,64 +201,85 @@ const CourseApprovals = () => {
               </div>
 
               {/* Modal Body */}
-              <div className="flex-grow overflow-y-auto p-10 space-y-8 bg-slate-50/20">
+              <div className="flex-grow overflow-y-auto p-10 space-y-10 bg-white">
 
-                {/* Meta Badges */}
-                <div className="flex flex-wrap gap-3">
-                  <InfoBadge icon={<Tag size={12} />} label="Category" value={selectedCourse.category} color="bg-blue-50 text-blue-600 border-blue-100" />
-                  <InfoBadge icon={<BarChart2 size={12} />} label="Level" value={selectedCourse.level} color={levelColor[selectedCourse.level] || 'bg-slate-50 text-slate-600 border-slate-100'} />
-                  <InfoBadge icon={<Globe size={12} />} label="Language" value={selectedCourse.language} color="bg-slate-50 text-slate-600 border-slate-100" />
-                  <InfoBadge
-                    icon={<IndianRupee size={12} />}
-                    label="Price"
-                    value={selectedCourse.isPaid ? `₹${selectedCourse.price}` : 'Free'}
-                    color={selectedCourse.isPaid ? 'bg-violet-50 text-violet-600 border-violet-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}
-                  />
-                  <InfoBadge icon={<User size={12} />} label="Educator" value={selectedCourse.educatorId?.name} color="bg-slate-50 text-slate-700 border-slate-100" />
+                {/* Course Overview Section */}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <div className="h-px flex-grow bg-slate-100" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-4 whitespace-nowrap">Course Overview</span>
+                    <div className="h-px flex-grow bg-slate-100" />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-5 bg-slate-50/50 rounded-2xl border border-slate-100/50">
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Tag size={12} className="text-blue-500" /> Category</p>
+                       <p className="text-sm font-bold text-slate-700">{selectedCourse.category}</p>
+                    </div>
+                    <div className="p-5 bg-slate-50/50 rounded-2xl border border-slate-100/50">
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><BarChart2 size={12} className="text-amber-500" /> Difficulty</p>
+                       <p className="text-sm font-bold text-slate-700">{selectedCourse.level}</p>
+                    </div>
+                    <div className="p-5 bg-slate-50/50 rounded-2xl border border-slate-100/50">
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Globe size={12} className="text-indigo-500" /> Language</p>
+                       <p className="text-sm font-bold text-slate-700">{selectedCourse.language || 'English'}</p>
+                    </div>
+                    <div className="p-5 bg-slate-50/50 rounded-2xl border border-slate-100/50">
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><IndianRupee size={12} className="text-emerald-500" /> Pricing</p>
+                       <p className="text-sm font-bold text-slate-700">{selectedCourse.isPaid ? `₹${selectedCourse.price}` : 'Free Course'}</p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Description */}
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <FileText size={14} className="text-blue-500" /> Course Description
-                  </label>
-                  <p className="text-sm text-slate-700 font-medium leading-relaxed bg-white p-6 rounded-2xl border border-slate-100 shadow-sm min-h-[80px]">
-                    {selectedCourse.description || <span className="text-slate-300 italic">No description provided.</span>}
-                  </p>
+                <div className="space-y-4">
+                   <div className="flex items-center gap-2 text-slate-400">
+                    <div className="h-px flex-grow bg-slate-100" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-4 whitespace-nowrap">Content Description</span>
+                    <div className="h-px flex-grow bg-slate-100" />
+                  </div>
+                  <div className="p-8 bg-slate-50/30 rounded-3xl border border-slate-100 shadow-sm">
+                    <p className="text-[15px] text-slate-600 font-medium leading-relaxed">
+                      {selectedCourse.description || <span className="text-slate-300 italic">No detailed description provided for this course.</span>}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Feedback */}
-                <div className="bg-amber-50/60 p-6 rounded-2xl border border-amber-100/80">
-                  <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <AlertCircle size={14} className="text-amber-500" /> Admin Feedback
-                    <span className="text-[9px] font-bold text-amber-400 normal-case tracking-normal">(required only for rejection)</span>
-                  </label>
-                  <textarea
-                    rows="4"
-                    value={feedback}
-                    onChange={(e) => setFeedback(e.target.value)}
-                    className="w-full bg-white border border-amber-100 rounded-xl p-5 focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-400 transition-all text-slate-700 font-medium placeholder:text-slate-300 text-sm resize-none"
-                    placeholder="Detail the changes required for the educator to revise their course..."
-                  />
+                {/* Review Feedback */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <div className="h-px flex-grow bg-slate-100" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-4 whitespace-nowrap">Review Feedback</span>
+                    <div className="h-px flex-grow bg-slate-100" />
+                  </div>
+                  <div className="relative group">
+                    <textarea
+                      rows="4"
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-3xl p-6 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-400 focus:bg-white transition-all text-slate-700 font-medium placeholder:text-slate-300 text-[15px] resize-none"
+                      placeholder="Enter internal notes or feedback for the educator (Required only if rejecting)..."
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Modal Actions */}
-              <div className="p-8 border-t border-slate-100 bg-white grid grid-cols-2 gap-6 sticky bottom-0 z-10 shadow-xl">
+              <div className="p-8 border-t border-slate-100 bg-white grid grid-cols-2 gap-6 sticky bottom-0 z-10">
                 <button
                   onClick={() => handleReview(selectedCourse._id, 'rejected')}
                   disabled={isProcessing}
-                  className="flex items-center justify-center gap-3 px-8 py-4 bg-white border-2 border-slate-100 text-slate-400 font-black uppercase tracking-widest rounded-2xl hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all active:scale-95 disabled:opacity-50"
+                  className="flex items-center justify-center gap-3 px-8 py-4 bg-white border border-slate-200 text-slate-500 font-bold uppercase tracking-widest text-xs rounded-2xl hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all active:scale-95 disabled:opacity-50"
                 >
-                  <XCircle size={18} /> Reject
+                  <XCircle size={18} /> Send Correction
                 </button>
                 <button
                   onClick={() => handleReview(selectedCourse._id, 'approved')}
                   disabled={isProcessing}
-                  className="flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-95 disabled:opacity-50"
+                  className="flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 text-white font-bold uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-95 disabled:opacity-50"
                 >
                   {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                  Publish
+                  Publish Course
                 </button>
               </div>
 

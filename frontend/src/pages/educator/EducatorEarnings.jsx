@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { IndianRupee, Wallet, TrendingUp, Calendar, ArrowUpRight } from 'lucide-react';
 import EducatorHeader from '../../components/layout/EducatorHeader';
+import Footer from '../../components/layout/Footer';
 import {
   LineChart,
   Line,
@@ -135,16 +136,19 @@ const EducatorEarnings = () => {
           {/* Card 1: Available Balance */}
           <motion.div 
             whileHover={{ y: -5 }}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col transition-all duration-300 hover:shadow-md"
+            className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-[24px] shadow-lg shadow-slate-200/50 p-6 flex flex-col transition-all duration-300 relative overflow-hidden group"
           >
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-[14px] font-semibold text-slate-500">Available Balance</p>
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500 text-white">
+               <Wallet size={80} />
+            </div>
+            <div className="flex items-center justify-between mb-4 relative z-10">
+              <p className="text-[11px] font-black text-white/80 uppercase tracking-widest">Available Balance</p>
+              <div className="w-12 h-12 rounded-[16px] flex items-center justify-center bg-white/20 backdrop-blur-md shadow-sm border border-white/10 text-white">
                 <Wallet size={20} />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-slate-900 flex items-center">
-              <IndianRupee size={28} className="mr-1" />
+            <h3 className="text-4xl font-black text-white tracking-tight drop-shadow-sm flex items-center relative z-10">
+              <IndianRupee size={32} className="mr-1" />
               {stats.walletBalance.toLocaleString('en-IN')}
             </h3>
           </motion.div>
@@ -152,16 +156,19 @@ const EducatorEarnings = () => {
           {/* Card 2: Total Earned */}
           <motion.div 
             whileHover={{ y: -5 }}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col transition-all duration-300 hover:shadow-md"
+            className="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-[24px] shadow-lg shadow-slate-200/50 p-6 flex flex-col transition-all duration-300 relative overflow-hidden group"
           >
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-[14px] font-semibold text-slate-500">Total Earned</p>
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500 text-white">
+               <TrendingUp size={80} />
+            </div>
+            <div className="flex items-center justify-between mb-4 relative z-10">
+              <p className="text-[11px] font-black text-white/80 uppercase tracking-widest">Total Earned</p>
+              <div className="w-12 h-12 rounded-[16px] flex items-center justify-center bg-white/20 backdrop-blur-md shadow-sm border border-white/10 text-white">
                 <TrendingUp size={20} />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-slate-900 flex items-center">
-              <IndianRupee size={28} className="mr-1" />
+            <h3 className="text-4xl font-black text-white tracking-tight drop-shadow-sm flex items-center relative z-10">
+              <IndianRupee size={32} className="mr-1" />
               {stats.totalEarnings.toLocaleString('en-IN')}
             </h3>
           </motion.div>
@@ -169,16 +176,18 @@ const EducatorEarnings = () => {
           {/* Card 3: Total Sales */}
           <motion.div 
             whileHover={{ y: -5 }}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col transition-all duration-300 hover:shadow-md"
+            className="bg-gradient-to-br from-indigo-500 to-purple-700 rounded-[24px] shadow-lg shadow-slate-200/50 p-6 flex flex-col transition-all duration-300 relative overflow-hidden group"
           >
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-[14px] font-semibold text-slate-500">Total Sales</p>
-              <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-                <br />
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500 text-white">
+               <Calendar size={80} />
+            </div>
+            <div className="flex items-center justify-between mb-4 relative z-10">
+              <p className="text-[11px] font-black text-white/80 uppercase tracking-widest">Total Sales</p>
+              <div className="w-12 h-12 rounded-[16px] flex items-center justify-center bg-white/20 backdrop-blur-md shadow-sm border border-white/10 text-white">
                 <Calendar size={20} />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-slate-900">
+            <h3 className="text-4xl font-black text-white tracking-tight drop-shadow-sm relative z-10">
               {stats.totalSales}
             </h3>
           </motion.div>
@@ -230,31 +239,40 @@ const EducatorEarnings = () => {
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis 
                     dataKey="date" 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{ fill: '#64748b', fontSize: 12 }} 
-                    dy={10}
+                    tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }} 
+                    dy={15}
                   />
                   <YAxis 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{ fill: '#64748b', fontSize: 12 }}
+                    tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
                     tickFormatter={(value) => `₹${value}`}
+                    dx={-10}
                   />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    formatter={(value) => [`₹${value}`, 'Earnings']}
+                    contentStyle={{ 
+                      borderRadius: '16px', 
+                      border: '1px solid #e2e8f0', 
+                      boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+                      backgroundColor: '#ffffff',
+                      padding: '12px 16px',
+                    }}
+                    itemStyle={{ color: '#0f172a', fontWeight: 800, fontSize: '16px' }}
+                    labelStyle={{ color: '#64748b', fontWeight: 600, fontSize: '12px', marginBottom: '4px' }}
+                    formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, 'Revenue']}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="amount" 
-                    stroke="#10b981" 
-                    strokeWidth={3}
-                    dot={{ r: 4, strokeWidth: 2, fill: '#fff', stroke: '#10b981' }}
-                    activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }}
+                    stroke="#2563eb" 
+                    strokeWidth={4}
+                    dot={false}
+                    activeDot={{ r: 8, strokeWidth: 3, fill: '#ffffff', stroke: '#2563eb' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -271,7 +289,7 @@ const EducatorEarnings = () => {
           <div className="p-8 border-b border-slate-100 flex items-center justify-between">
             <h2 className="text-[19px] font-bold text-slate-900">Recent Transactions</h2>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[480px] overflow-y-auto custom-scrollbar">
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-50/50 text-xs text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
                 <tr>
@@ -282,10 +300,10 @@ const EducatorEarnings = () => {
                   <th scope="col" className="px-8 py-4 text-right">Amount</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-200">
                 {transactions && transactions.length > 0 ? (
                   transactions.map((tx) => (
-                    <tr key={tx._id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={tx._id} className="hover:bg-blue-50 transition-colors cursor-default">
                       <td className="px-8 py-5 whitespace-nowrap text-slate-600 font-medium">
                         {new Date(tx.createdAt).toLocaleDateString(undefined, { 
                           year: 'numeric', month: 'short', day: 'numeric',
@@ -331,6 +349,7 @@ const EducatorEarnings = () => {
         </div>
 
       </motion.main>
+      <Footer />
     </div>
   );
 };
