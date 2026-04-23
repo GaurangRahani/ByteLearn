@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 
 import CourseReviews from '../../components/CourseReviews';
-import { CheckCircle2, ArrowRight } from 'lucide-react';
+import { CheckCircle2, ArrowRight, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const CourseDetails = () => {
   const { id } = useParams();
@@ -23,6 +24,7 @@ const CourseDetails = () => {
   const [error, setError] = useState(null);
   const [enrolling, setEnrolling] = useState(false);
   const [activeTab, setActiveTab] = useState('syllabus'); // 'syllabus', 'reviews'
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -128,8 +130,8 @@ const CourseDetails = () => {
               });
 
               if (verifyResponse.data.success) {
-                alert("Payment successful! You are now enrolled.");
-                navigate('/my-courses');
+                setEnrolling(false);
+                setShowSuccessModal(true);
               }
             } catch (err) {
               console.error("Verification failed:", err);
@@ -152,8 +154,7 @@ const CourseDetails = () => {
         await axios.post('/api/enrollments/enroll', { courseId: id }, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        alert("Enrolled successfully!");
-        navigate('/my-courses');
+        setShowSuccessModal(true);
       }
     } catch (err) {
       console.error('Enrollment error:', err);
@@ -194,6 +195,7 @@ const CourseDetails = () => {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans mb-16">
 
       <main className="flex-grow max-w-[1240px] w-full mx-auto px-6 py-8">
@@ -460,7 +462,57 @@ const CourseDetails = () => {
 
       </main>
     </div>
-  );
+    
+    <AnimatePresence>
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowSuccessModal(false)}
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]"
+          />
+          
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className="relative bg-white rounded-[24px] shadow-2xl p-8 max-w-[400px] w-full text-center overflow-hidden"
+          >
+            {/* Top decorative element */}
+            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-500 to-indigo-600" />
+            
+            <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
+              <CheckCircle2 className="text-emerald-500" size={32} />
+            </div>
+            
+            <h3 className="text-[22px] font-bold text-slate-900 mb-2 tracking-tight">Enrollment Successful!</h3>
+            <p className="text-slate-500 text-[15px] leading-relaxed mb-8 px-2">
+              Welcome aboard! You can now access all course materials and start your learning journey.
+            </p>
+            
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => navigate('/my-courses')}
+                className="w-full bg-[#2563EB] hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
+              >
+                Go to My Courses <ArrowRight size={18} />
+              </button>
+              
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full bg-white text-slate-500 hover:text-slate-800 font-semibold py-2 rounded-xl transition-all text-sm"
+              >
+                Dismiss
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  </>
+);
 };
 
 export default CourseDetails;
