@@ -195,8 +195,11 @@ const getEnrollmentDetail = async (req, res) => {
             return res.status(403).json({ success: false, message: "Unauthorized access to this enrollment" });
         }
 
-        const studentId = enrollment.studentId._id;
-        const courseId = enrollment.courseId._id;
+        const studentId = enrollment.studentId?._id;
+        if (!studentId) {
+            return res.status(404).json({ success: false, message: "Student account not found" });
+        }
+        const courseId = enrollment.courseId?._id;
 
         // Fetch Quiz Attempts
         const quizAttempts = await QuizAttempt.find({ studentId, courseId })
@@ -234,10 +237,44 @@ const getEnrollmentDetail = async (req, res) => {
             }))
         ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
+        // Calculate live grade for detail view
+        const config = enrollment.courseId?.gradingConfiguration || { quizWeight: 50, assignmentWeight: 50 };
+        const completedQuizzes = quizAttempts.filter(q => q.status === 'completed');
+        const gradedSubs = submissions.filter(s => s.status === 'graded');
+
+        let quizAvg = 0;
+        if (completedQuizzes.length > 0) {
+            const totalPct = completedQuizzes.reduce((acc, a) => acc + (a.score / (a.totalMarksPossible || 1)) * 100, 0);
+            quizAvg = totalPct / completedQuizzes.length;
+        }
+
+        let assignmentAvg = 0;
+        if (gradedSubs.length > 0) {
+            const totalPct = gradedSubs.reduce((acc, s) => {
+                const pct = (s.marksObtained / (s.assignmentId?.totalMarks || 100)) * 100;
+                return acc + pct;
+            }, 0);
+            assignmentAvg = totalPct / gradedSubs.length;
+        }
+
+        let liveGrade = null;
+        if (completedQuizzes.length > 0 && gradedSubs.length > 0) {
+            liveGrade = (quizAvg * (config.quizWeight / 100)) + (assignmentAvg * (config.assignmentWeight / 100));
+        } else if (completedQuizzes.length > 0) {
+            liveGrade = quizAvg;
+        } else if (gradedSubs.length > 0) {
+            liveGrade = assignmentAvg;
+        }
+
+        const performance = {
+            liveGrade: liveGrade !== null ? Math.round(liveGrade) : null,
+            lastActive: enrollment.studentId?.lastLogin || enrollment.updatedAt,
+        };
+
         res.status(200).json({
             success: true,
             data: {
-                enrollment,
+                enrollment: { ...enrollment, performance },
                 quizAttempts,
                 submissions,
                 timeline
