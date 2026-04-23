@@ -26,7 +26,7 @@ const Login = () => {
     console.log("Session Role Index:", role);
 
     if (isVerified === false) {
-      navigate('/verify-otp', { state: { email } });
+      navigate('/verify-otp', { state: { email, otpToken: userData.otpToken } });
       return;
     }
 
@@ -62,7 +62,12 @@ const Login = () => {
       console.error("Login catch block error:", err.response || err);
       
       if (err.response?.status === 403 && errorMessage.toLowerCase().includes('not verified')) {
-        navigate('/verify-otp', { state: { email } });
+        navigate('/verify-otp', { 
+          state: { 
+            email, 
+            otpToken: err.response.data.otpToken 
+          } 
+        });
       } else {
         setError(errorMessage || 'Login failed. Please check your credentials.');
       }

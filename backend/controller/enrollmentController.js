@@ -37,6 +37,9 @@ const enrollInCourse = async (req, res) => {
             progressPercentage: 0
         });
 
+        // Increment enrolled students count on Course
+        await Course.findByIdAndUpdate(courseId, { $inc: { enrolledStudents: 1 } });
+
         res.status(201).json({ success: true, message: "Enrolled successfully", data: enrollment });
 
     } catch (error) {

@@ -10,7 +10,8 @@ const CourseCard = ({ id, title, instructor, duration, progress, rating, totalRa
     <motion.div 
       whileHover={{ scale: 1.01, x: 5 }}
       transition={{ duration: 0.2 }}
-      className="bg-slate-50/50 rounded-[22px] border border-slate-100 p-6 flex flex-col md:flex-row md:items-center gap-6 group hover:border-blue-200 hover:bg-white hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-300"
+      onClick={() => navigate(`/learn/${id}`)}
+      className="bg-slate-50/50 rounded-[22px] border border-slate-100 p-6 flex flex-col md:flex-row md:items-center gap-6 group hover:border-blue-200 hover:bg-white hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-300 cursor-pointer"
     >
       <div className="flex-grow">
         <h3 className="font-bold text-slate-800 text-[18px] mb-2 group-hover:text-blue-600 transition-colors">{title}</h3>
@@ -54,7 +55,10 @@ const CourseCard = ({ id, title, instructor, duration, progress, rating, totalRa
       
       <div className="flex-shrink-0 flex justify-end mt-4 md:mt-0">
         <button 
-          onClick={() => navigate(`/learn/${id}`)}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/learn/${id}`);
+          }}
           className="bg-white hover:bg-blue-600 text-blue-600 hover:text-white border-2 border-blue-500/20 hover:border-blue-600 font-bold py-3 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 text-[14px] shadow-sm hover:shadow-blue-200"
         >
           Resume <ArrowRight size={16} />

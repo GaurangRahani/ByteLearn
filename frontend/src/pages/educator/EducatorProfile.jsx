@@ -139,9 +139,14 @@ const EducatorProfile = () => {
       localStorage.setItem('user', JSON.stringify(user));
 
       toast.success("Profile updated successfully!");
-      if (res.data.message && res.data.message.includes("Email updated")) {
+      if (res.data.otpToken) {
          toast.success("Please verify your new email.");
-         navigate('/verify-otp');
+         navigate('/verify-otp', { 
+           state: { 
+             email: formData.email, 
+             otpToken: res.data.otpToken 
+           } 
+         });
       }
     } catch (err) {
       console.error("Error updating profile:", err);

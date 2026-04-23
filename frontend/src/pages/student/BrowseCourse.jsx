@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Filter, AlertCircle } from 'lucide-react';
+import { Search, Filter, AlertCircle, Tag } from 'lucide-react';
 
 import BrowseCourseCard from '../../components/common/BrowseCourseCard';
 
@@ -10,6 +10,7 @@ const BrowseCourse = () => {
   const [availableCategories, setAvailableCategories] = useState(['All Categories']);
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPriceType, setSelectedPriceType] = useState('All');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -80,7 +81,14 @@ const BrowseCourse = () => {
         filtered = filtered.filter(course => course.category === selectedCategory);
     }
 
-    // 2. Apply Search Query Filter (Case-Insensitive)
+    // 2. Apply Price Type Filter
+    if (selectedPriceType === 'Free') {
+        filtered = filtered.filter(course => !course.isPaid || course.price === 0 || course.price === '0');
+    } else if (selectedPriceType === 'Paid') {
+        filtered = filtered.filter(course => course.isPaid && course.price > 0);
+    }
+
+    // 3. Apply Search Query Filter (Case-Insensitive)
     if (searchQuery) {
         const query = searchQuery.toLowerCase();
         filtered = filtered.filter(course => 
@@ -90,7 +98,7 @@ const BrowseCourse = () => {
     }
 
     setDisplayedCourses(filtered);
-  }, [rawCourses, selectedCategory, searchQuery]);
+  }, [rawCourses, selectedCategory, searchQuery, selectedPriceType]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans mb-12">
@@ -103,8 +111,8 @@ const BrowseCourse = () => {
         </div>
 
         {/* Search & Filter Bar */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          {}
+        <div className="flex flex-col xl:flex-row gap-4 mb-8">
+          {/* Search Input */}
           <div className="relative flex-grow shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Search size={18} className="text-slate-400" />
@@ -118,27 +126,50 @@ const BrowseCourse = () => {
             />
           </div>
 
-          {}
-          <div className="relative min-w-[220px] flex-shrink-0 flex shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
-             <div className="flex items-center absolute inset-y-0 left-4 pointer-events-none">
-                <Filter size={18} className="text-slate-500" />
-             </div>
-             <select
-               value={selectedCategory}
-               onChange={(e) => setSelectedCategory(e.target.value)}
-               className="w-full h-12 pl-[42px] pr-10 bg-white border border-slate-200/80 rounded-xl text-[14px] font-medium text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] transition-all cursor-pointer"
-             >
-                {availableCategories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-             </select>
-             <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M1 1L5 5L9 1" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-             </div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Category Filter */}
+            <div className="relative min-w-[200px] shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+              <div className="flex items-center absolute inset-y-0 left-4 pointer-events-none">
+                  <Filter size={18} className="text-slate-500" />
+              </div>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full h-12 pl-[42px] pr-10 bg-white border border-slate-200/80 rounded-xl text-[14px] font-medium text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] transition-all cursor-pointer"
+              >
+                  {availableCategories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+              </select>
+              <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 1L5 5L9 1" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+              </div>
+            </div>
+
+            {/* Price Filter */}
+            <div className="relative min-w-[160px] shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+              <div className="flex items-center absolute inset-y-0 left-4 pointer-events-none">
+                  <Tag size={18} className="text-slate-500" />
+              </div>
+              <select
+                value={selectedPriceType}
+                onChange={(e) => setSelectedPriceType(e.target.value)}
+                className="w-full h-12 pl-[42px] pr-10 bg-white border border-slate-200/80 rounded-xl text-[14px] font-medium text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] transition-all cursor-pointer"
+              >
+                <option value="All">All Types</option>
+                <option value="Free">Free Only</option>
+                <option value="Paid">Paid Only</option>
+              </select>
+              <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 1L5 5L9 1" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -32,6 +32,7 @@ const courseSchema = new mongoose.Schema({
   totalLessons: Number,
   rating: { type: Number, default: 0 },
   totalRatings: { type: Number, default: 0 },
+  enrolledStudents: { type: Number, default: 0 },
   gradingConfiguration: {
     quizWeight: { type: Number, default: 50 },
     assignmentWeight: { type: Number, default: 50 },

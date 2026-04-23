@@ -25,8 +25,8 @@ const HeroSection = () => {
                 Next-Gen Learning Platform
               </span>
               
-              <h1 className="text-[48px] sm:text-[64px] lg:text-[76px] font-black text-slate-900 leading-[1.05] tracking-tighter mb-8 italic">
-                Master New <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Future Skills</span>
+              <h1 className="text-[48px] sm:text-[64px] lg:text-[76px] font-black text-slate-900 leading-[1.05] tracking-tighter mb-8">
+                Master New <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] animate-gradient-x">Future Skills</span>
               </h1>
               
               <p className="text-lg md:text-xl text-slate-500 font-medium leading-relaxed mb-8 max-w-2xl mx-auto lg:mx-0">

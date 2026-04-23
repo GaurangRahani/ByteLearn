@@ -3,6 +3,7 @@ const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
 const { uploadOnCloudinary } = require('../utils/cloudinary');
 const { OAuth2Client } = require('google-auth-library');
+const { generateOtpToken, verifyOtpToken } = require('../utils/otpToken');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -48,14 +49,14 @@ const registerStudent = async (req, res) => {
             email, 
             password, 
             role: 'student', 
-            otp, 
-            otpExpires,
             gender,
             dateOfBirth,
             educationLevel,
             phone,
             profilePicture: profilePictureUrl
         });
+
+        const otpToken = generateOtpToken(email, otp);
 
         try {
             await sendEmail({
@@ -69,7 +70,10 @@ const registerStudent = async (req, res) => {
             return res.status(500).json({ message: 'Failed to send OTP email. Please try again.' });
         }
 
-        res.status(201).json({ message: 'Registration successful. Please verify OTP sent to email.' });
+        res.status(201).json({ 
+            message: 'Registration successful. Please verify OTP sent to email.',
+            otpToken 
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -117,7 +121,7 @@ const registerEducator = async (req, res) => {
         }
 
         const user = await User.create({
-            name, email, password, role: 'educator', otp, otpExpires,
+            name, email, password, role: 'educator',
             ...(gender && { gender }),
             ...(dateOfBirth && { dateOfBirth }),
             ...(phone && { phone }),
@@ -131,6 +135,8 @@ const registerEducator = async (req, res) => {
             }
         });
 
+        const otpToken = generateOtpToken(email, otp);
+
         try {
             await sendEmail({
                 email: user.email,
@@ -143,7 +149,10 @@ const registerEducator = async (req, res) => {
             return res.status(500).json({ message: 'Failed to send OTP email. Please try again.' });
         }
 
-        res.status(201).json({ message: 'Registration successful. Please verify OTP sent to email.' });
+        res.status(201).json({ 
+            message: 'Registration successful. Please verify OTP sent to email.',
+            otpToken
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -162,9 +171,7 @@ const loginUser = async (req, res) => {
             if (!user.isVerified) {
                 // Automatically generate and send a new OTP
                 const otp = generateOTP();
-                user.otp = otp;
-                user.otpExpires = Date.now() + 10 * 60 * 1000;
-                await user.save();
+                const otpToken = generateOtpToken(user.email, otp);
 
                 try {
                     await sendEmail({
@@ -176,7 +183,10 @@ const loginUser = async (req, res) => {
                     console.error('Failed to send OTP email on login attempt:', err.message);
                 }
 
-                return res.status(403).json({ message: 'Account not verified. A new OTP has been sent to your email.' });
+                return res.status(403).json({ 
+                    message: 'Account not verified. A new OTP has been sent to your email.',
+                    otpToken 
+                });
             }
             if (user.isBlocked) {
                 return res.status(403).json({ message: 'Your account has been blocked. To request an unblock appeal, contact support@bytelearn.com' });
@@ -247,8 +257,8 @@ const updateUserProfile = async (req, res) => {
             user.isVerified = false;
 
             const otp = generateOTP();
-            user.otp = otp;
-            user.otpExpires = Date.now() + 10 * 60 * 1000;
+            const otpToken = generateOtpToken(user.email, otp);
+            req.otpToken = otpToken; // Attach to req so it can be sent in response
 
             try {
                 await sendEmail({
@@ -302,7 +312,10 @@ const updateUserProfile = async (req, res) => {
             gender: updatedUser.gender,
             dateOfBirth: updatedUser.dateOfBirth,
             profilePicture: updatedUser.profilePicture,
-            ...(updatedUser.isVerified === false && { message: 'Email updated. Please verify your new email with the OTP sent.' })
+            ...(updatedUser.isVerified === false && { 
+                message: 'Email updated. Please verify your new email with the OTP sent.',
+                otpToken: req.otpToken
+            })
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -343,7 +356,7 @@ const getAllEducators = async (req, res) => {
 
         const total = await User.countDocuments(filter);
         const educators = await User.find(filter)
-            .select('-password -otp -otpExpires')
+            .select('-password')
             .skip(skip)
             .limit(limit);
 
@@ -407,21 +420,20 @@ const updateEducatorStatus = async (req, res) => {
 
 const verifyOtp = async (req, res) => {
     try {
-        const { email, otp } = req.body;
-        if (!email || !otp) {
-            return res.status(400).json({ message: 'Please provide email and OTP' });
+        const { email, otp, otpToken } = req.body;
+        if (!email || !otp || !otpToken) {
+            return res.status(400).json({ message: 'Please provide email, OTP and token' });
+        }
+
+        const isValid = verifyOtpToken(otpToken, email, otp);
+        if (!isValid) {
+            return res.status(400).json({ message: 'Invalid or expired OTP' });
         }
 
         const user = await User.findOne({ email });
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        if (user.otp !== otp || user.otpExpires < Date.now()) {
-            return res.status(400).json({ message: 'Invalid or expired OTP' });
-        }
-
         user.isVerified = true;
-        user.otp = undefined;
-        user.otpExpires = undefined;
         user.lastLogin = Date.now();
         await user.save();
 
@@ -448,16 +460,8 @@ const resendOtp = async (req, res) => {
         if (!user) return res.status(404).json({ message: 'User not found' });
         if (user.isVerified) return res.status(400).json({ message: 'User already verified' });
 
-        //only allow resend after 60 seconds
-        const cooldown = 60 * 1000; // 60 seconds
-        if (user.otpExpires && (user.otpExpires - Date.now()) > (10 * 60 * 1000 - cooldown)) {
-            return res.status(429).json({ message: 'Please wait 60 seconds before requesting a new OTP.' });
-        }
-
         const otp = generateOTP();
-        user.otp = otp;
-        user.otpExpires = Date.now() + 10 * 60 * 1000;
-        await user.save();
+        const otpToken = generateOtpToken(email, otp);
 
         try {
             await sendEmail({
@@ -469,7 +473,7 @@ const resendOtp = async (req, res) => {
             console.error('Email send failed:', err.message);
         }
 
-        res.json({ message: 'New OTP sent to email' });
+        res.json({ message: 'New OTP sent to email', otpToken });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

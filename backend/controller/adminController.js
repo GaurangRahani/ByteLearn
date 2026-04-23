@@ -66,7 +66,7 @@ const getAllEducators = async (req, res) => {
 
         const total = await User.countDocuments(filter);
         const educators = await User.find(filter)
-            .select('-password -otp -otpExpires')
+            .select('-password')
             .skip(skip)
             .limit(limit);
 
@@ -221,7 +221,7 @@ const getAllUsers = async (req, res) => {
         }
 
         const users = await User.find(filter)
-            .select('-password -otp -otpExpires')
+            .select('-password')
             .sort({ createdAt: -1 });
 
         res.status(200).json({ success: true, users });

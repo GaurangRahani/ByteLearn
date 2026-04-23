@@ -132,6 +132,9 @@ const verifyPayment = asyncHandler(async (req, res) => {
                     status: 'active',
                     enrolledAt: Date.now()
                 }], { session });
+
+                // Increment enrolled students count on Course
+                await Course.findByIdAndUpdate(payment.courseId, { $inc: { enrolledStudents: 1 } }).session(session);
             } else {
                 enrollment.status = 'active';
                 await enrollment.save({ session });

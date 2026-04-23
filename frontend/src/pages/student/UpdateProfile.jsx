@@ -83,7 +83,12 @@ const UpdateProfile = () => {
       
       toast.success(res.data.message || 'Profile updated successfully!');
       if (res.data.isVerified === false) {
-          navigate('/verify-otp', { state: { email: formData.email } });
+          navigate('/verify-otp', { 
+            state: { 
+              email: formData.email,
+              otpToken: res.data.otpToken
+            } 
+          });
       } else {
           setTimeout(() => navigate(-1), 1000);
       }

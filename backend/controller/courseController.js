@@ -170,7 +170,7 @@ const getAllCourses = async (req, res) => {
         }
 
         const courses = await Course.find(query)
-            .select("title thumbnail price isPaid level rating totalRatings description educatorId category coInstructors")
+            .select("title thumbnail price isPaid level rating totalRatings description educatorId category coInstructors enrolledStudents")
             .populate("educatorId", "name")
             .populate("coInstructors.userId", "name")
             .sort({ createdAt: -1 });
@@ -235,8 +235,11 @@ const getCourseById = async (req, res) => {
             });
         }
 
-        const enrolledStudents = await Enrollment.countDocuments({ courseId: course._id });
-        course.enrolledStudents = enrolledStudents;
+        // Use denormalized count if available, otherwise fallback to live count
+        if (course.enrolledStudents === undefined) {
+            const liveCount = await Enrollment.countDocuments({ courseId: course._id });
+            course.enrolledStudents = liveCount;
+        }
 
         res.status(200).json({ success: true, data: course });
     } catch (error) {

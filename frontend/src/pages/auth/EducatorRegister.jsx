@@ -95,7 +95,12 @@ const EducatorRegister = () => {
         }
       });
 
-      navigate('/verify-otp', { state: { email: formData.email } });
+      navigate('/verify-otp', { 
+        state: { 
+          email: formData.email,
+          otpToken: res.data.otpToken
+        } 
+      });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {

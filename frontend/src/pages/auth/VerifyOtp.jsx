@@ -7,8 +7,10 @@ const VerifyOtp = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || '';
+  const initialOtpToken = location.state?.otpToken || '';
 
   const [otp, setOtp] = useState('');
+  const [otpToken, setOtpToken] = useState(initialOtpToken);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -19,7 +21,10 @@ const VerifyOtp = () => {
     if (!email) {
       setError("No email found to verify. Please register or login first.");
     }
-  }, [email]);
+    if (!otpToken && email) {
+        setError("Verification token missing. Please try resending the OTP.");
+    }
+  }, [email, otpToken]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,7 +38,7 @@ const VerifyOtp = () => {
     setSuccess(null);
 
     try {
-      const res = await axios.post('/api/auth/verify-otp', { email, otp });
+      const res = await axios.post('/api/auth/verify-otp', { email, otp, otpToken });
       setSuccess("Account successfully verified! Redirecting to login...");
 
 
@@ -52,6 +57,7 @@ const VerifyOtp = () => {
     setSuccess(null);
     try {
       const res = await axios.post('/api/auth/resend-otp', { email });
+      setOtpToken(res.data.otpToken);
       setSuccess(res.data.message || "A new OTP has been sent to your email!");
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to resend OTP.');

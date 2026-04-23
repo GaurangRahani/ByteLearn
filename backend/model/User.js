@@ -31,9 +31,6 @@ const userSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
 
-    otp: { type: String },
-    otpExpires: { type: Date },
-
     educatorApplication: {
       qualifications: { type: String },
       experience: { type: String },
