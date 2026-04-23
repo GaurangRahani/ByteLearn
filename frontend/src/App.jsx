@@ -36,6 +36,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import EducatorApprovals from './pages/admin/EducatorApprovals';
 import CourseApprovals from './pages/admin/CourseApprovals';
 import UserManagement from './pages/admin/UserManagement';
+import AdminEarnings from './pages/admin/AdminEarnings';
 import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
 
 import Layout from './components/layout/Layout';
@@ -76,6 +77,7 @@ const AppContent = () => {
              <Route path="/admin/educators" element={<EducatorApprovals />} />
              <Route path="/admin/courses" element={<CourseApprovals />} />
              <Route path="/admin/users" element={<UserManagement />} />
+             <Route path="/admin/earnings" element={<AdminEarnings />} />
         </Route>
 
         {/* Educator Routes */}

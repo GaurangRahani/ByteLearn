@@ -5,6 +5,8 @@ const Certificate = require('../model/Certificate');
 const User = require('../model/User');
 const Enrollment = require('../model/Enrollment');
 const { generateCertificatePdf } = require('../utils/certificateGenerator');
+const sendEmail = require('../utils/sendEmail');
+const { getCourseCompletionTemplate } = require('../utils/emailTemplates');
 
 /**
  * Evaluates course completion and generates certificate if eligible
@@ -13,19 +15,25 @@ const { generateCertificatePdf } = require('../utils/certificateGenerator');
  */
 const evaluateCourseCompletion = async (studentId, courseId) => {
     try {
-        console.log(`[EvaluationEngine] Starting evaluation for student: ${studentId}, course: ${courseId}`);
+        console.log(`[EvaluationEngine] >>> STARTING evaluation for student: ${studentId}, course: ${courseId}`);
         
         // 1. Identity Context Isolation & Gate 1: Progress Check
         const enrollment = await Enrollment.findOne({ studentId, courseId });
-        if (!enrollment || enrollment.progressPercentage !== 100) {
-            console.log(`[EvaluationEngine] Aborting: Student has not reached 100% progress. Progress: ${enrollment?.progressPercentage || 0}%`);
+        if (!enrollment) {
+            console.log(`[EvaluationEngine] FAILED: No enrollment found for student ${studentId} in course ${courseId}`);
+            return false;
+        }
+        
+        console.log(`[EvaluationEngine] Progress check: ${enrollment.progressPercentage}%`);
+        if (enrollment.progressPercentage !== 100) {
+            console.log(`[EvaluationEngine] ABORTED: Progress is not 100%. Current progress: ${enrollment.progressPercentage}%`);
             return false;
         }
 
-        // 2. Gate 0: Immediate Duplicate Check (Prevents Race Conditions)
+        // 2. Gate 0: Immediate Duplicate Check
         const existingCert = await Certificate.findOne({ studentId, courseId });
         if (existingCert) {
-            console.log(`[EvaluationEngine] Certificate already exists for this student and course.`);
+            console.log(`[EvaluationEngine] ALREADY COMPLETED: Certificate ${existingCert.certificateId} exists.`);
             return existingCert;
         }
 
@@ -36,26 +44,34 @@ const evaluateCourseCompletion = async (studentId, courseId) => {
             status: 'submitted' 
         });
 
-        // If there are ungraded assignments, gracefully abort generation.
         if (pendingSubmissions > 0) {
-            console.log(`[EvaluationEngine] Aborting: ${pendingSubmissions} ungraded assignments found.`);
+            console.log(`[EvaluationEngine] ABORTED: ${pendingSubmissions} ungraded assignments still pending.`);
             return { success: false, message: "Pending educator review." };
         }
 
         // 1. Fetch Course and Configuration
-        const course = await Course.findById(courseId).populate('educatorId', 'name');
+        const course = await Course.findById(courseId).populate('educatorId', 'name email');
         if (!course) {
-            console.error(`[EvaluationEngine] Course ${courseId} not found`);
+            console.log(`[EvaluationEngine] ERROR: Course ${courseId} not found in database.`);
             return false;
         }
 
-        const config = course.gradingConfiguration;
-        if (!config || !config.isCertificationEnabled) {
-            console.log(`[EvaluationEngine] Certification not enabled for course: ${courseId}`);
+        // Use default configuration if missing or disabled (to ensure it works "properly" for all courses)
+        const config = {
+            quizWeight: course.gradingConfiguration?.quizWeight ?? 50,
+            assignmentWeight: course.gradingConfiguration?.assignmentWeight ?? 50,
+            minGradeToPass: course.gradingConfiguration?.minGradeToPass ?? 70,
+            isCertificationEnabled: course.gradingConfiguration?.isCertificationEnabled ?? true,
+            gradingScale: course.gradingConfiguration?.gradingScale || []
+        };
+
+        if (!config.isCertificationEnabled) {
+            console.log(`[EvaluationEngine] ABORTED: Certification is explicitly DISABLED for course: ${course.title}`);
             return false;
         }
 
         // 2. Fetch QuizAttempts and Submissions
+        console.log(`[EvaluationEngine] Fetching quiz attempts and submissions...`);
         const [quizAttempts, submissions] = await Promise.all([
             QuizAttempt.find({ studentId, courseId, status: 'completed' }),
             Submission.find({ studentId, courseId, status: 'graded' }).populate('assignmentId', 'totalMarks')
@@ -85,32 +101,33 @@ const evaluateCourseCompletion = async (studentId, courseId) => {
         const finalScore = (quizPercentage * (config.quizWeight / 100)) + (assignmentPercentage * (config.assignmentWeight / 100));
         const finalPercentage = Math.round(finalScore * 100) / 100;
 
-        console.log(`[EvaluationEngine] Final Score: ${finalPercentage}% (Quizzes: ${quizPercentage}%, Assignments: ${assignmentPercentage}%)`);
+        console.log(`[EvaluationEngine] CALCULATION: Quiz%=${quizPercentage.toFixed(2)}, Assignment%=${assignmentPercentage.toFixed(2)}, Final%=${finalPercentage}%`);
 
         // 6. Eligibility Check
         if (finalPercentage < config.minGradeToPass) {
-            console.log(`[EvaluationEngine] Student failed to reach minimum grade (${config.minGradeToPass}%). Score: ${finalPercentage}%`);
+            console.log(`[EvaluationEngine] FAILED: Final percentage ${finalPercentage}% is below passing grade ${config.minGradeToPass}%`);
             return false;
         }
 
         // 7. Mapping Grade Label
         let gradeLabel = "Passed";
         if (config.gradingScale && config.gradingScale.length > 0) {
-            // Grading scale is usually sorted descending
             const sortedScale = [...config.gradingScale].sort((a, b) => b.minScore - a.minScore);
             const match = sortedScale.find(grade => finalPercentage >= grade.minScore);
-            if (match) {
-                gradeLabel = match.label;
-            }
+            if (match) gradeLabel = match.label;
         }
+        console.log(`[EvaluationEngine] GRADE ASSIGNED: ${gradeLabel}`);
 
-
-        // 9. Fetch Student details for certificate
+        // 9. Fetch Student details
         const student = await User.findById(studentId);
-        if (!student) return false;
+        if (!student) {
+            console.log(`[EvaluationEngine] ERROR: Student User object not found for ${studentId}`);
+            return false;
+        }
 
         // 10. Generate Certificate PDF
         const certId = `CERT-${Date.now()}-${studentId.toString().slice(-6)}`.toUpperCase();
+        console.log(`[EvaluationEngine] GENERATING PDF for ${certId}...`);
         
         const pdfUrl = await generateCertificatePdf({
             studentName: student.name,
@@ -122,27 +139,53 @@ const evaluateCourseCompletion = async (studentId, courseId) => {
         });
 
         if (!pdfUrl) {
-            console.error(`[EvaluationEngine] Failed to generate PDF URL`);
+            console.log(`[EvaluationEngine] ERROR: pdfUrl returned NULL from generateCertificatePdf.`);
             return false;
         }
+        console.log(`[EvaluationEngine] PDF UPLOADED: ${pdfUrl}`);
 
         // 11. Save Certificate
         const certificate = await Certificate.create({
             studentId,
             courseId,
-            educatorId: course.educatorId._id,
+            educatorId: course.educatorId?._id || course.educatorId,
             certificateId: certId,
             finalPercentage,
             gradeLabel,
             pdfUrl,
             issuedAt: Date.now()
         });
+        console.log(`[EvaluationEngine] DATABASE: Certificate record created.`);
 
-        console.log(`[EvaluationEngine] Certificate generated successfully: ${certId}`);
+        // 12. Send Completion Email
+        if (student.email) {
+            try {
+                console.log(`[EvaluationEngine] EMAIL: Dispatching to ${student.email}...`);
+                await sendEmail({
+                    email: student.email,
+                    subject: `🎉 Congratulations! You've completed ${course.title}`,
+                    message: `Congratulations ${student.name}! You have completed ${course.title} with a grade of ${gradeLabel} (${finalPercentage}%).`,
+                    html: getCourseCompletionTemplate(
+                        student.name,
+                        course.title,
+                        gradeLabel,
+                        finalPercentage
+                    )
+                });
+                console.log(`[EvaluationEngine] EMAIL: Successfully sent.`);
+            } catch (emailError) {
+                console.log(`[EvaluationEngine] EMAIL ERROR (Non-fatal): ${emailError.message}`);
+            }
+        } else {
+            console.log(`[EvaluationEngine] EMAIL SKIPPED: No email found for student.`);
+        }
+
+        console.log(`[EvaluationEngine] >>> SUCCESS for ${certId}`);
         return certificate;
 
     } catch (error) {
-        console.error(`[EvaluationEngine] Error:`, error);
+        console.log(`[EvaluationEngine] CRITICAL FAILURE: ${error.message}`);
+        console.error(error);
         return false;
     }
 };

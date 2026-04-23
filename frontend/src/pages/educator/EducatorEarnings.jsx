@@ -113,8 +113,14 @@ const EducatorEarnings = () => {
     chartData: []
   };
 
+  const colorMap = {
+    blue: { bg: 'bg-blue-50/50', text: 'text-blue-600' },
+    emerald: { bg: 'bg-emerald-50/50', text: 'text-emerald-600' },
+    indigo: { bg: 'bg-indigo-50/50', text: 'text-indigo-600' }
+  };
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans mb-16">
+    <div className="min-h-screen bg-[#FDFCFB] flex flex-col font-sans mb-16">
       <EducatorHeader educatorName={educatorName} activePage="/educator/earnings" />
       <motion.main 
         className="flex-grow w-full max-w-[1400px] mx-auto px-6 py-10"
@@ -131,24 +137,26 @@ const EducatorEarnings = () => {
           </p>
         </div>
 
-        {/* KPI Cards */}
+        {/* KPI Cards - Redesigned with Median Blue UI */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
           {/* Card 1: Available Balance */}
           <motion.div 
             whileHover={{ y: -5 }}
-            className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-[24px] shadow-lg shadow-slate-200/50 p-6 flex flex-col transition-all duration-300 relative overflow-hidden group"
+            className="bg-[#EFF6FF] rounded-[32px] border border-[#DBEAFE] shadow-sm p-8 flex flex-col transition-all duration-300 relative overflow-hidden group"
           >
-            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500 text-white">
-               <Wallet size={80} />
+            <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-700 text-slate-900">
+               <Wallet size={140} />
             </div>
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <p className="text-[11px] font-black text-white/80 uppercase tracking-widest">Available Balance</p>
-              <div className="w-12 h-12 rounded-[16px] flex items-center justify-center bg-white/20 backdrop-blur-md shadow-sm border border-white/10 text-white">
-                <Wallet size={20} />
+            <div className="flex items-center gap-4 mb-8 relative z-10">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${colorMap.blue.bg} ${colorMap.blue.text} shadow-inner`}>
+                <Wallet size={24} />
+              </div>
+              <div>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Available Balance</p>
               </div>
             </div>
-            <h3 className="text-4xl font-black text-white tracking-tight drop-shadow-sm flex items-center relative z-10">
-              <IndianRupee size={32} className="mr-1" />
+            <h3 className="text-4xl font-black text-slate-900 tracking-tight flex items-baseline relative z-10">
+              <span className="text-2xl font-bold text-slate-400 mr-1.5">₹</span>
               {stats.walletBalance.toLocaleString('en-IN')}
             </h3>
           </motion.div>
@@ -156,19 +164,21 @@ const EducatorEarnings = () => {
           {/* Card 2: Total Earned */}
           <motion.div 
             whileHover={{ y: -5 }}
-            className="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-[24px] shadow-lg shadow-slate-200/50 p-6 flex flex-col transition-all duration-300 relative overflow-hidden group"
+            className="bg-[#EFF6FF] rounded-[32px] border border-[#DBEAFE] shadow-sm p-8 flex flex-col transition-all duration-300 relative overflow-hidden group"
           >
-            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500 text-white">
-               <TrendingUp size={80} />
+            <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-700 text-slate-900">
+               <TrendingUp size={140} />
             </div>
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <p className="text-[11px] font-black text-white/80 uppercase tracking-widest">Total Earned</p>
-              <div className="w-12 h-12 rounded-[16px] flex items-center justify-center bg-white/20 backdrop-blur-md shadow-sm border border-white/10 text-white">
-                <TrendingUp size={20} />
+            <div className="flex items-center gap-4 mb-8 relative z-10">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${colorMap.emerald.bg} ${colorMap.emerald.text} shadow-inner`}>
+                <TrendingUp size={24} />
+              </div>
+              <div>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Total Earned</p>
               </div>
             </div>
-            <h3 className="text-4xl font-black text-white tracking-tight drop-shadow-sm flex items-center relative z-10">
-              <IndianRupee size={32} className="mr-1" />
+            <h3 className="text-4xl font-black text-slate-900 tracking-tight flex items-baseline relative z-10">
+              <span className="text-2xl font-bold text-slate-400 mr-1.5">₹</span>
               {stats.totalEarnings.toLocaleString('en-IN')}
             </h3>
           </motion.div>
@@ -176,19 +186,22 @@ const EducatorEarnings = () => {
           {/* Card 3: Total Sales */}
           <motion.div 
             whileHover={{ y: -5 }}
-            className="bg-gradient-to-br from-indigo-500 to-purple-700 rounded-[24px] shadow-lg shadow-slate-200/50 p-6 flex flex-col transition-all duration-300 relative overflow-hidden group"
+            className="bg-[#EFF6FF] rounded-[32px] border border-[#DBEAFE] shadow-sm p-8 flex flex-col transition-all duration-300 relative overflow-hidden group"
           >
-            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500 text-white">
-               <Calendar size={80} />
+            <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-700 text-slate-900">
+               <Calendar size={140} />
             </div>
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <p className="text-[11px] font-black text-white/80 uppercase tracking-widest">Total Sales</p>
-              <div className="w-12 h-12 rounded-[16px] flex items-center justify-center bg-white/20 backdrop-blur-md shadow-sm border border-white/10 text-white">
-                <Calendar size={20} />
+            <div className="flex items-center gap-4 mb-8 relative z-10">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${colorMap.indigo.bg} ${colorMap.indigo.text} shadow-inner`}>
+                <Calendar size={24} />
+              </div>
+              <div>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Total Sales</p>
               </div>
             </div>
-            <h3 className="text-4xl font-black text-white tracking-tight drop-shadow-sm relative z-10">
+            <h3 className="text-4xl font-black text-slate-900 tracking-tight flex items-baseline relative z-10">
               {stats.totalSales}
+              <span className="text-sm font-bold text-slate-400 ml-2 uppercase tracking-widest">Units</span>
             </h3>
           </motion.div>
         </div>

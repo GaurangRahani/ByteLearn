@@ -55,40 +55,52 @@ const EducatorDashboard = () => {
   }, [navigate]);
 
   const stats = [
-    { title: 'CREATED COURSES', value: statsData.totalCourses, icon: <BookOpen size={24} />, bg: 'bg-gradient-to-br from-blue-600 to-blue-800' },
-    { title: 'TOTAL STUDENTS', value: statsData.totalStudents, icon: <Users size={24} />, bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700' },
-    { title: 'PENDING APPROVALS', value: statsData.pendingApprovals, icon: <Clock size={24} />, bg: 'bg-gradient-to-br from-indigo-500 to-purple-700' },
-    { title: 'APPROVED COURSES', value: statsData.approvedCourses, icon: <CheckCircle2 size={24} />, bg: 'bg-gradient-to-br from-amber-500 to-orange-600' },
+    { title: 'CREATED COURSES', value: statsData.totalCourses, icon: <BookOpen size={24} />, color: 'blue' },
+    { title: 'TOTAL STUDENTS', value: statsData.totalStudents, icon: <Users size={24} />, color: 'emerald' },
+    { title: 'PENDING APPROVALS', value: statsData.pendingApprovals, icon: <Clock size={24} />, color: 'indigo' },
+    { title: 'APPROVED COURSES', value: statsData.approvedCourses, icon: <CheckCircle2 size={24} />, color: 'amber' },
   ];
 
+  const colorMap = {
+    blue: { bg: 'bg-blue-50/50', text: 'text-blue-600' },
+    emerald: { bg: 'bg-emerald-50/50', text: 'text-emerald-600' },
+    indigo: { bg: 'bg-indigo-50/50', text: 'text-indigo-600' },
+    amber: { bg: 'bg-amber-50/50', text: 'text-amber-600' }
+  };
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#FDFCFB]">
       <EducatorHeader educatorName={educatorName} activePage="/educator-dashboard" />
       
       {/* Main Content Area */}
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         {/* Welcome Section */}
-        <div className="mb-8">
+        <div className="mb-10">
           <h1 className="text-[32px] font-bold text-slate-800 tracking-tight mb-1">Welcome back, {educatorName.split(' ')[0]}!</h1>
-          <p className="text-slate-500">Manage your courses and engage with students</p>
+          <p className="text-slate-500 font-medium">Manage your courses and engage with students from your command center.</p>
         </div>
 
-        {/* 4 Stat Cards */}
+        {/* 4 Stat Cards - Redesigned with Median Blue UI */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           {stats.map((stat, index) => (
-            <div key={index} className={`${stat.bg} p-6 rounded-[24px] shadow-lg shadow-slate-200/50 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-white overflow-hidden relative group`}>
-              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
-                {stat.icon}
+            <div key={index} className="bg-[#EFF6FF] p-6 rounded-[32px] border border-[#DBEAFE] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between relative group overflow-hidden">
+              {/* Background Decorative Icon */}
+              <div className="absolute -right-2 -bottom-2 opacity-[0.03] group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-700 text-slate-900">
+                {React.cloneElement(stat.icon, { size: 100 })}
               </div>
-              <div className="flex items-start mb-4 relative z-10">
-                <div className="w-12 h-12 rounded-[16px] flex items-center justify-center bg-white/20 backdrop-blur-md shadow-sm border border-white/10 text-white">
+              
+              <div className="flex items-center gap-4 mb-4 relative z-10">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${colorMap[stat.color].bg} ${colorMap[stat.color].text} shadow-inner`}>
                   {stat.icon}
                 </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">{stat.title}</p>
+                </div>
               </div>
+
               <div className="relative z-10">
-                <p className="text-[11px] font-black text-white/80 uppercase tracking-widest mb-1">{stat.title}</p>
-                <h3 className="text-4xl font-black text-white tracking-tight drop-shadow-sm">{stat.value}</h3>
+                <h3 className="text-4xl font-black text-slate-900 tracking-tight">{stat.value}</h3>
               </div>
             </div>
           ))}

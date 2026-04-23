@@ -10,9 +10,13 @@ const {
     getAllUsers,
     toggleUserStatus
 } = require('../controller/adminController');
+const { getAdminEarnings } = require('../controller/earningsController');
 
 // Admin Stats
 router.get('/stats', protect, admin, getAdminStats);
+
+// Financials
+router.get('/earnings', protect, admin, getAdminEarnings);
 
 // Course Review
 router.get('/courses/pending', protect, admin, getAllPendingCourses);

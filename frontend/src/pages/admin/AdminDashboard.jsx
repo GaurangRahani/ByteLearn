@@ -61,27 +61,33 @@ const AdminDashboard = () => {
       title: 'Active Students', 
       value: data.totalStudents, 
       icon: <Users size={24} />, 
-      bg: 'bg-gradient-to-br from-blue-600 to-blue-800',
+      color: 'blue',
       label: 'ENROLLED USERS'
     },
     { 
       title: 'Verified Educators', 
       value: data.totalEducators, 
       icon: <ShieldCheck size={24} />, 
-      bg: 'bg-gradient-to-br from-indigo-500 to-purple-700',
+      color: 'indigo',
       label: 'TEACHING STAFF'
     },
     { 
       title: 'Published Courses', 
       value: data.totalCourses, 
       icon: <BookOpen size={24} />, 
-      bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700',
+      color: 'emerald',
       label: 'CONTENT LIBRARY'
     },
   ];
 
+  const colorMap = {
+    blue: { bg: 'bg-blue-50/50', text: 'text-blue-600' },
+    indigo: { bg: 'bg-indigo-50/50', text: 'text-indigo-600' },
+    emerald: { bg: 'bg-emerald-50/50', text: 'text-emerald-600' }
+  };
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans">
+    <div className="min-h-screen bg-[#FDFCFB] font-sans">
       <AdminHeader />
       
       <main className="max-w-[1440px] mx-auto px-10 py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -92,28 +98,33 @@ const AdminDashboard = () => {
             <h1 className="text-[36px] font-bold text-slate-900 tracking-tight mb-2">Admin Command Center</h1>
             <p className="text-slate-500 font-medium tracking-tight text-[16px]">Monitor platform growth and manage institutional approvals.</p>
           </div>
-          <div className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-sm">
              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-widest">Platform Status: Healthy</span>
           </div>
         </div>
 
-        {/* 3 Premium Stats Cards */}
+        {/* 3 Premium Stats Cards - Redesigned with Median Blue UI */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-12">
           {kpis.map((kpi, index) => (
-             <div key={index} className={`${kpi.bg} p-8 rounded-[32px] shadow-xl shadow-slate-200/50 flex flex-col justify-between hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 text-white overflow-hidden relative group`}>
-                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
-                   {React.cloneElement(kpi.icon, { size: 80 })}
+             <div key={index} className="bg-[#EFF6FF] p-8 rounded-[32px] border border-[#DBEAFE] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between relative group overflow-hidden">
+                {/* Background Decorative Icon */}
+                <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-700 text-slate-900">
+                   {React.cloneElement(kpi.icon, { size: 140 })}
                 </div>
-                <div className="flex items-start mb-10 relative z-10">
-                   <div className="w-14 h-14 rounded-[20px] flex items-center justify-center bg-white/20 backdrop-blur-md shadow-sm border border-white/10 text-white">
+                
+                <div className="flex items-center gap-4 mb-8 relative z-10">
+                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${colorMap[kpi.color].bg} ${colorMap[kpi.color].text} shadow-inner`}>
                       {kpi.icon}
                    </div>
+                   <div>
+                     <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">{kpi.label}</p>
+                   </div>
                 </div>
+
                 <div className="relative z-10">
-                   <p className="text-[11px] font-bold text-white/70 uppercase tracking-widest mb-1">{kpi.label}</p>
-                   <h3 className="text-5xl font-bold text-white tracking-tight drop-shadow-sm">{kpi.value}</h3>
-                   <div className="mt-4 flex items-center gap-2 text-white/80 font-bold text-xs">
+                   <h3 className="text-5xl font-black text-slate-900 tracking-tight">{kpi.value}</h3>
+                   <div className="mt-4 flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-widest">
                       {kpi.title} <ArrowRight size={14} className="opacity-50" />
                    </div>
                 </div>

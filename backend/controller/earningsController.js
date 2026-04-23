@@ -2,6 +2,8 @@ const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const User = require('../model/User');
 const Transaction = require('../model/Transaction');
+const Payment = require('../model/Payment');
+const Course = require('../model/Course');
 
 
 const getEarningsDashboard = asyncHandler(async (req, res) => {
@@ -128,7 +130,93 @@ const requestWithdrawal = asyncHandler(async (req, res) => {
     }
 });
 
+const getAdminEarnings = asyncHandler(async (req, res) => {
+    const ADMIN_COMMISSION_PERCENT = 0.20;
+
+    // 1. Total Earnings (Admin's 20% Cut)
+    const totalEarningsData = await Payment.aggregate([
+        { $match: { status: 'success' } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+    const grossRevenue = totalEarningsData.length > 0 ? totalEarningsData[0].total : 0;
+    const totalEarnings = grossRevenue * ADMIN_COMMISSION_PERCENT;
+
+    // 2. Earnings from each course (Admin's 20% Cut)
+    const courseEarnings = await Payment.aggregate([
+        { $match: { status: 'success' } },
+        {
+            $group: {
+                _id: "$courseId",
+                totalGross: { $sum: "$amount" },
+                enrollmentCount: { $sum: 1 }
+            }
+        },
+        {
+            $lookup: {
+                from: "courses",
+                localField: "_id",
+                foreignField: "_id",
+                as: "courseInfo"
+            }
+        },
+        { $unwind: "$courseInfo" },
+        {
+            $project: {
+                courseTitle: "$courseInfo.title",
+                totalEarned: { $multiply: ["$totalGross", ADMIN_COMMISSION_PERCENT] },
+                enrollmentCount: 1
+            }
+        },
+        { $sort: { totalEarned: -1 } }
+    ]);
+
+    // 3. Individual earnings (recent enrollments - showing admin's cut)
+    const rawEnrollments = await Payment.find({ status: 'success' })
+        .populate('studentId', 'name email')
+        .populate('courseId', 'title')
+        .sort({ paidAt: -1 })
+        .limit(100);
+    
+    const recentEnrollments = rawEnrollments.map(payment => {
+        const p = payment.toObject();
+        return {
+            ...p,
+            amount: p.amount * ADMIN_COMMISSION_PERCENT // show only admin's cut
+        };
+    });
+
+    // 4. Monthly earnings graph (Admin's 20% Cut)
+    const monthlyStats = await Payment.aggregate([
+        { $match: { status: 'success' } },
+        {
+            $group: {
+                _id: {
+                    month: { $month: "$paidAt" },
+                    year: { $year: "$paidAt" }
+                },
+                amount: { $sum: "$amount" }
+            }
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+
+    const chartData = monthlyStats.map(stat => ({
+        month: new Date(stat._id.year, stat._id.month - 1).toLocaleString('en-US', { month: 'short', year: 'numeric' }),
+        amount: stat.amount * ADMIN_COMMISSION_PERCENT
+    }));
+
+    res.status(200).json({
+        success: true,
+        grossRevenue,
+        totalEarnings,
+        courseEarnings,
+        recentEnrollments,
+        chartData
+    });
+});
+
 module.exports = {
     getEarningsDashboard,
-    requestWithdrawal
+    requestWithdrawal,
+    getAdminEarnings
 };

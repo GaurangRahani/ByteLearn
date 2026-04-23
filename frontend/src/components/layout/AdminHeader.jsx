@@ -9,7 +9,8 @@ import {
   LayoutDashboard,
   ShieldCheck,
   BookCheck,
-  UserCog
+  UserCog,
+  IndianRupee
 } from 'lucide-react';
 
 const AdminHeader = () => {
@@ -67,6 +68,7 @@ const AdminHeader = () => {
     { name: 'Overview', path: '/admin-dashboard', icon: <LayoutDashboard size={16} /> },
     { name: 'Educator Approvals', path: '/admin/educators', icon: <ShieldCheck size={16} /> },
     { name: 'Course Approvals', path: '/admin/courses', icon: <BookCheck size={16} /> },
+    { name: 'Financials', path: '/admin/earnings', icon: <IndianRupee size={16} /> },
     { name: 'User Management', path: '/admin/users', icon: <UserCog size={16} /> },
   ];
 

@@ -7,7 +7,8 @@ import {
   UserCog, 
   LogOut,
   ShieldCheck,
-  Bell
+  Bell,
+  IndianRupee
 } from 'lucide-react';
 
 const AdminSidebar = () => {
@@ -23,6 +24,7 @@ const AdminSidebar = () => {
     { name: 'Overview', path: '/admin-dashboard', icon: <LayoutDashboard size={20} /> },
     { name: 'Educator Approvals', path: '/admin/educators', icon: <ShieldCheck size={20} /> },
     { name: 'Course Approvals', path: '/admin/courses', icon: <BookCheck size={20} /> },
+    { name: 'Financials', path: '/admin/earnings', icon: <IndianRupee size={20} /> },
     { name: 'User Management', path: '/admin/users', icon: <UserCog size={20} /> },
   ];
 

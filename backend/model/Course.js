@@ -37,7 +37,7 @@ const courseSchema = new mongoose.Schema({
     quizWeight: { type: Number, default: 50 },
     assignmentWeight: { type: Number, default: 50 },
     minGradeToPass: { type: Number, default: 70 },
-    isCertificationEnabled: { type: Boolean, default: false },
+    isCertificationEnabled: { type: Boolean, default: true },
     gradingScale: [{
       label: { type: String, required: true },
       minScore: { type: Number, required: true }

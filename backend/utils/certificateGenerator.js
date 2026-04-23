@@ -11,6 +11,7 @@ const generateCertificatePdf = async (data) => {
     let browser;
     try {
         const { studentName, courseName, grade, date, certId, educatorName } = data;
+        console.log(`[PdfGenerator] Starting PDF generation for ${studentName} - ${courseName}`);
 
         const htmlTemplate = `
         <!DOCTYPE html>
@@ -203,16 +204,18 @@ const generateCertificatePdf = async (data) => {
         `;
 
         // 1. Launch Puppeteer
+        console.log(`[PdfGenerator] Launching Puppeteer...`);
         browser = await puppeteer.launch({
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
-            headless: 'new'
+            headless: true
         });
         const page = await browser.newPage();
         
-        // Use networkidle0 to ensure fonts etc are loaded
+        console.log(`[PdfGenerator] Setting HTML content...`);
         await page.setContent(htmlTemplate, { waitUntil: 'networkidle0' });
 
         // 2. Generate PDF Buffer
+        console.log(`[PdfGenerator] Creating PDF buffer...`);
         const pdfBuffer = await page.pdf({
             format: 'A4',
             landscape: true,
@@ -221,8 +224,10 @@ const generateCertificatePdf = async (data) => {
 
         await browser.close();
         browser = null;
+        console.log(`[PdfGenerator] PDF buffer created. Size: ${pdfBuffer.length} bytes.`);
 
         // 3. Upload to Cloudinary using Stream
+        console.log(`[PdfGenerator] Uploading to Cloudinary...`);
         return new Promise((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
                 {
@@ -233,9 +238,10 @@ const generateCertificatePdf = async (data) => {
                 },
                 (error, result) => {
                     if (error) {
-                        console.error("[Cloudinary Upload Error]", error);
+                        console.error("[PdfGenerator] Cloudinary Upload Error:", error);
                         reject(error);
                     } else {
+                        console.log(`[PdfGenerator] Cloudinary Upload Success: ${result.secure_url}`);
                         resolve(result.secure_url);
                     }
                 }
@@ -245,7 +251,7 @@ const generateCertificatePdf = async (data) => {
 
     } catch (error) {
         if (browser) await browser.close();
-        console.error("[Certificate Generator Error]", error);
+        console.error("[PdfGenerator] CRITICAL ERROR:", error);
         return null;
     }
 };
