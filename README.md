@@ -177,5 +177,3 @@ The Node.js/Express server is hosted on **Render**, providing automated deployme
 
 For collaboration or technical support, please reach out via the official platform at [bytelearn.arthapulse.app](https://bytelearn.arthapulse.app).
 
-_Developed with a commitment to academic excellence and technical integrity._
-git resetgit reset
